@@ -84,6 +84,25 @@ export const contentCards = [
 
 export const navItems = ['DOMOV', 'VIDEÁ', 'O NÁS', 'ČLENSTVO', 'MERCH', 'KONTAKT']
 
+export const footerNavigation = [
+  { label: 'Domov', href: '#domov' },
+  { label: 'Videá', href: '#videa' },
+  { label: 'O nás', href: '#onas' },
+  { label: 'Členstvo', href: '#clenstvo' },
+  { label: 'Merch', href: '#merch' },
+  { label: 'Kontakt', href: '#kontakt' },
+]
+
+export const legalLinks = [
+  { label: 'Ochrana osobných údajov', href: '/ochrana-osobnych-udajov' },
+  { label: 'Cookies', href: '/cookies' },
+  { label: 'Obchodné podmienky', href: '/obchodne-podmienky' },
+  { label: 'Zrušenie členstva', href: '/zrusenie-clenstva' },
+]
+
+export const contactEmail = 'ahoj@vychodbrothers.sk'
+export const footerSlogan = 'Humor, príbehy a život z východu. Bez filtra.'
+
 export const plans = [
   {
     id: 'basic', name: 'ZÁKLADNÉ ČLENSTVO', price: '3,99 €', period: 'mesačne', button: 'Vybrať základné',

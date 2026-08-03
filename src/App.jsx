@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { activeSocialProfiles, contentCards, media, navItems, socialProfiles, stats } from './data'
 import MembershipSection from './components/MembershipSection'
+import NewsletterSection from './components/NewsletterSection'
+import Footer from './components/Footer'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -76,28 +78,20 @@ function AnimatedNumber({ value, placeholder = '--' }) {
 }
 
 function Stats() {
-  return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">OVERENÉ<br />ŠTATISTIKY <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className={`stat stat-${item.status}`} href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} data-platform={item.platform} data-metric={item.metric} key={item.id}><AnimatedNumber value={item.value} placeholder={item.placeholder} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
+  return <motion.section className="stats-panel" id="onas" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">OVERENÉ<br />ŠTATISTIKY <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className={`stat stat-${item.status}`} href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} data-platform={item.platform} data-metric={item.metric} key={item.id}><AnimatedNumber value={item.value} placeholder={item.placeholder} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
 }
 
 function FeatureCard({ card, index }) {
-  return <MotionLink className={`feature-card ${card.id}`} href={card.href} target={card.href.startsWith('http') ? '_blank' : undefined} rel={card.href.startsWith('http') ? 'noreferrer' : undefined} initial={{ opacity: 0, y: 28, clipPath: 'inset(0 0 14% 0)' }} whileInView={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }} viewport={{ once: true, amount: .18 }} transition={{ duration: .75, delay: index * .07, ease: [.2, .7, .2, 1] }} whileHover={{ y: -4, rotateX: -.6, rotateY: card.id === 'backstage' ? -.7 : .7 }}><span className="card-image" style={{ backgroundImage: `url(${card.image})` }} /><span className="card-shade" /><span className="card-light" /><span className="card-eyebrow">{card.eyebrow}</span><h2>{card.title}</h2><p>{card.description}</p>{card.play && <span className="card-play" aria-hidden="true">▶</span>}<span className="card-cta">{card.cta} <Arrow /></span></MotionLink>
+  return <MotionLink className={`feature-card ${card.id}`} id={card.id} href={card.href} target={card.href.startsWith('http') ? '_blank' : undefined} rel={card.href.startsWith('http') ? 'noreferrer' : undefined} initial={{ opacity: 0, y: 28, clipPath: 'inset(0 0 14% 0)' }} whileInView={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }} viewport={{ once: true, amount: .18 }} transition={{ duration: .75, delay: index * .07, ease: [.2, .7, .2, 1] }} whileHover={{ y: -4, rotateX: -.6, rotateY: card.id === 'backstage' ? -.7 : .7 }}><span className="card-image" style={{ backgroundImage: `url(${card.image})` }} /><span className="card-shade" /><span className="card-light" /><span className="card-eyebrow">{card.eyebrow}</span><h2>{card.title}</h2><p>{card.description}</p>{card.play && <span className="card-play" aria-hidden="true">▶</span>}<span className="card-cta">{card.cta} <Arrow /></span></MotionLink>
 }
 
 function ContentGrid() {
   return <section className="content-grid" id="videa" aria-label="Obsah Východ Brothers">{contentCards.map((card, index) => <FeatureCard card={card} index={index} key={card.id} />)}</section>
 }
 
-function Newsletter() {
-  return <section className="newsletter reveal" id="newsletter"><div><h2>NEZMEŠKAJ NOVÉ VIDEO! <Arrow /></h2><p>Prihlás sa na odber noviniek a buď vždy prvý,<br />kto sa dozvie o novom videu alebo špeciálnom obsahu.</p></div><form onSubmit={(e) => e.preventDefault()}><input type="email" aria-label="Tvoj e-mail" placeholder="Tvoj e-mail" required /><button>ODOBERAŤ</button><Arrow /></form></section>
-}
-
-function Footer() {
-  return <footer id="kontakt"><div className="footer-brand"><Logo /><p>Humor z východu<br />pre celé Slovensko.</p></div><div className="footer-links"><strong>NÁJDEŠ NÁS</strong><nav className="footer-socials">{activeSocialProfiles.map((profile) => <a href={profile.url} target="_blank" rel="noreferrer" key={profile.id}>{profile.name} ↗</a>)}</nav></div><div className="footer-contact"><strong>KONTAKT</strong><a href="mailto:ahoj@vychodbrothers.sk">ahoj@vychodbrothers.sk</a></div><div className="footer-legal"><span>© 2026 VÝCHOD BROTHERS</span><nav><a href="#privacy">Ochrana súkromia</a><a href="#cookies">Cookies</a><a href="#terms">Podmienky</a></nav></div></footer>
-}
-
 export default function App() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><MembershipSection /><Newsletter /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><MembershipSection /><NewsletterSection /><Footer /></main></>
 }
