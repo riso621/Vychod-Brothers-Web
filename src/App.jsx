@@ -48,7 +48,7 @@ function Stats() {
 }
 
 function FeatureCard({ type, image, title, accent, children }) {
-  return <a className={`feature-card ${type} reveal`} href={`#${type}`} style={{ backgroundImage: `linear-gradient(90deg, rgba(7,8,8,.93) 0%, rgba(7,8,8,.18) 72%), url(${image})` }}><h2>{title}<br /><em>{accent}</em></h2><p>{children}</p><Arrow /></a>
+  return <a className={`feature-card ${type} reveal`} href={`#${type}`}><span className="card-image" style={{ backgroundImage: `url(${image})` }} /><span className="card-shade" /><h2>{title}<br /><em>{accent}</em></h2><p>{children}</p><Arrow /></a>
 }
 
 function ContentGrid() {
