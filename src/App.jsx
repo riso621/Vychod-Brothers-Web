@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { contentCards, media, navItems, plans, stats } from './data'
+import { activeSocialProfiles, contentCards, media, navItems, plans, socialProfiles, stats } from './data'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -30,7 +30,7 @@ function Header() {
 }
 
 function SideRail() {
-  return <aside className="side-rail" aria-label="Sociálne siete"><div className="socials"><a href="#facebook">f</a><a href="#instagram">◎</a><a href="#tiktok">♪</a><a href="#youtube">▶</a></div><span className="vertical">VÝCHOD BROTHERS</span><span className="plus">+</span><a className="scroll" href="#videa">↓ <small>SCROLL</small></a></aside>
+  return <aside className="side-rail" aria-label="Sociálne siete"><div className="socials">{activeSocialProfiles.map((profile) => <a href={profile.url} target="_blank" rel="noreferrer" aria-label={profile.label} title={profile.name} key={profile.id}>{profile.icon}</a>)}</div><span className="vertical">VÝCHOD BROTHERS</span><span className="plus">+</span><a className="scroll" href="#videa">↓ <small>SCROLL</small></a></aside>
 }
 
 function FilmStrip() {
@@ -49,7 +49,7 @@ function Hero() {
       <Header />
       <motion.div className="hero-photo" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} animate={reduceMotion ? undefined : { scale: [1.015, 1.055] }} transition={{ duration: 18, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }} />
       <div className="hero-smoke" aria-hidden="true" />
-      <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}><span>VÝCHOD</span><span>BROTHERS</span></motion.h1><motion.p variants={reveal}>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</motion.p><MotionLink variants={reveal} className="outline-btn" href="#videa" whileHover={{ y: -2 }} whileTap={{ scale: .98 }}><b>▶</b> POZRIEŤ NAJNOVŠIE VIDEO</MotionLink></motion.div>
+      <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}><span>VÝCHOD</span><span>BROTHERS</span></motion.h1><motion.p variants={reveal}>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</motion.p><MotionLink variants={reveal} className="outline-btn" href={socialProfiles.youtube.url} target="_blank" rel="noreferrer" whileHover={{ y: -2 }} whileTap={{ scale: .98 }}><b>▶</b> POZRIEŤ NAJNOVŠIE VIDEO</MotionLink></motion.div>
       <motion.div className="neon-mark" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: .76 }} transition={{ delay: .8, duration: 1.2 }}>VB</motion.div>
       <FilmStrip />
       <motion.p className="mentality" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: .8 }}>NIE JE LEN MIESTO,<br />JE TO MENTALITA.<i /></motion.p>
@@ -73,7 +73,7 @@ function AnimatedNumber({ value }) {
 }
 
 function Stats() {
-  return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">SÚČASŤ<br />NÁŠHO SVETA <Arrow /></motion.div>{stats.map((item) => <motion.div variants={reveal} className="stat" key={item.value}><AnimatedNumber value={item.value} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.div>)}</motion.section>
+  return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">SÚČASŤ<br />NÁŠHO SVETA <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className="stat" href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} key={`${item.value}-${item.lines.join('-')}`}><AnimatedNumber value={item.value} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
 }
 
 function FeatureCard({ card, index }) {
@@ -93,7 +93,7 @@ function Newsletter() {
 }
 
 function Footer() {
-  return <footer id="kontakt"><div className="footer-brand"><Logo /><p>Humor z východu<br />pre celé Slovensko.</p></div><div className="footer-links"><strong>NÁJDEŠ NÁS</strong><nav className="footer-socials"><a href="#instagram">Instagram ↗</a><a href="#tiktok">TikTok ↗</a><a href="#youtube">YouTube ↗</a></nav></div><div className="footer-contact"><strong>KONTAKT</strong><a href="mailto:ahoj@vychodbrothers.sk">ahoj@vychodbrothers.sk</a></div><div className="footer-legal"><span>© 2026 VÝCHOD BROTHERS</span><nav><a href="#privacy">Ochrana súkromia</a><a href="#cookies">Cookies</a><a href="#terms">Podmienky</a></nav></div></footer>
+  return <footer id="kontakt"><div className="footer-brand"><Logo /><p>Humor z východu<br />pre celé Slovensko.</p></div><div className="footer-links"><strong>NÁJDEŠ NÁS</strong><nav className="footer-socials">{activeSocialProfiles.map((profile) => <a href={profile.url} target="_blank" rel="noreferrer" key={profile.id}>{profile.name} ↗</a>)}</nav></div><div className="footer-contact"><strong>KONTAKT</strong><a href="mailto:ahoj@vychodbrothers.sk">ahoj@vychodbrothers.sk</a></div><div className="footer-legal"><span>© 2026 VÝCHOD BROTHERS</span><nav><a href="#privacy">Ochrana súkromia</a><a href="#cookies">Cookies</a><a href="#terms">Podmienky</a></nav></div></footer>
 }
 
 export default function App() {

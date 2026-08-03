@@ -12,12 +12,23 @@ export const media = {
   giveaway: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1800&q=88',
 }
 
+export const socialProfiles = {
+  youtube: { name: 'YouTube', url: 'https://www.youtube.com/@Vychodbrothers1', icon: '▶', label: 'Východ Brothers na YouTube' },
+  tiktok: { name: 'TikTok', url: 'https://www.tiktok.com/@vychodbrothers', icon: '♪', label: 'Východ Brothers na TikToku' },
+  instagram: { name: 'Instagram', url: 'https://www.instagram.com/vychodbrothers/', icon: '◎', label: 'Východ Brothers na Instagrame' },
+  facebook: { name: 'Facebook', url: 'https://www.facebook.com/riso.vanci/', icon: 'f', label: 'Východ Brothers na Facebooku' },
+}
+
+export const activeSocialProfiles = Object.entries(socialProfiles)
+  .filter(([, profile]) => Boolean(profile.url))
+  .map(([id, profile]) => ({ id, ...profile }))
+
 export const stats = [
-  { value: '120K+', lines: ['YOUTUBE', 'ODBERATEĽOV'] },
-  { value: '15,2M+', lines: ['YOUTUBE', 'VIEWS'] },
-  { value: '75K+', lines: ['TIKTOK', 'FOLLOWERS'] },
-  { value: '38K+', lines: ['INSTAGRAM', 'FOLLOWERS'] },
-  { value: '180+', lines: ['VYDANÝCH', 'VIDEÍ'] },
+  { value: '120K+', lines: ['YOUTUBE', 'ODBERATEĽOV'], social: 'youtube' },
+  { value: '15,2M+', lines: ['YOUTUBE', 'VIEWS'], social: 'youtube' },
+  { value: '75K+', lines: ['TIKTOK', 'FOLLOWERS'], social: 'tiktok' },
+  { value: '38K+', lines: ['INSTAGRAM', 'FOLLOWERS'], social: 'instagram' },
+  { value: '180+', lines: ['VYDANÝCH', 'VIDEÍ'], social: 'youtube' },
 ]
 
 export const contentCards = [
@@ -27,7 +38,7 @@ export const contentCards = [
     title: 'Keď ideš na východ len na víkend',
     description: 'Nový minifilm · 14:08 · 486 tis. pozretí',
     cta: 'Pozrieť teraz',
-    href: 'https://www.youtube.com/',
+    href: socialProfiles.youtube.url,
     image: media.latest,
     play: true,
   },
