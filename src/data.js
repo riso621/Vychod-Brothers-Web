@@ -24,11 +24,11 @@ export const activeSocialProfiles = Object.entries(socialProfiles)
   .map(([id, profile]) => ({ id, ...profile }))
 
 export const stats = [
-  { value: '120K+', lines: ['YOUTUBE', 'ODBERATEĽOV'], social: 'youtube' },
-  { value: '15,2M+', lines: ['YOUTUBE', 'VIEWS'], social: 'youtube' },
-  { value: '75K+', lines: ['TIKTOK', 'FOLLOWERS'], social: 'tiktok' },
-  { value: '38K+', lines: ['INSTAGRAM', 'FOLLOWERS'], social: 'instagram' },
-  { value: '180+', lines: ['VYDANÝCH', 'VIDEÍ'], social: 'youtube' },
+  { id: 'youtube-subscribers', platform: 'youtube', metric: 'subscriberCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['YOUTUBE', 'ODBERATEĽOV'], social: 'youtube' },
+  { id: 'youtube-views', platform: 'youtube', metric: 'viewCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['YOUTUBE', 'ZHLIADNUTÍ'], social: 'youtube' },
+  { id: 'youtube-videos', platform: 'youtube', metric: 'videoCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['YOUTUBE', 'VIDEÍ'], social: 'youtube' },
+  { id: 'instagram-followers', platform: 'instagram', metric: 'followersCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['INSTAGRAM', 'SLEDOVATEĽOV'], social: 'instagram' },
+  { id: 'tiktok-followers', platform: 'tiktok', metric: 'followerCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['TIKTOK', 'SLEDOVATEĽOV'], social: 'tiktok' },
 ]
 
 export const contentCards = [
@@ -36,7 +36,7 @@ export const contentCards = [
     id: 'latest',
     eyebrow: 'NAJNOVŠIE VIDEO',
     title: 'Keď ideš na východ len na víkend',
-    description: 'Nový minifilm · 14:08 · 486 tis. pozretí',
+    description: 'Nový minifilm · Humor z východu bez filtra',
     cta: 'Pozrieť teraz',
     href: socialProfiles.youtube.url,
     image: media.latest,

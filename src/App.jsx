@@ -57,23 +57,24 @@ function Hero() {
   )
 }
 
-function AnimatedNumber({ value }) {
+function AnimatedNumber({ value, placeholder = '--' }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, amount: .7 })
-  const numeric = Number(value.replace(/[^0-9.,]/g, '').replace(',', '.'))
-  const suffix = value.replace(/[0-9.,]/g, '')
-  const decimals = value.includes(',') ? 1 : 0
+  const hasVerifiedValue = typeof value === 'string' && value.trim() !== ''
+  const numeric = hasVerifiedValue ? Number(value.replace(/[^0-9.,]/g, '').replace(',', '.')) : null
+  const suffix = hasVerifiedValue ? value.replace(/[0-9.,]/g, '') : ''
+  const decimals = hasVerifiedValue && value.includes(',') ? 1 : 0
   const [display, setDisplay] = useState('0')
   useEffect(() => {
-    if (!inView) return undefined
+    if (!inView || numeric === null || !Number.isFinite(numeric)) return undefined
     const control = animate(0, numeric, { duration: 1.6, ease: 'easeOut', onUpdate: (latest) => setDisplay(latest.toFixed(decimals).replace('.', ',')) })
     return () => control.stop()
   }, [inView, numeric, decimals])
-  return <strong ref={ref}>{display}{suffix}</strong>
+  return <strong ref={ref} aria-label={hasVerifiedValue ? value : 'Štatistika zatiaľ nie je načítaná'}>{hasVerifiedValue ? `${display}${suffix}` : placeholder}</strong>
 }
 
 function Stats() {
-  return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">SÚČASŤ<br />NÁŠHO SVETA <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className="stat" href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} key={`${item.value}-${item.lines.join('-')}`}><AnimatedNumber value={item.value} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
+  return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">OVERENÉ<br />ŠTATISTIKY <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className={`stat stat-${item.status}`} href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} data-platform={item.platform} data-metric={item.metric} key={item.id}><AnimatedNumber value={item.value} placeholder={item.placeholder} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
 }
 
 function FeatureCard({ card, index }) {
