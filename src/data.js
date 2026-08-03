@@ -24,11 +24,13 @@ export const activeSocialProfiles = Object.entries(socialProfiles)
   .map(([id, profile]) => ({ id, ...profile }))
 
 export const stats = [
-  { id: 'youtube-subscribers', platform: 'youtube', metric: 'subscriberCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['YOUTUBE', 'ODBERATEĽOV'], social: 'youtube' },
+  { id: 'youtube-subscribers', platform: 'youtube', metric: 'subscriberCount', provider: 'manual-verified', value: '36,2 tis.', status: 'verified', placeholder: '--', lines: ['YOUTUBE', 'ODBERATEĽOV'], social: 'youtube' },
   { id: 'youtube-views', platform: 'youtube', metric: 'viewCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['YOUTUBE', 'ZHLIADNUTÍ'], social: 'youtube' },
-  { id: 'youtube-videos', platform: 'youtube', metric: 'videoCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['YOUTUBE', 'VIDEÍ'], social: 'youtube' },
-  { id: 'instagram-followers', platform: 'instagram', metric: 'followersCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['INSTAGRAM', 'SLEDOVATEĽOV'], social: 'instagram' },
-  { id: 'tiktok-followers', platform: 'tiktok', metric: 'followerCount', provider: null, value: null, status: 'pending', placeholder: '--', lines: ['TIKTOK', 'SLEDOVATEĽOV'], social: 'tiktok' },
+  { id: 'youtube-videos', platform: 'youtube', metric: 'videoCount', provider: 'manual-verified', value: '203', status: 'verified', placeholder: '--', lines: ['YOUTUBE', 'VIDEÍ'], social: 'youtube' },
+  { id: 'instagram-followers', platform: 'instagram', metric: 'followersCount', provider: 'manual-verified', value: '49,8 tis.', status: 'verified', placeholder: '--', lines: ['INSTAGRAM', 'SLEDOVATEĽOV'], social: 'instagram' },
+  { id: 'tiktok-followers', platform: 'tiktok', metric: 'followerCount', provider: 'manual-verified', value: '128,3 tis.', status: 'verified', placeholder: '--', lines: ['TIKTOK', 'SLEDOVATEĽOV'], social: 'tiktok' },
+  { id: 'tiktok-likes', platform: 'tiktok', metric: 'likeCount', provider: 'manual-verified', value: '2,1 mil.', status: 'verified', placeholder: '--', lines: ['TIKTOK', 'LAJKOV'], social: 'tiktok' },
+  { id: 'facebook-followers', platform: 'facebook', metric: 'followersCount', provider: 'manual-verified', value: '73 tis.', status: 'verified', placeholder: '--', lines: ['FACEBOOK', 'SLEDOVATEĽOV'], social: 'facebook' },
 ]
 
 export const contentCards = [

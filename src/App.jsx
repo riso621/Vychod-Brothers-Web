@@ -61,9 +61,10 @@ function AnimatedNumber({ value, placeholder = '--' }) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, amount: .7 })
   const hasVerifiedValue = typeof value === 'string' && value.trim() !== ''
-  const numeric = hasVerifiedValue ? Number(value.replace(/[^0-9.,]/g, '').replace(',', '.')) : null
-  const suffix = hasVerifiedValue ? value.replace(/[0-9.,]/g, '') : ''
-  const decimals = hasVerifiedValue && value.includes(',') ? 1 : 0
+  const numericMatch = hasVerifiedValue ? value.match(/\d+(?:[.,]\d+)?/) : null
+  const numeric = numericMatch ? Number(numericMatch[0].replace(',', '.')) : null
+  const suffix = numericMatch ? value.replace(numericMatch[0], '') : ''
+  const decimals = numericMatch?.[0].includes(',') || numericMatch?.[0].includes('.') ? 1 : 0
   const [display, setDisplay] = useState('0')
   useEffect(() => {
     if (!inView || numeric === null || !Number.isFinite(numeric)) return undefined
