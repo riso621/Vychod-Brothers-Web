@@ -1,5 +1,5 @@
 export const media = {
-  hero: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=2200&q=88',
+  hero: '/images/vychod-brothers-hero.webp',
   film: [
     'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=700&q=75',
     'https://images.unsplash.com/photo-1539635278303-d4002c07eae3?auto=format&fit=crop&w=700&q=75',
