@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { media, navItems, plans, stats } from './data'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
+const MotionLink = motion.create('a')
+
+const reveal = {
+  hidden: { opacity: 0, y: 26 },
+  visible: { opacity: 1, y: 0, transition: { duration: .85, ease: [.2, .7, .2, 1] } },
+}
 
 function Logo() {
   return <a className="brand" href="#domov" aria-label="Východ Brothers – domov"><i>V</i>B</a>
@@ -27,28 +34,50 @@ function SideRail() {
 }
 
 function FilmStrip() {
-  return <div className="film-strip reveal" aria-label="Ukážky z videí"><div className="perforations top" />{media.film.map((image, index) => <div className="frame" key={image}><img src={image} alt={`Momentka z natáčania ${index + 1}`} /></div>)}<div className="perforations bottom" /></div>
+  const { scrollY } = useScroll()
+  const stripX = useTransform(scrollY, [0, 900], [0, 36])
+  return <motion.div className="film-strip" style={{ x: stripX }} initial={{ opacity: 0, y: 35 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .75, duration: 1 }} aria-label="Ukážky z videí"><div className="perforations top" />{media.film.map((image, index) => <div className="frame" key={image}><img src={image} alt={`Momentka z natáčania ${index + 1}`} loading="eager" decoding="async" /></div>)}<div className="perforations bottom" /></motion.div>
 }
 
 function Hero() {
+  const reduceMotion = useReducedMotion()
+  const { scrollY } = useScroll()
+  const photoY = useTransform(scrollY, [0, 900], [0, reduceMotion ? 0 : 46])
+  const copyY = useTransform(scrollY, [0, 700], [0, reduceMotion ? 0 : -24])
   return (
     <section className="hero" id="domov">
       <Header />
-      <div className="hero-photo" style={{ backgroundImage: `url(${media.hero})` }} />
-      <div className="hero-copy reveal"><h1>VÝCHOD<br />BROTHERS</h1><p>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</p><a className="outline-btn" href="#videa"><b>▶</b> POZRIEŤ NAJNOVŠIE VIDEO</a></div>
-      <div className="neon-mark" aria-hidden="true">VB</div>
+      <motion.div className="hero-photo" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} animate={reduceMotion ? undefined : { scale: [1.015, 1.055] }} transition={{ duration: 18, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }} />
+      <div className="hero-smoke" aria-hidden="true" />
+      <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}><span>VÝCHOD</span><span>BROTHERS</span></motion.h1><motion.p variants={reveal}>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</motion.p><MotionLink variants={reveal} className="outline-btn" href="#videa" whileHover={{ y: -2 }} whileTap={{ scale: .98 }}><b>▶</b> POZRIEŤ NAJNOVŠIE VIDEO</MotionLink></motion.div>
+      <motion.div className="neon-mark" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: .76 }} transition={{ delay: .8, duration: 1.2 }}>VB</motion.div>
       <FilmStrip />
-      <p className="mentality">NIE JE LEN MIESTO,<br />JE TO MENTALITA.<i /></p>
+      <motion.p className="mentality" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: .8 }}>NIE JE LEN MIESTO,<br />JE TO MENTALITA.<i /></motion.p>
     </section>
   )
 }
 
+function AnimatedNumber({ value }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, amount: .7 })
+  const numeric = Number(value.replace(/[^0-9.,]/g, '').replace(',', '.'))
+  const suffix = value.replace(/[0-9.,]/g, '')
+  const decimals = value.includes(',') ? 1 : 0
+  const [display, setDisplay] = useState('0')
+  useEffect(() => {
+    if (!inView) return undefined
+    const control = animate(0, numeric, { duration: 1.6, ease: 'easeOut', onUpdate: (latest) => setDisplay(latest.toFixed(decimals).replace('.', ',')) })
+    return () => control.stop()
+  }, [inView, numeric, decimals])
+  return <strong ref={ref}>{display}{suffix}</strong>
+}
+
 function Stats() {
-  return <section className="stats-panel reveal"><div className="stats-intro">SÚČASŤ<br />NÁŠHO SVETA <Arrow /></div>{stats.map((item) => <div className="stat" key={item.value}><strong>{item.value}</strong><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></div>)}</section>
+  return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">SÚČASŤ<br />NÁŠHO SVETA <Arrow /></motion.div>{stats.map((item) => <motion.div variants={reveal} className="stat" key={item.value}><AnimatedNumber value={item.value} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.div>)}</motion.section>
 }
 
 function FeatureCard({ type, image, title, accent, children }) {
-  return <a className={`feature-card ${type} reveal`} href={`#${type}`}><span className="card-image" style={{ backgroundImage: `url(${image})` }} /><span className="card-shade" /><h2>{title}<br /><em>{accent}</em></h2><p>{children}</p><Arrow /></a>
+  return <MotionLink className={`feature-card ${type}`} href={`#${type}`} initial={{ opacity: 0, y: 28, clipPath: 'inset(0 0 16% 0)' }} whileInView={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }} viewport={{ once: true, amount: .18 }} transition={{ duration: .8, ease: [.2, .7, .2, 1] }} whileHover={{ y: -5, rotateX: -1.2, rotateY: type === 'backstage' ? -1 : 1 }}><span className="card-image" style={{ backgroundImage: `url(${image})` }} /><span className="card-shade" /><span className="card-light" /><h2>{title}<br /><em>{accent}</em></h2><p>{children}</p><Arrow /></MotionLink>
 }
 
 function ContentGrid() {
@@ -56,7 +85,7 @@ function ContentGrid() {
 }
 
 function Membership() {
-  return <section className="membership reveal" id="clenstvo"><div className="membership-poster"><span>STAŇ SA</span><strong>LEGENDOU</strong><p>EXKLUZÍVNY OBSAH, VIDEÁ SKÔR,<br />BEHIND THE SCENES A VEĽA VIAC!</p></div>{plans.map((plan) => <article className={`plan ${plan.popular ? 'popular' : ''}`} key={plan.name}>{plan.popular && <span className="badge">NAJOBĽÚBENEJŠIE</span>}<h3>{plan.name}</h3><div className="price">{plan.price} <small>/ MESIAC</small></div><ul>{plan.perks.map((perk) => <li key={perk}>✓ &nbsp; {perk}</li>)}</ul><button>{plan.button}</button></article>)}<div className="member-benefits"><p>ⓧ <span>ZRUŠÍŠ KEDYKOĽVEK</span></p><p>▣ <span>BEZPEČNÁ PLATBA</span></p><p>▤ <span>FAKTÚRA AUTOMATICKY</span></p><p>♡ <span>PODPORA TVORBY<br />VÝCHOD BROTHERS</span></p></div></section>
+  return <motion.section className="membership" id="clenstvo" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .9 }}><motion.div className="membership-poster" whileHover={{ rotate: -.4, scale: 1.035 }}><span>STAŇ SA</span><strong>LEGENDOU</strong><p>EXKLUZÍVNY OBSAH, VIDEÁ SKÔR,<br />BEHIND THE SCENES A VEĽA VIAC!</p></motion.div>{plans.map((plan) => <motion.article whileHover={{ y: -4 }} className={`plan ${plan.popular ? 'popular' : ''}`} key={plan.name}>{plan.popular && <span className="badge">NAJOBĽÚBENEJŠIE</span>}<h3>{plan.name}</h3><div className="price">{plan.price} <small>/ MESIAC</small></div><ul>{plan.perks.map((perk) => <li key={perk}>✓ &nbsp; {perk}</li>)}</ul><button>{plan.button}</button></motion.article>)}<div className="member-benefits"><p>ⓧ <span>ZRUŠÍŠ KEDYKOĽVEK</span></p><p>▣ <span>BEZPEČNÁ PLATBA</span></p><p>▤ <span>FAKTÚRA AUTOMATICKY</span></p><p>♡ <span>PODPORA TVORBY<br />VÝCHOD BROTHERS</span></p></div></motion.section>
 }
 
 function Newsletter() {
@@ -69,5 +98,7 @@ function Footer() {
 
 export default function App() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
-  return <><SideRail /><main className="site-shell"><Hero /><Stats /><ContentGrid /><Membership /><Newsletter /><Footer /></main></>
+  const { scrollYProgress } = useScroll()
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><Membership /><Newsletter /><Footer /></main></>
 }
