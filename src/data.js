@@ -86,11 +86,20 @@ export const navItems = ['DOMOV', 'VIDEÁ', 'O NÁS', 'ČLENSTVO', 'MERCH', 'KON
 
 export const plans = [
   {
-    name: 'ZÁKLADNÉ ČLENSTVO', price: '3,99 €', button: 'VYBRAŤ PLÁN',
+    id: 'basic', name: 'ZÁKLADNÉ ČLENSTVO', price: '3,99 €', period: 'mesačne', button: 'Vybrať základné',
+    description: 'Všetko podstatné pre fanúšikov, ktorí chcú byť pri tom skôr.',
     perks: ['Videá skôr ako na YouTube', 'Vystrihnuté scény', 'Zákulisie', 'Hlasovanie o ďalšom videu'],
   },
   {
-    name: 'VIP ČLENSTVO', price: '7,99 €', button: 'VYBRAŤ VIP', popular: true,
+    id: 'vip', name: 'VIP ČLENSTVO', price: '7,99 €', period: 'mesačne', button: 'Vybrať VIP', popular: true,
+    description: 'Kompletný prístup k tomu, čo zostáva mimo verejného YouTube.',
     perks: ['Exkluzívne minifilmy', 'Všetky bonusové videá', 'Premiéry pre členov', 'Meno v titulkoch', 'VIP odznak na profile'],
   },
+]
+
+export const membershipBenefits = [
+  { id: 'commitment', icon: '∞', title: 'Bez záväzkov', detail: 'Zrušíš kedykoľvek' },
+  { id: 'payment', icon: '▣', title: 'Bezpečná platba', detail: 'Platobné údaje budú chránené' },
+  { id: 'invoice', icon: '▤', title: 'Automatická faktúra', detail: 'Doklad ku každej platbe' },
+  { id: 'support', icon: '♡', title: 'Podpora tvorby', detail: 'Pomáhaš tvoriť Východ Brothers' },
 ]

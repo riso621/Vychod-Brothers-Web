@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { activeSocialProfiles, contentCards, media, navItems, plans, socialProfiles, stats } from './data'
+import { activeSocialProfiles, contentCards, media, navItems, socialProfiles, stats } from './data'
+import MembershipSection from './components/MembershipSection'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -86,10 +87,6 @@ function ContentGrid() {
   return <section className="content-grid" id="videa" aria-label="Obsah Východ Brothers">{contentCards.map((card, index) => <FeatureCard card={card} index={index} key={card.id} />)}</section>
 }
 
-function Membership() {
-  return <motion.section className="membership" id="clenstvo" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .9 }}><motion.div className="membership-poster" whileHover={{ rotate: -.4, scale: 1.035 }}><span>STAŇ SA</span><strong>LEGENDOU</strong><p>EXKLUZÍVNY OBSAH, VIDEÁ SKÔR,<br />BEHIND THE SCENES A VEĽA VIAC!</p></motion.div>{plans.map((plan) => <motion.article whileHover={{ y: -4 }} className={`plan ${plan.popular ? 'popular' : ''}`} key={plan.name}>{plan.popular && <span className="badge">NAJOBĽÚBENEJŠIE</span>}<h3>{plan.name}</h3><div className="price">{plan.price} <small>/ MESIAC</small></div><ul>{plan.perks.map((perk) => <li key={perk}>✓ &nbsp; {perk}</li>)}</ul><button>{plan.button}</button></motion.article>)}<div className="member-benefits"><p>ⓧ <span>ZRUŠÍŠ KEDYKOĽVEK</span></p><p>▣ <span>BEZPEČNÁ PLATBA</span></p><p>▤ <span>FAKTÚRA AUTOMATICKY</span></p><p>♡ <span>PODPORA TVORBY<br />VÝCHOD BROTHERS</span></p></div></motion.section>
-}
-
 function Newsletter() {
   return <section className="newsletter reveal" id="newsletter"><div><h2>NEZMEŠKAJ NOVÉ VIDEO! <Arrow /></h2><p>Prihlás sa na odber noviniek a buď vždy prvý,<br />kto sa dozvie o novom videu alebo špeciálnom obsahu.</p></div><form onSubmit={(e) => e.preventDefault()}><input type="email" aria-label="Tvoj e-mail" placeholder="Tvoj e-mail" required /><button>ODOBERAŤ</button><Arrow /></form></section>
 }
@@ -102,5 +99,5 @@ export default function App() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><Membership /><Newsletter /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><MembershipSection /><Newsletter /><Footer /></main></>
 }
