@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { media, navItems, plans, stats } from './data'
+import { contentCards, media, navItems, plans, stats } from './data'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -76,12 +76,12 @@ function Stats() {
   return <motion.section className="stats-panel" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">SÚČASŤ<br />NÁŠHO SVETA <Arrow /></motion.div>{stats.map((item) => <motion.div variants={reveal} className="stat" key={item.value}><AnimatedNumber value={item.value} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.div>)}</motion.section>
 }
 
-function FeatureCard({ type, image, title, accent, children }) {
-  return <MotionLink className={`feature-card ${type}`} href={`#${type}`} initial={{ opacity: 0, y: 28, clipPath: 'inset(0 0 16% 0)' }} whileInView={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }} viewport={{ once: true, amount: .18 }} transition={{ duration: .8, ease: [.2, .7, .2, 1] }} whileHover={{ y: -5, rotateX: -1.2, rotateY: type === 'backstage' ? -1 : 1 }}><span className="card-image" style={{ backgroundImage: `url(${image})` }} /><span className="card-shade" /><span className="card-light" /><h2>{title}<br /><em>{accent}</em></h2><p>{children}</p><Arrow /></MotionLink>
+function FeatureCard({ card, index }) {
+  return <MotionLink className={`feature-card ${card.id}`} href={card.href} target={card.href.startsWith('http') ? '_blank' : undefined} rel={card.href.startsWith('http') ? 'noreferrer' : undefined} initial={{ opacity: 0, y: 28, clipPath: 'inset(0 0 14% 0)' }} whileInView={{ opacity: 1, y: 0, clipPath: 'inset(0 0 0% 0)' }} viewport={{ once: true, amount: .18 }} transition={{ duration: .75, delay: index * .07, ease: [.2, .7, .2, 1] }} whileHover={{ y: -4, rotateX: -.6, rotateY: card.id === 'backstage' ? -.7 : .7 }}><span className="card-image" style={{ backgroundImage: `url(${card.image})` }} /><span className="card-shade" /><span className="card-light" /><span className="card-eyebrow">{card.eyebrow}</span><h2>{card.title}</h2><p>{card.description}</p>{card.play && <span className="card-play" aria-hidden="true">▶</span>}<span className="card-cta">{card.cta} <Arrow /></span></MotionLink>
 }
 
 function ContentGrid() {
-  return <section className="content-grid" id="videa"><FeatureCard type="latest" image={media.latest} title="NAJNOVŠIE" accent="VIDEO">POZRIEŤ TERAZ</FeatureCard><FeatureCard type="backstage" image={media.backstage} title="ZÁKULISIE" accent="">POZRI SA, ČO SA DEJE<br />ZA KAMEROU</FeatureCard><FeatureCard type="vip" image={media.vip} title="VIP" accent="KLUB">EXKLUZÍVNY OBSAH<br />PRE ČLENOV</FeatureCard><FeatureCard type="merch" image={media.merch} title="MERCH" accent="">OFICIÁLNY MERCH<br />VÝCHOD BROTHERS</FeatureCard><FeatureCard type="giveaway" image={media.giveaway} title="SÚŤAŽE" accent="& GIVEAWAYE">SÚŤAŽE LEN PRE<br />NAŠICH ČLENOV</FeatureCard></section>
+  return <section className="content-grid" id="videa" aria-label="Obsah Východ Brothers">{contentCards.map((card, index) => <FeatureCard card={card} index={index} key={card.id} />)}</section>
 }
 
 function Membership() {
@@ -89,7 +89,7 @@ function Membership() {
 }
 
 function Newsletter() {
-  return <section className="newsletter reveal"><div><h2>NEZMEŠKAJ NOVÉ VIDEO! <Arrow /></h2><p>Prihlás sa na odber noviniek a buď vždy prvý,<br />kto sa dozvie o novom videu alebo špeciálnom obsahu.</p></div><form onSubmit={(e) => e.preventDefault()}><input type="email" aria-label="Tvoj e-mail" placeholder="Tvoj e-mail" required /><button>ODOBERAŤ</button><Arrow /></form></section>
+  return <section className="newsletter reveal" id="newsletter"><div><h2>NEZMEŠKAJ NOVÉ VIDEO! <Arrow /></h2><p>Prihlás sa na odber noviniek a buď vždy prvý,<br />kto sa dozvie o novom videu alebo špeciálnom obsahu.</p></div><form onSubmit={(e) => e.preventDefault()}><input type="email" aria-label="Tvoj e-mail" placeholder="Tvoj e-mail" required /><button>ODOBERAŤ</button><Arrow /></form></section>
 }
 
 function Footer() {

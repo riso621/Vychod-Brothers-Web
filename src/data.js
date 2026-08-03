@@ -9,7 +9,7 @@ export const media = {
   backstage: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=82',
   vip: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1000&q=80',
   merch: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=1000&q=80',
-  giveaway: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80',
+  giveaway: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1800&q=88',
 }
 
 export const stats = [
@@ -18,6 +18,55 @@ export const stats = [
   { value: '75K+', lines: ['TIKTOK', 'FOLLOWERS'] },
   { value: '38K+', lines: ['INSTAGRAM', 'FOLLOWERS'] },
   { value: '180+', lines: ['VYDANÝCH', 'VIDEÍ'] },
+]
+
+export const contentCards = [
+  {
+    id: 'latest',
+    eyebrow: 'NAJNOVŠIE VIDEO',
+    title: 'Keď ideš na východ len na víkend',
+    description: 'Nový minifilm · 14:08 · 486 tis. pozretí',
+    cta: 'Pozrieť teraz',
+    href: 'https://www.youtube.com/',
+    image: media.latest,
+    play: true,
+  },
+  {
+    id: 'backstage',
+    eyebrow: 'ZA KAMEROU',
+    title: 'Zákulisie',
+    description: 'Pozri sa, čo sa deje medzi klapkou a finálnym strihom.',
+    cta: 'Nahliadnuť do zákulisia',
+    href: '#backstage',
+    image: media.backstage,
+  },
+  {
+    id: 'vip',
+    eyebrow: 'EXKLUZÍVNE PRE ČLENOV',
+    title: 'VIP klub',
+    description: 'Bonusové videá, premiéry a obsah, ktorý na YouTube neuvidíš.',
+    cta: 'Pozrieť členstvo',
+    href: '#clenstvo',
+    image: media.vip,
+  },
+  {
+    id: 'merch',
+    eyebrow: 'UŽ ČOSKORO',
+    title: 'Merch pripravujeme',
+    description: 'Prvý drop práve vzniká. Daj si vedieť medzi prvými.',
+    cta: 'Odoberať novinky',
+    href: '#newsletter',
+    image: media.merch,
+  },
+  {
+    id: 'giveaway',
+    eyebrow: 'PRE NAŠU KOMUNITU',
+    title: 'Súťaže & giveaway',
+    description: 'Špeciálne výzvy a odmeny pre fanúšikov aj členov.',
+    cta: 'Sledovať novinky',
+    href: '#newsletter',
+    image: media.giveaway,
+  },
 ]
 
 export const navItems = ['DOMOV', 'VIDEÁ', 'O NÁS', 'ČLENSTVO', 'MERCH', 'KONTAKT']
