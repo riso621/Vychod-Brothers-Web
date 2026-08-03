@@ -93,7 +93,7 @@ function Newsletter() {
 }
 
 function Footer() {
-  return <footer id="kontakt"><Logo /><p>Humor z východu pre celé Slovensko.</p><nav><a href="#privacy">Ochrana súkromia</a><a href="#cookies">Cookies</a><a href="mailto:ahoj@vychodbrothers.sk">ahoj@vychodbrothers.sk</a></nav><span>© 2026 VÝCHOD BROTHERS</span></footer>
+  return <footer id="kontakt"><div className="footer-brand"><Logo /><p>Humor z východu<br />pre celé Slovensko.</p></div><div className="footer-links"><strong>NÁJDEŠ NÁS</strong><nav className="footer-socials"><a href="#instagram">Instagram ↗</a><a href="#tiktok">TikTok ↗</a><a href="#youtube">YouTube ↗</a></nav></div><div className="footer-contact"><strong>KONTAKT</strong><a href="mailto:ahoj@vychodbrothers.sk">ahoj@vychodbrothers.sk</a></div><div className="footer-legal"><span>© 2026 VÝCHOD BROTHERS</span><nav><a href="#privacy">Ochrana súkromia</a><a href="#cookies">Cookies</a><a href="#terms">Podmienky</a></nav></div></footer>
 }
 
 export default function App() {
