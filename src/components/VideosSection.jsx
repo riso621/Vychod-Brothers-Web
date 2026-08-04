@@ -11,6 +11,7 @@ const accessLabels = {
 const categoryLabels = {
   youtube: 'YouTube',
   stream: 'Stream',
+  cloudflare_stream: 'Cloudflare Stream',
 }
 
 function VideoCard({ video, thumbnailUrl, featured = false }) {

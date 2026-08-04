@@ -12,6 +12,7 @@ const accessLabels = {
 const categoryLabels = {
   youtube: 'YouTube',
   stream: 'Stream',
+  cloudflare_stream: 'Cloudflare Stream',
 }
 
 const formatDate = (publishedAt) => new Intl.DateTimeFormat('sk-SK', {
@@ -21,7 +22,7 @@ const formatDate = (publishedAt) => new Intl.DateTimeFormat('sk-SK', {
 }).format(new Date(publishedAt))
 
 export default function VideoDetail({ slug }) {
-  const { profile, authLoading, profileLoading } = useProfile()
+  const { session, profile, authLoading, profileLoading } = useProfile()
   const [video, setVideo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -52,7 +53,8 @@ export default function VideoDetail({ slug }) {
   }
 
   const membership = profile?.membership || 'free'
-  const hasAccess = video.accessLevel === 'public'
+  const isAdmin = session?.user?.app_metadata?.role === 'admin'
+  const hasAccess = isAdmin || video.accessLevel === 'public'
     || (video.accessLevel === 'member' && ['member', 'vip'].includes(membership))
     || (video.accessLevel === 'vip' && membership === 'vip')
   const accessLoading = video.accessLevel !== 'public' && (authLoading || profileLoading)

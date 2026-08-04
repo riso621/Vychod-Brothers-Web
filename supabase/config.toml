@@ -1,0 +1,5 @@
+[functions.cloudflare-stream-upload-url]
+verify_jwt = false
+
+[functions.cloudflare-stream-playback-token]
+verify_jwt = false

@@ -17,20 +17,20 @@ export function createStoragePath(userId, file) {
   return `${userId}/${crypto.randomUUID()}.${extension}`
 }
 
-export async function uploadStorageFile({ bucket, path, file, onProgress }) {
+export async function uploadThumbnailFile({ path, file, onProgress }) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Prihlásenie vypršalo. Prihlás sa znova.')
 
   return new Promise((resolve, reject) => {
     const upload = new tus.Upload(file, {
       endpoint: getStorageEndpoint(),
-      retryDelays: [0, 3000, 5000, 10000, 20000],
+      retryDelays: [0, 3000, 5000, 10000],
       headers: { authorization: `Bearer ${session.access_token}` },
       uploadDataDuringCreation: true,
       removeFingerprintOnSuccess: true,
       chunkSize: 6 * 1024 * 1024,
       metadata: {
-        bucketName: bucket,
+        bucketName: 'thumbnails',
         objectName: path,
         contentType: file.type,
         cacheControl: '3600',
@@ -39,7 +39,6 @@ export async function uploadStorageFile({ bucket, path, file, onProgress }) {
       onProgress: (uploaded, total) => onProgress?.(total ? Math.round((uploaded / total) * 100) : 0),
       onSuccess: () => resolve(path),
     })
-
     upload.start()
   })
 }

@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useProfile } from '../context/profile-context'
 import { invalidateVideoCache } from '../lib/videos'
-import { createStoragePath, uploadStorageFile } from '../lib/storage'
+import { createStoragePath, uploadThumbnailFile } from '../lib/storage'
+import { createCloudflareUpload, uploadCloudflareVideo } from '../lib/cloudflare-stream'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 
 const accessLabels = { public: 'Verejné', member: 'Pre členov', vip: 'VIP' }
-const providerLabels = { youtube: 'YouTube', stream: 'Stream' }
+const providerLabels = { youtube: 'YouTube', stream: 'Legacy Stream', cloudflare_stream: 'Cloudflare Stream' }
 const MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024
 const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024
 const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
@@ -110,21 +111,22 @@ function VideoFormModal({ video, onClose, onSaved }) {
     }
 
     let uploadedThumbnail = null
-    let uploadedVideo = null
+    let cloudflareVideoUid = null
     try {
       if (thumbnailFile) {
         uploadedThumbnail = createStoragePath(userId, thumbnailFile)
-        await uploadStorageFile({ bucket: 'thumbnails', path: uploadedThumbnail, file: thumbnailFile, onProgress: setThumbnailProgress })
+        await uploadThumbnailFile({ path: uploadedThumbnail, file: thumbnailFile, onProgress: setThumbnailProgress })
       }
       if (videoFile) {
-        uploadedVideo = createStoragePath(userId, videoFile)
-        await uploadStorageFile({ bucket: 'videos', path: uploadedVideo, file: videoFile, onProgress: setVideoProgress })
+        const directUpload = await createCloudflareUpload(videoFile)
+        cloudflareVideoUid = directUpload.uid
+        await uploadCloudflareVideo({ uploadUrl: directUpload.uploadUrl, file: videoFile, onProgress: setVideoProgress })
       }
 
       const payload = {
         ...values,
-        provider: uploadedVideo ? 'stream' : video?.provider || 'stream',
-        provider_video_id: uploadedVideo || video?.provider_video_id,
+        provider: cloudflareVideoUid ? 'cloudflare_stream' : video?.provider || 'cloudflare_stream',
+        provider_video_id: cloudflareVideoUid || video?.provider_video_id,
         thumbnail_url: uploadedThumbnail || video?.thumbnail_url,
       }
       const query = isEditing
@@ -134,11 +136,9 @@ function VideoFormModal({ video, onClose, onSaved }) {
       if (error) throw error
 
       if (isEditing && uploadedThumbnail && video.thumbnail_url && !/^https?:\/\//i.test(video.thumbnail_url)) await supabase.storage.from('thumbnails').remove([video.thumbnail_url])
-      if (isEditing && uploadedVideo && video.provider === 'stream' && video.provider_video_id) await supabase.storage.from('videos').remove([video.provider_video_id])
       await onSaved(values.title, isEditing)
     } catch (error) {
       if (uploadedThumbnail) await supabase.storage.from('thumbnails').remove([uploadedThumbnail])
-      if (uploadedVideo) await supabase.storage.from('videos').remove([uploadedVideo])
       setMessage(readableMutationError(error))
       setSubmitting(false)
     }

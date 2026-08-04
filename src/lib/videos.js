@@ -23,7 +23,7 @@ function mapVideo(row) {
     youtubeUrl: row.provider === 'youtube' && row.provider_video_id
       ? `https://www.youtube.com/watch?v=${row.provider_video_id}`
       : '',
-    streamVideoId: row.provider === 'stream' ? row.provider_video_id || '' : '',
+    streamVideoId: ['stream', 'cloudflare_stream'].includes(row.provider) ? row.provider_video_id || '' : '',
     tags: [],
   }
 }
