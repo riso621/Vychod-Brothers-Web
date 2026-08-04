@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { activeSocialProfiles, contentCards, media, navItems, socialProfiles, stats } from './data'
 import MembershipSection from './components/MembershipSection'
@@ -10,6 +10,7 @@ import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
 const MotionLink = motion.create('a')
+const AuthControl = lazy(() => import('./components/AuthModal'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -33,6 +34,7 @@ function Header() {
         {navItems.map((item, index) => <a className={isVideosPage ? index === 1 ? 'active' : '' : index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
       <a className="join-brush" href={isVideosPage ? '/#clenstvo' : '#clenstvo'}>STAŤ SA ČLENOM</a>
+      <Suspense fallback={null}><AuthControl /></Suspense>
       <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
     </header>
   )
