@@ -1,10 +1,10 @@
 import * as tus from 'tus-js-client'
 import { supabase } from './supabase'
 
-export async function createCloudflareUpload(file) {
+export async function createCloudflareUpload(file, accessLevel) {
   if (!supabase) throw new Error('Supabase nie je nakonfigurovaný.')
   const { data, error } = await supabase.functions.invoke('cloudflare-stream-upload-url', {
-    body: { fileName: file.name, fileSize: file.size },
+    body: { fileName: file.name, fileSize: file.size, accessLevel },
   })
   if (error || !data?.uploadUrl || !data?.uid) {
     throw new Error(data?.error || error?.message || 'Nepodarilo sa pripraviť Cloudflare upload.')

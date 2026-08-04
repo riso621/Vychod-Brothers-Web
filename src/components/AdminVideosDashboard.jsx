@@ -118,7 +118,7 @@ function VideoFormModal({ video, onClose, onSaved }) {
         await uploadThumbnailFile({ path: uploadedThumbnail, file: thumbnailFile, onProgress: setThumbnailProgress })
       }
       if (videoFile) {
-        const directUpload = await createCloudflareUpload(videoFile)
+        const directUpload = await createCloudflareUpload(videoFile, values.access_level)
         cloudflareVideoUid = directUpload.uid
         await uploadCloudflareVideo({ uploadUrl: directUpload.uploadUrl, file: videoFile, onProgress: setVideoProgress })
       }

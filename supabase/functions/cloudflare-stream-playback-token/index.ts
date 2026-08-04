@@ -19,6 +19,13 @@ function parseSigningKey(raw: string) {
   return JSON.parse(atob(value))
 }
 
+function playerHost(customerCode: string) {
+  const value = customerCode.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '')
+  if (value.endsWith('.cloudflarestream.com')) return value
+  if (value.startsWith('customer-')) return `${value}.cloudflarestream.com`
+  return `customer-${value}.cloudflarestream.com`
+}
+
 async function createPlaybackToken(videoUid: string, keyId: string, rawKey: string) {
   const header = { alg: 'RS256', kid: keyId }
   const payload = { sub: videoUid, kid: keyId, exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS }
@@ -80,14 +87,23 @@ Deno.serve(async (request) => {
   }
 
   const customerCode = Deno.env.get('CLOUDFLARE_STREAM_CUSTOMER_CODE')
+  if (!customerCode) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+  const streamHost = playerHost(customerCode)
+  if (video.access_level === 'public') {
+    return json({
+      playerUrl: `https://${streamHost}/${videoUid}/iframe`,
+      expiresAt: null,
+    })
+  }
+
   const keyId = Deno.env.get('CLOUDFLARE_STREAM_SIGNING_KEY_ID')
   const signingKey = Deno.env.get('CLOUDFLARE_STREAM_SIGNING_KEY')
-  if (!customerCode || !keyId || !signingKey) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+  if (!keyId || !signingKey) return json({ error: 'Cloudflare Stream signing nie je nakonfigurovaný.' }, 503)
 
   try {
     const playbackToken = await createPlaybackToken(videoUid, keyId, signingKey)
     return json({
-      playerUrl: `https://customer-${customerCode}.cloudflarestream.com/${playbackToken}/iframe`,
+      playerUrl: `https://${streamHost}/${playbackToken}/iframe`,
       expiresAt: new Date(Date.now() + TOKEN_TTL_SECONDS * 1000).toISOString(),
     })
   } catch (error) {
