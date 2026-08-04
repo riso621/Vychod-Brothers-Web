@@ -13,6 +13,7 @@ const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
 const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
+const AdminVideosDashboard = lazy(() => import('./components/AdminVideosDashboard'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -115,10 +116,16 @@ function AccountPage() {
   return <main className="account-page"><Header /><AccountDashboard /><Footer /></main>
 }
 
+function AdminVideosPage() {
+  return <main className="admin-videos-page"><Header /><AdminVideosDashboard /><Footer /></main>
+}
+
 export default function App() {
   const path = window.location.pathname
   const page = path.startsWith('/videos')
     ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
-    : path === '/account' || path === '/account/' ? <AccountPage /> : <HomePage />
+    : path === '/account' || path === '/account/'
+      ? <AccountPage />
+      : path === '/admin/videos' || path === '/admin/videos/' ? <AdminVideosPage /> : <HomePage />
   return <Suspense fallback={null}><ProfileProvider>{page}</ProfileProvider></Suspense>
 }
