@@ -50,7 +50,11 @@ function AuthModal({ mode, onModeChange, onClose }) {
     }
 
     setStatus({ type: 'success', message: mode === 'register' ? 'Účet bol vytvorený a si prihlásený.' : 'Prihlásenie bolo úspešné.' })
-    window.setTimeout(onClose, 650)
+    const nextPath = new URLSearchParams(window.location.search).get('next')
+    window.setTimeout(() => {
+      if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) window.location.assign(nextPath)
+      else onClose()
+    }, 650)
   }
 
   return (
@@ -80,7 +84,7 @@ function AuthModal({ mode, onModeChange, onClose }) {
 }
 
 export default function AuthControl() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(() => new URLSearchParams(window.location.search).get('auth') === 'login')
   const [mode, setMode] = useState('login')
   const { session, profile, authLoading, profileLoading, profileError, signOut } = useProfile()
 
@@ -89,7 +93,9 @@ export default function AuthControl() {
   if (session) {
     return (
       <div className="auth-account">
-        <span className={`auth-profile-message${profileError ? ' is-error' : ''}`} role={profileError ? 'alert' : 'status'}>{profileLoading ? 'Načítavam profil…' : profileError || profile?.username || 'Môj účet'}</span>
+        {profileError
+          ? <span className="auth-profile-message is-error" role="alert">{profileError}</span>
+          : <a className="auth-profile-message" href="/account" aria-label="Otvoriť môj účet">{profileLoading ? 'Načítavam profil…' : profile?.username || 'Môj účet'}</a>}
         <button className="auth-trigger is-signed-in" type="button" onClick={signOut} title={session.user.email}>Odhlásiť</button>
       </div>
     )

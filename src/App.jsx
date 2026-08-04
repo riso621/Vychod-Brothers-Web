@@ -6,6 +6,7 @@ import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
 import VideosSection from './components/VideosSection'
 import VideoDetail from './components/VideoDetail'
+import AccountDashboard from './components/AccountDashboard'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -19,20 +20,21 @@ const reveal = {
 }
 
 function Logo() {
-  return <a className="brand" href={window.location.pathname.startsWith('/videos') ? '/' : '#domov'} aria-label="Východ Brothers – domov"><i>V</i>B</a>
+  return <a className="brand" href={window.location.pathname === '/' ? '#domov' : '/'} aria-label="Východ Brothers – domov"><i>V</i>B</a>
 }
 
 function Header() {
   const [open, setOpen] = useState(false)
   const isVideosPage = window.location.pathname.startsWith('/videos')
-  const hrefs = isVideosPage
+  const isHomePage = window.location.pathname === '/'
+  const hrefs = !isHomePage
     ? ['/', '/videos', '/#onas', '/#clenstvo', '/#merch', '/#kontakt']
     : ['#domov', '/videos', '#onas', '#clenstvo', '#merch', '#kontakt']
   return (
     <header className="topbar">
       <Logo />
       <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
-        {navItems.map((item, index) => <a className={isVideosPage ? index === 1 ? 'active' : '' : index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
+        {navItems.map((item, index) => <a className={isVideosPage ? index === 1 ? 'active' : '' : isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
       <a className="join-brush" href={isVideosPage ? '/#clenstvo' : '#clenstvo'}>STAŤ SA ČLENOM</a>
       <Suspense fallback={null}><AuthControl /></Suspense>
@@ -109,10 +111,14 @@ function VideosPage({ slug }) {
   return <main className="videos-page"><Header />{slug ? <VideoDetail slug={slug} /> : <VideosSection />}<Footer /></main>
 }
 
+function AccountPage() {
+  return <main className="account-page"><Header /><AccountDashboard /><Footer /></main>
+}
+
 export default function App() {
   const path = window.location.pathname
-  const page = !path.startsWith('/videos')
-    ? <HomePage />
-    : <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
+  const page = path.startsWith('/videos')
+    ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
+    : path === '/account' || path === '/account/' ? <AccountPage /> : <HomePage />
   return <Suspense fallback={null}><ProfileProvider>{page}</ProfileProvider></Suspense>
 }
