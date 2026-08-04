@@ -1,4 +1,5 @@
 import { getVideoBySlug } from '../data/videos'
+import VideoPlayer from './VideoPlayer'
 
 const accessLabels = {
   public: 'Verejné',
@@ -34,11 +35,6 @@ export default function VideoDetail({ slug }) {
     )
   }
 
-  const locked = video.accessLevel !== 'public'
-  const accessMessage = video.accessLevel === 'vip'
-    ? 'Tento obsah je dostupný iba pre VIP členov'
-    : 'Tento obsah je určený pre členov'
-
   return (
     <article className="video-detail">
       <a className="video-detail-back" href="/videos">← Späť na videá</a>
@@ -52,20 +48,7 @@ export default function VideoDetail({ slug }) {
         <p>{video.shortDescription}</p>
       </header>
 
-      <div className="video-detail-stage">
-        <img src={video.thumbnail} alt={`Náhľad videa ${video.title}`} onError={(event) => { event.currentTarget.hidden = true }} />
-        <div className="video-player-placeholder">
-          <span aria-hidden="true">▶</span>
-          <strong>Video prehrávač pripravujeme</strong>
-        </div>
-      </div>
-
-      {locked && (
-        <div className={`video-access-notice access-${video.accessLevel}`}>
-          <span aria-hidden="true">⌁</span>
-          <div><strong>{accessLabels[video.accessLevel]}</strong><p>{accessMessage}</p></div>
-        </div>
-      )}
+      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} />
 
       <div className="video-detail-content">
         <div className="video-detail-description">
