@@ -261,6 +261,10 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 .admin-video-title>span,.admin-video-row dt { color: #777d78; font: 700 9px var(--condensed); letter-spacing: .13em; text-transform: uppercase; }
 .admin-video-title h2 { margin: 7px 0 9px; font: 700 21px/1.1 var(--condensed); }
 .admin-video-title time { color: #8f948f; font: 500 11px Inter,sans-serif; }
+.admin-video-actions { display: flex; gap: 8px; margin-top: 13px; }
+.admin-video-actions button { padding: 7px 10px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: transparent; color: #d5d8d3; cursor: pointer; font: 700 9px var(--condensed); letter-spacing: .08em; text-transform: uppercase; }
+.admin-video-actions button:hover { border-color: var(--yellow); color: var(--yellow); }
+.admin-video-actions button.is-danger:hover { border-color: #d96c62; color: #efa49c; }
 .admin-video-row dl { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 18px; margin: 0; }
 .admin-video-row dd { margin: 8px 0 0; font: 700 12px var(--condensed); }
 .admin-video-row dd.access-vip { color: var(--yellow); }
@@ -286,7 +290,14 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 .admin-form-actions p.is-error { color: #efa49c; }
 .admin-form-actions button { min-height: 44px; padding: 0 18px; border: 1px solid rgba(255,255,255,.18); border-radius: 6px; background: transparent; color: #ddd; cursor: pointer; font: 750 11px var(--condensed); letter-spacing: .07em; text-transform: uppercase; }
 .admin-form-actions button.is-primary { border-color: var(--yellow); background: var(--yellow); color: #080909; }
+.admin-form-actions button.is-danger { border-color: #b64f47; background: #9d3e37; color: #fff; }
 .admin-form-actions button:disabled { cursor: wait; opacity: .6; }
+.admin-delete-dialog { width: min(100%,560px); }
+.admin-delete-dialog>span { color: #efa49c; font: 700 10px var(--condensed); letter-spacing: .15em; text-transform: uppercase; }
+.admin-delete-dialog h2 { margin: 14px 0; font: 800 clamp(30px,4vw,44px)/1 var(--condensed); }
+.admin-delete-dialog>p { color: #aeb2ae; font: 400 14px/1.65 Inter,sans-serif; }
+.admin-delete-dialog .admin-delete-error { color: #efa49c; }
+.admin-delete-dialog .admin-form-actions { margin-top: 28px; }
 .admin-videos button:focus-visible,.admin-video-form input:focus-visible,.admin-video-form textarea:focus-visible,.admin-video-form select:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
 @media(max-width:900px){.admin-videos-page{padding-top:72px}.admin-videos{width:min(100% - 36px,760px);padding-top:56px}.admin-videos-heading{align-items:flex-start;flex-direction:column}.admin-video-row{grid-template-columns:140px 1fr}.admin-video-row dl{grid-column:1/-1}.admin-video-dialog{padding:28px}}
 @media(max-width:600px){.admin-videos{width:calc(100% - 24px);padding-top:42px}.admin-videos-heading{margin-bottom:38px}.admin-videos-heading h1{font-size:62px}.admin-videos-heading>button{width:100%;justify-content:center}.admin-video-row{grid-template-columns:100px 1fr;gap:16px}.admin-video-thumbnail{height:72px}.admin-video-row dl{grid-template-columns:1fr 1fr}.admin-video-modal{padding:10px}.admin-video-dialog{max-height:calc(100vh - 20px);padding:25px 18px}.admin-video-form{grid-template-columns:1fr}.admin-video-form .is-wide{grid-column:auto}.admin-video-form fieldset{display:grid}.admin-form-actions{align-items:stretch;flex-direction:column}.admin-form-actions p{margin:0 0 6px}.admin-form-actions button{width:100%}.admin-videos-page>.site-footer{margin-top:48px}}

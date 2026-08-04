@@ -31,17 +31,18 @@ function validateVideo(values) {
   return ''
 }
 
-function readableInsertError(error) {
+function readableMutationError(error, action = 'uložiť') {
   if (error?.code === '23505') return 'Video s týmto slugom už existuje. Zvoľ iný slug.'
-  if (error?.code === '42501') return 'Nemáte oprávnenie vytvárať videá.'
+  if (error?.code === '42501') return 'Nemáte oprávnenie meniť videá.'
   if (error?.code === '23514') return 'Niektorá hodnota nie je povolená databázou.'
-  return 'Video sa nepodarilo uložiť. Skontroluj údaje a skús to znova.'
+  return `Video sa nepodarilo ${action}. Skontroluj údaje a skús to znova.`
 }
 
-function VideoFormModal({ onClose, onCreated }) {
+function VideoFormModal({ video, onClose, onSaved }) {
   const titleRef = useRef(null)
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const isEditing = Boolean(video)
 
   useEffect(() => {
     titleRef.current?.focus()
@@ -72,30 +73,61 @@ function VideoFormModal({ onClose, onCreated }) {
 
     setSubmitting(true)
     setMessage('')
-    const { error } = await supabase.from('videos').insert(values)
+    const query = isEditing
+      ? supabase.from('videos').update(values).eq('id', video.id)
+      : supabase.from('videos').insert(values)
+    const { error } = await query
     if (error) {
-      setMessage(readableInsertError(error))
+      setMessage(readableMutationError(error))
       setSubmitting(false)
       return
     }
-    await onCreated(values.title)
+    await onSaved(values.title, isEditing)
   }
 
   return (
     <div className="admin-video-modal" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <section className="admin-video-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-video-form-heading">
-        <header><div><span>Nový záznam</span><h2 id="admin-video-form-heading">Pridať video</h2></div><button type="button" onClick={onClose} aria-label="Zavrieť formulár">×</button></header>
+        <header><div><span>{isEditing ? 'Úprava záznamu' : 'Nový záznam'}</span><h2 id="admin-video-form-heading">{isEditing ? 'Upraviť video' : 'Pridať video'}</h2></div><button type="button" onClick={onClose} aria-label="Zavrieť formulár">×</button></header>
         <form className="admin-video-form" onSubmit={handleSubmit} noValidate>
-          <label>Názov<input ref={titleRef} name="title" type="text" maxLength="160" required /></label>
-          <label>Slug<input name="slug" type="text" maxLength="180" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="nazov-videa" required /></label>
-          <label className="is-wide">Popis<textarea name="description" rows="4" maxLength="5000" required /></label>
-          <label className="is-wide">Thumbnail URL<input name="thumbnail_url" type="url" placeholder="https://…" required /></label>
-          <label>Provider<select name="provider" defaultValue="youtube"><option value="youtube">YouTube</option><option value="stream">Stream</option></select></label>
-          <label>Provider video ID<input name="provider_video_id" type="text" maxLength="255" required /></label>
-          <label>Prístup<select name="access_level" defaultValue="public"><option value="public">Verejné</option><option value="member">Pre členov</option><option value="vip">VIP</option></select></label>
-          <fieldset><legend>Stav</legend><label className="admin-check"><input name="featured" type="checkbox" /> Featured</label><label className="admin-check"><input name="published" type="checkbox" /> Publikované</label></fieldset>
-          <div className="admin-form-actions is-wide"><p className={message ? 'is-error' : ''} role={message ? 'alert' : undefined} aria-live="polite">{message}</p><button type="button" onClick={onClose} disabled={submitting}>Zrušiť</button><button className="is-primary" type="submit" disabled={submitting}>{submitting ? 'Ukladám…' : 'Uložiť video'}</button></div>
+          <label>Názov<input ref={titleRef} name="title" type="text" maxLength="160" defaultValue={video?.title || ''} required /></label>
+          <label>Slug<input name="slug" type="text" maxLength="180" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="nazov-videa" defaultValue={video?.slug || ''} required /></label>
+          <label className="is-wide">Popis<textarea name="description" rows="4" maxLength="5000" defaultValue={video?.description || ''} required /></label>
+          <label className="is-wide">Thumbnail URL<input name="thumbnail_url" type="url" placeholder="https://…" defaultValue={video?.thumbnail_url || ''} required /></label>
+          <label>Provider<select name="provider" defaultValue={video?.provider || 'youtube'}><option value="youtube">YouTube</option><option value="stream">Stream</option></select></label>
+          <label>Provider video ID<input name="provider_video_id" type="text" maxLength="255" defaultValue={video?.provider_video_id || ''} required /></label>
+          <label>Prístup<select name="access_level" defaultValue={video?.access_level || 'public'}><option value="public">Verejné</option><option value="member">Pre členov</option><option value="vip">VIP</option></select></label>
+          <fieldset><legend>Stav</legend><label className="admin-check"><input name="featured" type="checkbox" defaultChecked={video?.featured || false} /> Featured</label><label className="admin-check"><input name="published" type="checkbox" defaultChecked={video?.published || false} /> Publikované</label></fieldset>
+          <div className="admin-form-actions is-wide"><p className={message ? 'is-error' : ''} role={message ? 'alert' : undefined} aria-live="polite">{message}</p><button type="button" onClick={onClose} disabled={submitting}>Zrušiť</button><button className="is-primary" type="submit" disabled={submitting}>{submitting ? 'Ukladám…' : isEditing ? 'Uložiť zmeny' : 'Uložiť video'}</button></div>
         </form>
+      </section>
+    </div>
+  )
+}
+
+function DeleteVideoModal({ video, onClose, onDeleted }) {
+  const [deleting, setDeleting] = useState(false)
+  const [message, setMessage] = useState('')
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    const { error } = await supabase.from('videos').delete().eq('id', video.id)
+    if (error) {
+      setMessage(readableMutationError(error, 'odstrániť'))
+      setDeleting(false)
+      return
+    }
+    await onDeleted(video.title)
+  }
+
+  return (
+    <div className="admin-video-modal" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deleting) onClose() }}>
+      <section className="admin-video-dialog admin-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-video-heading" aria-describedby="delete-video-description">
+        <span>Trvalé odstránenie</span>
+        <h2 id="delete-video-heading">Naozaj chcete odstrániť toto video?</h2>
+        <p id="delete-video-description">Video „{video.title}“ bude natrvalo odstránené z katalógu.</p>
+        {message && <p className="admin-delete-error" role="alert">{message}</p>}
+        <div className="admin-form-actions"><button type="button" onClick={onClose} disabled={deleting}>Zrušiť</button><button className="is-danger" type="button" onClick={handleDelete} disabled={deleting}>{deleting ? 'Odstraňujem…' : 'Odstrániť video'}</button></div>
       </section>
     </div>
   )
@@ -108,13 +140,15 @@ export default function AdminVideosDashboard() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingVideo, setEditingVideo] = useState(null)
+  const [deletingVideo, setDeletingVideo] = useState(null)
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
 
   const loadVideos = useCallback(async () => {
     setLoading(true)
     const { data, error: queryError } = await supabase
       .from('videos')
-      .select('id, title, thumbnail_url, provider, access_level, published, featured, created_at')
+      .select('id, title, slug, description, thumbnail_url, provider, provider_video_id, access_level, published, featured, created_at')
       .order('created_at', { ascending: false })
     setVideos(data || [])
     setError(queryError ? 'Videá sa nepodarilo načítať.' : '')
@@ -137,10 +171,17 @@ export default function AdminVideosDashboard() {
     return undefined
   }, [authLoading, isAdmin, loadVideos])
 
-  const handleCreated = async (title) => {
+  const handleSaved = async (title, wasEditing) => {
     await loadVideos()
     setModalOpen(false)
-    setSuccess(`Video „${title}“ bolo úspešne vytvorené.`)
+    setEditingVideo(null)
+    setSuccess(`Video „${title}“ bolo úspešne ${wasEditing ? 'upravené' : 'vytvorené'}.`)
+  }
+
+  const handleDeleted = async (title) => {
+    await loadVideos()
+    setDeletingVideo(null)
+    setSuccess(`Video „${title}“ bolo odstránené.`)
   }
 
   if (authLoading) {
@@ -155,7 +196,7 @@ export default function AdminVideosDashboard() {
     <section className="admin-videos" aria-labelledby="admin-videos-heading">
       <header className="admin-videos-heading">
         <div><span>ADMIN / VIDEO KATALÓG</span><h1 id="admin-videos-heading">Videá</h1><p>Prehľad videí dostupných cez aktuálne databázové oprávnenia.</p></div>
-        <button type="button" onClick={() => setModalOpen(true)} disabled={!isSupabaseConfigured}><span aria-hidden="true">+</span> Pridať video</button>
+        <button type="button" onClick={() => { setEditingVideo(null); setModalOpen(true); setSuccess('') }} disabled={!isSupabaseConfigured}><span aria-hidden="true">+</span> Pridať video</button>
       </header>
 
       <div className="admin-video-list" aria-live="polite" aria-busy={loading}>
@@ -166,13 +207,14 @@ export default function AdminVideosDashboard() {
         {videos.map((video) => (
           <article className="admin-video-row" key={video.id}>
             <div className="admin-video-thumbnail">{video.thumbnail_url && <img src={video.thumbnail_url} alt="" loading="lazy" onError={(event) => { event.currentTarget.hidden = true }} />}<span aria-hidden="true">VB</span></div>
-            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time></div>
+            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
             <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div></dl>
           </article>
         ))}
       </div>
 
-      {modalOpen && <VideoFormModal onClose={() => setModalOpen(false)} onCreated={handleCreated} />}
+      {modalOpen && <VideoFormModal video={editingVideo} onClose={() => { setModalOpen(false); setEditingVideo(null) }} onSaved={handleSaved} />}
+      {deletingVideo && <DeleteVideoModal video={deletingVideo} onClose={() => setDeletingVideo(null)} onDeleted={handleDeleted} />}
     </section>
   )
 }
