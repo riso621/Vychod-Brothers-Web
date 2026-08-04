@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { useProfile } from '../context/profile-context'
 
 const accessLabels = { public: 'Verejné', member: 'Pre členov', vip: 'VIP' }
 const providerLabels = { youtube: 'YouTube', stream: 'Stream' }
@@ -48,13 +49,20 @@ function VideoFormModal({ onClose }) {
 }
 
 export default function AdminVideosDashboard() {
+  const { session, authLoading } = useProfile()
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const isAdmin = session?.user?.app_metadata?.role === 'admin'
 
   useEffect(() => {
     let active = true
+    if (authLoading) return () => { active = false }
+    if (!isAdmin) {
+      setLoading(false)
+      return () => { active = false }
+    }
     if (!supabase) {
       setError('Supabase nie je nakonfigurovaný.')
       setLoading(false)
@@ -73,7 +81,15 @@ export default function AdminVideosDashboard() {
       })
 
     return () => { active = false }
-  }, [])
+  }, [authLoading, isAdmin])
+
+  if (authLoading) {
+    return <section className="admin-videos"><p className="admin-videos-status" aria-live="polite">Overujem oprávnenie…</p></section>
+  }
+
+  if (!isAdmin) {
+    return <section className="admin-videos"><div className="admin-videos-status is-error" role="alert"><div><strong>Nemáte oprávnenie</strong><p>Táto stránka je dostupná iba administrátorom.</p></div></div></section>
+  }
 
   return (
     <section className="admin-videos" aria-labelledby="admin-videos-heading">
