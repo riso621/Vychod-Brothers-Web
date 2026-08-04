@@ -3,7 +3,7 @@ import { getPublishedVideos } from '../lib/videos'
 import { getSignedStorageUrls } from '../lib/storage'
 
 const accessLabels = {
-  public: 'Verejné',
+  free: 'FREE',
   member: 'Pre členov',
   vip: 'VIP obsah',
 }
@@ -15,7 +15,7 @@ const categoryLabels = {
 }
 
 function VideoCard({ video, thumbnailUrl, featured = false }) {
-  const locked = video.accessLevel !== 'public'
+  const locked = video.accessLevel !== 'free'
 
   return (
     <article className={`catalog-video-card${featured ? ' is-featured' : ''}`}>

@@ -66,7 +66,7 @@ Deno.serve(async (request) => {
     .maybeSingle()
   if (videoError || !video) return json({ error: 'Video nie je dostupné.' }, 404)
 
-  if (video.access_level !== 'public') {
+  if (video.access_level !== 'free') {
     if (!userToken) return json({ error: 'Prihlásenie je povinné.' }, 401)
     const { data: { user }, error: userError } = await supabase.auth.getUser(userToken)
     if (userError || !user) return json({ error: 'Prihlásenie nie je platné.' }, 401)
@@ -75,13 +75,15 @@ Deno.serve(async (request) => {
     if (!isAdmin) {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('membership')
+        .select('membership, membership_status, membership_expires_at')
         .eq('id', user.id)
         .maybeSingle()
       if (profileError || !profile) return json({ error: 'Prístup sa nepodarilo overiť.' }, 403)
-      const allowed = video.access_level === 'member'
+      const active = profile.membership_status === 'active'
+        && (!profile.membership_expires_at || new Date(profile.membership_expires_at) > new Date())
+      const allowed = active && (video.access_level === 'member'
         ? ['member', 'vip'].includes(profile.membership)
-        : profile.membership === 'vip'
+        : profile.membership === 'vip')
       if (!allowed) return json({ error: 'Nemáte prístup k tomuto videu.' }, 403)
     }
   }
@@ -89,7 +91,7 @@ Deno.serve(async (request) => {
   const customerCode = Deno.env.get('CLOUDFLARE_STREAM_CUSTOMER_CODE')
   if (!customerCode) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
   const streamHost = playerHost(customerCode)
-  if (video.access_level === 'public') {
+  if (video.access_level === 'free') {
     return json({
       playerUrl: `https://${streamHost}/${videoUid}/iframe`,
       expiresAt: null,

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { getPublishedVideoBySlug } from '../lib/videos'
 import { useProfile } from '../context/profile-context'
 import VideoPlayer from './VideoPlayer'
+import { canAccessMembership } from '../lib/membership'
 
 const accessLabels = {
-  public: 'Verejné',
+  free: 'FREE',
   member: 'Pre členov',
   vip: 'VIP obsah',
 }
@@ -52,12 +53,9 @@ export default function VideoDetail({ slug }) {
     )
   }
 
-  const membership = profile?.membership || 'free'
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
-  const hasAccess = isAdmin || video.accessLevel === 'public'
-    || (video.accessLevel === 'member' && ['member', 'vip'].includes(membership))
-    || (video.accessLevel === 'vip' && membership === 'vip')
-  const accessLoading = video.accessLevel !== 'public' && (authLoading || profileLoading)
+  const hasAccess = canAccessMembership(video.accessLevel, profile, isAdmin)
+  const accessLoading = video.accessLevel !== 'free' && (authLoading || profileLoading)
 
   return (
     <article className="video-detail">

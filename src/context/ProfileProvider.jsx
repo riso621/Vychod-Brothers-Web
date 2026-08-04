@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { ProfileContext } from './profile-context'
 
-const profileColumns = 'id, username, membership, avatar_url, created_at'
+const profileColumns = 'id, username, membership, membership_started_at, membership_expires_at, membership_status, avatar_url, created_at'
 
 export default function ProfileProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -10,6 +10,18 @@ export default function ProfileProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState('')
+
+  const loadProfile = useCallback(async (userId) => {
+    if (!supabase || !userId) return
+    setProfileLoading(true)
+    setProfileError('')
+    const { data, error } = await supabase.from('profiles').select(profileColumns).eq('id', userId).maybeSingle()
+    setProfile(data)
+    setProfileError(error
+      ? 'Profil sa nepodarilo bezpečne načítať.'
+      : data ? '' : 'Profil sa zatiaľ nenašiel. Dokončenie účtu môže chvíľu trvať.')
+    setProfileLoading(false)
+  }, [])
 
   useEffect(() => {
     if (!supabase) {
@@ -43,30 +55,15 @@ export default function ProfileProvider({ children }) {
       return undefined
     }
 
-    let active = true
-    setProfileLoading(true)
-    setProfileError('')
-
-    supabase
-      .from('profiles')
-      .select(profileColumns)
-      .eq('id', session.user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (!active) return
-        setProfile(data)
-        setProfileError(error
-          ? 'Profil sa nepodarilo bezpečne načítať.'
-          : data ? '' : 'Profil sa zatiaľ nenašiel. Dokončenie účtu môže chvíľu trvať.')
-        setProfileLoading(false)
-      })
-
-    return () => { active = false }
-  }, [session?.user?.id])
+    loadProfile(session.user.id)
+    return undefined
+  }, [session?.user?.id, loadProfile])
 
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut()
   }
+
+  const refreshProfile = useCallback(() => loadProfile(session?.user?.id), [loadProfile, session?.user?.id])
 
   const value = useMemo(() => ({
     session,
@@ -74,8 +71,9 @@ export default function ProfileProvider({ children }) {
     authLoading,
     profileLoading,
     profileError,
+    refreshProfile,
     signOut,
-  }), [session, profile, authLoading, profileLoading, profileError])
+  }), [session, profile, authLoading, profileLoading, profileError, refreshProfile])
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
 }

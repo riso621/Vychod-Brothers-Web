@@ -85,12 +85,12 @@ export const contentCards = [
 export const navItems = ['DOMOV', 'VIDEÁ', 'O NÁS', 'ČLENSTVO', 'MERCH', 'KONTAKT']
 
 export const footerNavigation = [
-  { label: 'Domov', href: '#domov' },
+  { label: 'Domov', href: '/' },
   { label: 'Videá', href: '/videos' },
-  { label: 'O nás', href: '#onas' },
-  { label: 'Členstvo', href: '#clenstvo' },
-  { label: 'Merch', href: '#merch' },
-  { label: 'Kontakt', href: '#kontakt' },
+  { label: 'O nás', href: '/#onas' },
+  { label: 'Členstvo', href: '/clenstvo' },
+  { label: 'Merch', href: '/#merch' },
+  { label: 'Kontakt', href: '/#kontakt' },
 ]
 
 export const legalLinks = [
@@ -102,23 +102,3 @@ export const legalLinks = [
 
 export const contactEmail = 'ahoj@vychodbrothers.sk'
 export const footerSlogan = 'Humor, príbehy a život z východu. Bez filtra.'
-
-export const plans = [
-  {
-    id: 'basic', name: 'ZÁKLADNÉ ČLENSTVO', price: '3,99 €', period: 'mesačne', button: 'Vybrať základné',
-    description: 'Všetko podstatné pre fanúšikov, ktorí chcú byť pri tom skôr.',
-    perks: ['Videá skôr ako na YouTube', 'Vystrihnuté scény', 'Zákulisie', 'Hlasovanie o ďalšom videu'],
-  },
-  {
-    id: 'vip', name: 'VIP ČLENSTVO', price: '7,99 €', period: 'mesačne', button: 'Vybrať VIP', popular: true,
-    description: 'Kompletný prístup k tomu, čo zostáva mimo verejného YouTube.',
-    perks: ['Exkluzívne minifilmy', 'Všetky bonusové videá', 'Premiéry pre členov', 'Meno v titulkoch', 'VIP odznak na profile'],
-  },
-]
-
-export const membershipBenefits = [
-  { id: 'commitment', icon: '∞', title: 'Bez záväzkov', detail: 'Zrušíš kedykoľvek' },
-  { id: 'payment', icon: '▣', title: 'Bezpečná platba', detail: 'Platobné údaje budú chránené' },
-  { id: 'invoice', icon: '▤', title: 'Automatická faktúra', detail: 'Doklad ku každej platbe' },
-  { id: 'support', icon: '♡', title: 'Podpora tvorby', detail: 'Pomáhaš tvoriť Východ Brothers' },
-]

@@ -6,7 +6,7 @@ import { createStoragePath, uploadThumbnailFile } from '../lib/storage'
 import { createCloudflareUpload, deleteVideoFromProvider, uploadCloudflareVideo } from '../lib/cloudflare-stream'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 
-const accessLabels = { public: 'Verejné', member: 'Pre členov', vip: 'VIP' }
+const accessLabels = { free: 'FREE', member: 'MEMBER', vip: 'VIP' }
 const providerLabels = { youtube: 'YouTube', stream: 'Legacy Stream', cloudflare_stream: 'Cloudflare Stream' }
 const MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024
 const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024
@@ -32,7 +32,7 @@ function validateVideo(values, { videoFile, thumbnailFile, isEditing }) {
   if (!values.title || values.title.length > 160) return 'Názov je povinný a môže mať najviac 160 znakov.'
   if (!values.slug || values.slug.length > 180 || !slugPattern.test(values.slug)) return 'Slug používaj malými písmenami, číslami a pomlčkami.'
   if (!values.description || values.description.length > 5000) return 'Popis je povinný a môže mať najviac 5 000 znakov.'
-  if (!['public', 'member', 'vip'].includes(values.access_level)) return 'Vyber platnú úroveň prístupu.'
+  if (!['free', 'member', 'vip'].includes(values.access_level)) return 'Vyber platnú úroveň prístupu.'
   if (!isEditing && !videoFile) return 'Vyber MP4 video súbor.'
   if (!isEditing && !thumbnailFile) return 'Vyber thumbnail obrázok.'
   if (videoFile && (videoFile.type !== 'video/mp4' || !videoFile.name.toLowerCase().endsWith('.mp4'))) return 'Video musí byť vo formáte MP4.'
@@ -154,7 +154,7 @@ function VideoFormModal({ video, onClose, onSaved }) {
           <label className="is-wide">Popis<textarea name="description" rows="4" maxLength="5000" defaultValue={video?.description || ''} required /></label>
           <FileUploadField label="Thumbnail" accept=".jpg,.jpeg,.png,.webp" file={thumbnailFile} progress={thumbnailProgress} onChange={setThumbnailFile} optional={isEditing} />
           <FileUploadField label="Video MP4" accept="video/mp4,.mp4" file={videoFile} progress={videoProgress} onChange={setVideoFile} optional={isEditing} />
-          <label>Prístup<select name="access_level" defaultValue={video?.access_level || 'public'}><option value="public">Verejné</option><option value="member">Pre členov</option><option value="vip">VIP</option></select></label>
+          <label>Prístup<select name="access_level" defaultValue={video?.access_level || 'free'}><option value="free">FREE</option><option value="member">MEMBER</option><option value="vip">VIP</option></select></label>
           <fieldset><legend>Stav</legend><label className="admin-check"><input name="featured" type="checkbox" defaultChecked={video?.featured || false} /> Featured</label><label className="admin-check"><input name="published" type="checkbox" defaultChecked={video?.published || false} /> Publikované</label></fieldset>
           <div className="admin-form-actions is-wide"><p className={message ? 'is-error' : ''} role={message ? 'alert' : undefined} aria-live="polite">{message}</p><button type="button" onClick={onClose} disabled={submitting}>Zrušiť</button><button className="is-primary" type="submit" disabled={submitting}>{submitting ? 'Ukladám…' : isEditing ? 'Uložiť zmeny' : 'Uložiť video'}</button></div>
         </form>
@@ -257,7 +257,7 @@ export default function AdminVideosDashboard() {
     <section className="admin-videos" aria-labelledby="admin-videos-heading">
       <header className="admin-videos-heading">
         <div><span>ADMIN / VIDEO KATALÓG</span><h1 id="admin-videos-heading">Videá</h1><p>Prehľad videí dostupných cez aktuálne databázové oprávnenia.</p></div>
-        <button type="button" onClick={() => { setEditingVideo(null); setModalOpen(true); setSuccess('') }} disabled={!isSupabaseConfigured}><span aria-hidden="true">+</span> Pridať video</button>
+        <div className="admin-heading-actions"><a href="/admin/memberships">Členstvá</a><button type="button" onClick={() => { setEditingVideo(null); setModalOpen(true); setSuccess('') }} disabled={!isSupabaseConfigured}><span aria-hidden="true">+</span> Pridať video</button></div>
       </header>
 
       <div className="admin-video-list" aria-live="polite" aria-busy={loading}>

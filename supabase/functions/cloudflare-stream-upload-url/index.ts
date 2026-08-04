@@ -35,7 +35,7 @@ Deno.serve(async (request) => {
   const accessLevel = String(body.accessLevel || '')
   if (!fileName.toLowerCase().endsWith('.mp4')) return json({ error: 'Video musí byť vo formáte MP4.' }, 400)
   if (!Number.isSafeInteger(fileSize) || fileSize <= 0 || fileSize > MAX_VIDEO_BYTES) return json({ error: 'Neplatná veľkosť videa.' }, 400)
-  if (!['public', 'member', 'vip'].includes(accessLevel)) return json({ error: 'Neplatná úroveň prístupu.' }, 400)
+  if (!['free', 'member', 'vip'].includes(accessLevel)) return json({ error: 'Neplatná úroveň prístupu.' }, 400)
 
   const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID')
   const apiToken = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')
@@ -45,7 +45,7 @@ Deno.serve(async (request) => {
   const uploadMetadata = [
     `name ${metadataValue(fileName)}`,
     `maxDurationSeconds ${metadataValue(String(MAX_DURATION_SECONDS))}`,
-    accessLevel === 'public' ? null : 'requiresignedurls',
+    accessLevel === 'free' ? null : 'requiresignedurls',
     `expiry ${metadataValue(expiry)}`,
   ].filter(Boolean).join(',')
 

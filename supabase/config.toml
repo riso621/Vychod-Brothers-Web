@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.cloudflare-stream-delete-video]
 verify_jwt = false
+
+[functions.admin-memberships]
+verify_jwt = false

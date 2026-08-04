@@ -12,6 +12,7 @@ const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
 const AdminVideosDashboard = lazy(() => import('./components/AdminVideosDashboard'))
+const AdminMembershipsDashboard = lazy(() => import('./components/AdminMembershipsDashboard'))
 const VideosSection = lazy(() => import('./components/VideosSection'))
 const VideoDetail = lazy(() => import('./components/VideoDetail'))
 
@@ -27,17 +28,18 @@ function Logo() {
 function Header() {
   const [open, setOpen] = useState(false)
   const isVideosPage = window.location.pathname.startsWith('/videos')
+  const isMembershipPage = window.location.pathname.startsWith('/clenstvo')
   const isHomePage = window.location.pathname === '/'
   const hrefs = !isHomePage
-    ? ['/', '/videos', '/#onas', '/#clenstvo', '/#merch', '/#kontakt']
-    : ['#domov', '/videos', '#onas', '#clenstvo', '#merch', '#kontakt']
+    ? ['/', '/videos', '/#onas', '/clenstvo', '/#merch', '/#kontakt']
+    : ['#domov', '/videos', '#onas', '/clenstvo', '#merch', '#kontakt']
   return (
     <header className="topbar">
       <Logo />
       <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
-        {navItems.map((item, index) => <a className={isVideosPage ? index === 1 ? 'active' : '' : isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
+        {navItems.map((item, index) => <a className={isVideosPage && index === 1 || isMembershipPage && index === 3 || isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
-      <a className="join-brush" href={isVideosPage ? '/#clenstvo' : '#clenstvo'}>STAŤ SA ČLENOM</a>
+      <a className="join-brush" href="/clenstvo">STAŤ SA ČLENOM</a>
       <Suspense fallback={null}><AuthControl /></Suspense>
       <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
     </header>
@@ -116,8 +118,16 @@ function AccountPage() {
   return <main className="account-page"><Header /><AccountDashboard /><Footer /></main>
 }
 
+function MembershipPage() {
+  return <main className="membership-page"><Header /><MembershipSection standalone /><Footer /></main>
+}
+
 function AdminVideosPage() {
   return <main className="admin-videos-page"><Header /><AdminVideosDashboard /><Footer /></main>
+}
+
+function AdminMembershipsPage() {
+  return <main className="admin-videos-page"><Header /><AdminMembershipsDashboard /><Footer /></main>
 }
 
 export default function App() {
@@ -126,6 +136,10 @@ export default function App() {
     ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
     : path === '/account' || path === '/account/'
       ? <AccountPage />
-      : path === '/admin/videos' || path === '/admin/videos/' ? <AdminVideosPage /> : <HomePage />
+      : path === '/clenstvo' || path === '/clenstvo/'
+        ? <MembershipPage />
+        : path === '/admin/memberships' || path === '/admin/memberships/'
+          ? <AdminMembershipsPage />
+          : path === '/admin/videos' || path === '/admin/videos/' ? <AdminVideosPage /> : <HomePage />
   return <Suspense fallback={null}><ProfileProvider>{page}</ProfileProvider></Suspense>
 }
