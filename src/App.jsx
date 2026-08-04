@@ -5,6 +5,7 @@ import MembershipSection from './components/MembershipSection'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
 import VideosSection from './components/VideosSection'
+import VideoDetail from './components/VideoDetail'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -16,12 +17,12 @@ const reveal = {
 }
 
 function Logo() {
-  return <a className="brand" href={window.location.pathname === '/videos' ? '/' : '#domov'} aria-label="Východ Brothers – domov"><i>V</i>B</a>
+  return <a className="brand" href={window.location.pathname.startsWith('/videos') ? '/' : '#domov'} aria-label="Východ Brothers – domov"><i>V</i>B</a>
 }
 
 function Header() {
   const [open, setOpen] = useState(false)
-  const isVideosPage = window.location.pathname === '/videos'
+  const isVideosPage = window.location.pathname.startsWith('/videos')
   const hrefs = isVideosPage
     ? ['/', '/videos', '/#onas', '/#clenstvo', '/#merch', '/#kontakt']
     : ['#domov', '/videos', '#onas', '#clenstvo', '#merch', '#kontakt']
@@ -101,10 +102,13 @@ function HomePage() {
   return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><MembershipSection /><NewsletterSection /><Footer /></main></>
 }
 
-function VideosPage() {
-  return <main className="videos-page"><Header /><VideosSection /><Footer /></main>
+function VideosPage({ slug }) {
+  return <main className="videos-page"><Header />{slug ? <VideoDetail slug={slug} /> : <VideosSection />}<Footer /></main>
 }
 
 export default function App() {
-  return window.location.pathname === '/videos' ? <VideosPage /> : <HomePage />
+  const path = window.location.pathname
+  if (!path.startsWith('/videos')) return <HomePage />
+  const slug = decodeURIComponent(path.slice('/videos/'.length))
+  return <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : slug} />
 }

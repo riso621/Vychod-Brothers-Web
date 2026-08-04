@@ -15,7 +15,7 @@ const categoryLabels = {
   bonus: 'Bonus',
 }
 
-function VideoCard({ video, featured = false, onSelect }) {
+function VideoCard({ video, featured = false }) {
   const locked = video.accessLevel !== 'public'
 
   return (
@@ -29,7 +29,7 @@ function VideoCard({ video, featured = false, onSelect }) {
         <div className="catalog-video-meta"><span>{categoryLabels[video.category] ?? video.category}</span><span className={`access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span></div>
         <h2>{video.title}</h2>
         <p>{video.shortDescription}</p>
-        <button type="button" onClick={() => onSelect(video)}>Pozrieť detail <span aria-hidden="true">→</span></button>
+        <a className="catalog-video-link" href={`/videos/${video.slug}`}>Pozrieť detail <span aria-hidden="true">→</span></a>
       </div>
     </article>
   )
@@ -40,12 +40,7 @@ export default function VideosSection() {
   const featuredVideo = getFeaturedVideo()
   const categories = useMemo(() => [...new Set(publishedVideos.map((video) => video.category))], [publishedVideos])
   const [category, setCategory] = useState('all')
-  const [message, setMessage] = useState('')
   const visibleVideos = category === 'all' ? publishedVideos : getVideosByCategory(category)
-
-  const handleSelect = (video) => {
-    setMessage(`${video.title}: Prehrávač pripravujeme.`)
-  }
 
   return (
     <section className="videos-catalog" aria-labelledby="videos-heading">
@@ -58,7 +53,7 @@ export default function VideosSection() {
       {featuredVideo && (
         <div className="videos-featured" aria-label="Odporúčané video">
           <span className="videos-section-label">Odporúčané</span>
-          <VideoCard video={featuredVideo} featured onSelect={handleSelect} />
+          <VideoCard video={featuredVideo} featured />
         </div>
       )}
 
@@ -71,9 +66,8 @@ export default function VideosSection() {
       </div>
 
       <div className="videos-grid">
-        {visibleVideos.map((video) => <VideoCard video={video} onSelect={handleSelect} key={video.id} />)}
+        {visibleVideos.map((video) => <VideoCard video={video} key={video.id} />)}
       </div>
-      <p className="videos-catalog-status" aria-live="polite">{message}</p>
     </section>
   )
 }
