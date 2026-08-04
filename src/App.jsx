@@ -11,6 +11,7 @@ import './App.css'
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
 const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
+const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -110,7 +111,8 @@ function VideosPage({ slug }) {
 
 export default function App() {
   const path = window.location.pathname
-  if (!path.startsWith('/videos')) return <HomePage />
-  const slug = decodeURIComponent(path.slice('/videos/'.length))
-  return <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : slug} />
+  const page = !path.startsWith('/videos')
+    ? <HomePage />
+    : <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
+  return <Suspense fallback={null}><ProfileProvider>{page}</ProfileProvider></Suspense>
 }

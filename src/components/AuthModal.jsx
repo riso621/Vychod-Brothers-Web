@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { useProfile } from '../context/profile-context'
 
 function AuthModal({ mode, onModeChange, onClose }) {
   const [email, setEmail] = useState('')
@@ -79,24 +80,19 @@ function AuthModal({ mode, onModeChange, onClose }) {
 }
 
 export default function AuthControl() {
-  const [session, setSession] = useState(null)
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState('login')
+  const { session, profile, authLoading, profileLoading, profileError, signOut } = useProfile()
 
-  useEffect(() => {
-    if (!supabase) return undefined
-
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession))
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  const handleSignOut = async () => {
-    if (supabase) await supabase.auth.signOut()
-  }
+  if (authLoading) return <span className="auth-trigger is-loading">Načítavam…</span>
 
   if (session) {
-    return <button className="auth-trigger is-signed-in" type="button" onClick={handleSignOut} title={session.user.email}>Odhlásiť</button>
+    return (
+      <div className="auth-account">
+        <span className={`auth-profile-message${profileError ? ' is-error' : ''}`} role={profileError ? 'alert' : 'status'}>{profileLoading ? 'Načítavam profil…' : profileError || profile?.username || 'Môj účet'}</span>
+        <button className="auth-trigger is-signed-in" type="button" onClick={signOut} title={session.user.email}>Odhlásiť</button>
+      </div>
+    )
   }
 
   return (
