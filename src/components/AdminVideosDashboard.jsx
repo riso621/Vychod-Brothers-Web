@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useProfile } from '../context/profile-context'
+import { invalidateVideoCache } from '../lib/videos'
 
 const accessLabels = { public: 'Verejné', member: 'Pre členov', vip: 'VIP' }
 const providerLabels = { youtube: 'YouTube', stream: 'Stream' }
@@ -172,6 +173,7 @@ export default function AdminVideosDashboard() {
   }, [authLoading, isAdmin, loadVideos])
 
   const handleSaved = async (title, wasEditing) => {
+    invalidateVideoCache()
     await loadVideos()
     setModalOpen(false)
     setEditingVideo(null)
@@ -179,6 +181,7 @@ export default function AdminVideosDashboard() {
   }
 
   const handleDeleted = async (title) => {
+    invalidateVideoCache()
     await loadVideos()
     setDeletingVideo(null)
     setSuccess(`Video „${title}“ bolo odstránené.`)

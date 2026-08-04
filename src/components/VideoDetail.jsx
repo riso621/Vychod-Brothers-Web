@@ -1,4 +1,6 @@
-import { getVideoBySlug } from '../data/videos'
+import { useEffect, useState } from 'react'
+import { getPublishedVideoBySlug } from '../lib/videos'
+import { useProfile } from '../context/profile-context'
 import VideoPlayer from './VideoPlayer'
 
 const accessLabels = {
@@ -8,11 +10,8 @@ const accessLabels = {
 }
 
 const categoryLabels = {
-  parodia: 'Paródia',
-  minifilm: 'Minifilm',
-  skec: 'Skeč',
-  zakulisie: 'Zákulisie',
-  bonus: 'Bonus',
+  youtube: 'YouTube',
+  stream: 'Stream',
 }
 
 const formatDate = (publishedAt) => new Intl.DateTimeFormat('sk-SK', {
@@ -22,7 +21,24 @@ const formatDate = (publishedAt) => new Intl.DateTimeFormat('sk-SK', {
 }).format(new Date(publishedAt))
 
 export default function VideoDetail({ slug }) {
-  const video = getVideoBySlug(slug)
+  const { profile, authLoading, profileLoading } = useProfile()
+  const [video, setVideo] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+    getPublishedVideoBySlug(slug)
+      .then((result) => { if (active) setVideo(result) })
+      .catch(() => { if (active) setError('Video sa nepodarilo načítať. Skús to, prosím, znova.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [slug])
+
+  if (loading) return <section className="video-not-found" aria-live="polite"><p>Načítavam video…</p></section>
+  if (error) return <section className="video-not-found" role="alert"><h1>Video sa nepodarilo načítať</h1><p>{error}</p><a href="/videos">← Späť na videá</a></section>
 
   if (!video) {
     return (
@@ -34,6 +50,12 @@ export default function VideoDetail({ slug }) {
       </section>
     )
   }
+
+  const membership = profile?.membership || 'free'
+  const hasAccess = video.accessLevel === 'public'
+    || (video.accessLevel === 'member' && ['member', 'vip'].includes(membership))
+    || (video.accessLevel === 'vip' && membership === 'vip')
+  const accessLoading = video.accessLevel !== 'public' && (authLoading || profileLoading)
 
   return (
     <article className="video-detail">
@@ -48,13 +70,13 @@ export default function VideoDetail({ slug }) {
         <p>{video.shortDescription}</p>
       </header>
 
-      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} />
+      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} />
 
       <div className="video-detail-content">
         <div className="video-detail-description">
           <h2>O videu</h2>
           <p>{video.description}</p>
-          <div className="video-detail-tags" aria-label="Tagy videa">{video.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>
+          {video.tags.length > 0 && <div className="video-detail-tags" aria-label="Tagy videa">{video.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>}
         </div>
         <dl className="video-detail-facts">
           <div><dt>Dĺžka</dt><dd>{video.duration}</dd></div>

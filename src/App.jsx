@@ -4,8 +4,6 @@ import { activeSocialProfiles, contentCards, media, navItems, socialProfiles, st
 import MembershipSection from './components/MembershipSection'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
-import VideosSection from './components/VideosSection'
-import VideoDetail from './components/VideoDetail'
 import AccountDashboard from './components/AccountDashboard'
 import './App.css'
 
@@ -14,6 +12,8 @@ const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
 const AdminVideosDashboard = lazy(() => import('./components/AdminVideosDashboard'))
+const VideosSection = lazy(() => import('./components/VideosSection'))
+const VideoDetail = lazy(() => import('./components/VideoDetail'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },

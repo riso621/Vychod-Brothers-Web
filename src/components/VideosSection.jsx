@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { getFeaturedVideo, getPublishedVideos, getVideosByCategory } from '../data/videos'
+import { useEffect, useMemo, useState } from 'react'
+import { getPublishedVideos } from '../lib/videos'
 
 const accessLabels = {
   public: 'Verejné',
@@ -8,11 +8,8 @@ const accessLabels = {
 }
 
 const categoryLabels = {
-  parodia: 'Paródia',
-  minifilm: 'Minifilm',
-  skec: 'Skeč',
-  zakulisie: 'Zákulisie',
-  bonus: 'Bonus',
+  youtube: 'YouTube',
+  stream: 'Stream',
 }
 
 function VideoCard({ video, featured = false }) {
@@ -36,11 +33,22 @@ function VideoCard({ video, featured = false }) {
 }
 
 export default function VideosSection() {
-  const publishedVideos = getPublishedVideos()
-  const featuredVideo = getFeaturedVideo()
+  const [publishedVideos, setPublishedVideos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const featuredVideo = publishedVideos.find((video) => video.featured) || null
   const categories = useMemo(() => [...new Set(publishedVideos.map((video) => video.category))], [publishedVideos])
   const [category, setCategory] = useState('all')
-  const visibleVideos = category === 'all' ? publishedVideos : getVideosByCategory(category)
+  const visibleVideos = category === 'all' ? publishedVideos : publishedVideos.filter((video) => video.category === category)
+
+  useEffect(() => {
+    let active = true
+    getPublishedVideos()
+      .then((videos) => { if (active) setPublishedVideos(videos) })
+      .catch(() => { if (active) setError('Videá sa nepodarilo načítať. Skús to, prosím, znova.') })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [])
 
   return (
     <section className="videos-catalog" aria-labelledby="videos-heading">
@@ -50,14 +58,18 @@ export default function VideosSection() {
         <p>Paródie, minifilmy, skeče aj pohľad do zákulisia na jednom mieste. Katalóg postupne pripravujeme.</p>
       </header>
 
-      {featuredVideo && (
+      {loading && <p className="videos-catalog-status" aria-live="polite">Načítavam videá…</p>}
+      {!loading && error && <p className="videos-catalog-status is-error" role="alert">{error}</p>}
+      {!loading && !error && publishedVideos.length === 0 && <p className="videos-catalog-status">Zatiaľ tu nie sú žiadne publikované videá.</p>}
+
+      {!loading && !error && featuredVideo && (
         <div className="videos-featured" aria-label="Odporúčané video">
           <span className="videos-section-label">Odporúčané</span>
           <VideoCard video={featuredVideo} featured />
         </div>
       )}
 
-      <div className="videos-toolbar">
+      {!loading && !error && publishedVideos.length > 0 && <><div className="videos-toolbar">
         <h2>Všetky videá</h2>
         <div className="videos-filters" aria-label="Filtrovať videá podľa kategórie">
           <button type="button" className={category === 'all' ? 'is-active' : ''} aria-pressed={category === 'all'} onClick={() => setCategory('all')}>Všetky</button>
@@ -67,7 +79,7 @@ export default function VideosSection() {
 
       <div className="videos-grid">
         {visibleVideos.map((video) => <VideoCard video={video} key={video.id} />)}
-      </div>
+      </div></>}
     </section>
   )
 }
