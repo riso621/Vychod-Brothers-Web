@@ -2,9 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useProfile } from '../context/profile-context'
 import { invalidateVideoCache } from '../lib/videos'
+import { createStoragePath, uploadStorageFile } from '../lib/storage'
+import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 
 const accessLabels = { public: 'Verejné', member: 'Pre členov', vip: 'VIP' }
 const providerLabels = { youtube: 'YouTube', stream: 'Stream' }
+const MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024
+const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024
+const imageTypes = ['image/jpeg', 'image/png', 'image/webp']
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes)) return ''
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`
+  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`
+  return `${Math.ceil(bytes / 1024)} KB`
+}
 
 function formatDate(value) {
   if (!value) return '—'
@@ -15,20 +27,17 @@ function formatDate(value) {
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-function validateVideo(values) {
+function validateVideo(values, { videoFile, thumbnailFile, isEditing }) {
   if (!values.title || values.title.length > 160) return 'Názov je povinný a môže mať najviac 160 znakov.'
   if (!values.slug || values.slug.length > 180 || !slugPattern.test(values.slug)) return 'Slug používaj malými písmenami, číslami a pomlčkami.'
   if (!values.description || values.description.length > 5000) return 'Popis je povinný a môže mať najviac 5 000 znakov.'
-  if (!values.thumbnail_url) return 'Thumbnail URL je povinná.'
-  try {
-    const url = new URL(values.thumbnail_url)
-    if (!['http:', 'https:'].includes(url.protocol)) return 'Thumbnail musí používať platnú HTTP alebo HTTPS adresu.'
-  } catch {
-    return 'Zadaj platnú URL adresu thumbnailu.'
-  }
-  if (!['youtube', 'stream'].includes(values.provider)) return 'Vyber platného poskytovateľa videa.'
-  if (!values.provider_video_id || values.provider_video_id.length > 255 || /\s/.test(values.provider_video_id)) return 'Provider video ID je povinné a nesmie obsahovať medzery.'
   if (!['public', 'member', 'vip'].includes(values.access_level)) return 'Vyber platnú úroveň prístupu.'
+  if (!isEditing && !videoFile) return 'Vyber MP4 video súbor.'
+  if (!isEditing && !thumbnailFile) return 'Vyber thumbnail obrázok.'
+  if (videoFile && (videoFile.type !== 'video/mp4' || !videoFile.name.toLowerCase().endsWith('.mp4'))) return 'Video musí byť vo formáte MP4.'
+  if (videoFile?.size > MAX_VIDEO_SIZE) return 'Video môže mať najviac 5 GB.'
+  if (thumbnailFile && (!imageTypes.includes(thumbnailFile.type) || !/\.(jpe?g|png|webp)$/i.test(thumbnailFile.name))) return 'Thumbnail musí byť JPG, JPEG, PNG alebo WEBP.'
+  if (thumbnailFile?.size > MAX_THUMBNAIL_SIZE) return 'Thumbnail môže mať najviac 10 MB.'
   return ''
 }
 
@@ -36,13 +45,35 @@ function readableMutationError(error, action = 'uložiť') {
   if (error?.code === '23505') return 'Video s týmto slugom už existuje. Zvoľ iný slug.'
   if (error?.code === '42501') return 'Nemáte oprávnenie meniť videá.'
   if (error?.code === '23514') return 'Niektorá hodnota nie je povolená databázou.'
+  if (/unauthorized|forbidden|row-level security|permission/i.test(error?.message || '')) return 'Nemáte oprávnenie nahrať alebo zmeniť toto video.'
+  if (/size|too large|maximum/i.test(error?.message || '')) return 'Súbor prekračuje povolenú veľkosť.'
   return `Video sa nepodarilo ${action}. Skontroluj údaje a skús to znova.`
+}
+
+function FileUploadField({ label, accept, file, progress, onChange, optional = false }) {
+  return (
+    <label className="admin-file-field">
+      {label}{optional && <small>Voliteľné pri úprave</small>}
+      <input type="file" accept={accept} onChange={(event) => onChange(event.target.files?.[0] || null)} />
+      {file && <span className="admin-file-meta"><strong>{file.name}</strong><small>{formatFileSize(file.size)}</small></span>}
+      {file && <span className="admin-upload-progress" aria-label={`${label}: ${progress} %`}><i style={{ width: `${progress}%` }} /><small>{progress === 100 ? 'Úspešne nahrané' : `${progress} %`}</small></span>}
+    </label>
+  )
+}
+
+function StorageImage({ path }) {
+  const { url } = useSignedStorageUrl('thumbnails', path, Boolean(path))
+  return url ? <img src={url} alt="" loading="lazy" onError={(event) => { event.currentTarget.hidden = true }} /> : null
 }
 
 function VideoFormModal({ video, onClose, onSaved }) {
   const titleRef = useRef(null)
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [videoFile, setVideoFile] = useState(null)
+  const [thumbnailFile, setThumbnailFile] = useState(null)
+  const [videoProgress, setVideoProgress] = useState(0)
+  const [thumbnailProgress, setThumbnailProgress] = useState(0)
   const isEditing = Boolean(video)
 
   useEffect(() => {
@@ -59,14 +90,11 @@ function VideoFormModal({ video, onClose, onSaved }) {
       title: String(formData.get('title') || '').trim(),
       slug: String(formData.get('slug') || '').trim().toLowerCase(),
       description: String(formData.get('description') || '').trim(),
-      thumbnail_url: String(formData.get('thumbnail_url') || '').trim(),
-      provider: String(formData.get('provider') || ''),
-      provider_video_id: String(formData.get('provider_video_id') || '').trim(),
       access_level: String(formData.get('access_level') || ''),
       featured: formData.has('featured'),
       published: formData.has('published'),
     }
-    const validationError = validateVideo(values)
+    const validationError = validateVideo(values, { videoFile, thumbnailFile, isEditing })
     if (validationError) {
       setMessage(validationError)
       return
@@ -74,16 +102,46 @@ function VideoFormModal({ video, onClose, onSaved }) {
 
     setSubmitting(true)
     setMessage('')
-    const query = isEditing
-      ? supabase.from('videos').update(values).eq('id', video.id)
-      : supabase.from('videos').insert(values)
-    const { error } = await query
-    if (error) {
-      setMessage(readableMutationError(error))
+    const userId = (await supabase.auth.getUser()).data.user?.id
+    if (!userId) {
+      setMessage('Prihlásenie vypršalo. Prihlás sa znova.')
       setSubmitting(false)
       return
     }
-    await onSaved(values.title, isEditing)
+
+    let uploadedThumbnail = null
+    let uploadedVideo = null
+    try {
+      if (thumbnailFile) {
+        uploadedThumbnail = createStoragePath(userId, thumbnailFile)
+        await uploadStorageFile({ bucket: 'thumbnails', path: uploadedThumbnail, file: thumbnailFile, onProgress: setThumbnailProgress })
+      }
+      if (videoFile) {
+        uploadedVideo = createStoragePath(userId, videoFile)
+        await uploadStorageFile({ bucket: 'videos', path: uploadedVideo, file: videoFile, onProgress: setVideoProgress })
+      }
+
+      const payload = {
+        ...values,
+        provider: uploadedVideo ? 'stream' : video?.provider || 'stream',
+        provider_video_id: uploadedVideo || video?.provider_video_id,
+        thumbnail_url: uploadedThumbnail || video?.thumbnail_url,
+      }
+      const query = isEditing
+        ? supabase.from('videos').update(payload).eq('id', video.id)
+        : supabase.from('videos').insert(payload)
+      const { error } = await query
+      if (error) throw error
+
+      if (isEditing && uploadedThumbnail && video.thumbnail_url && !/^https?:\/\//i.test(video.thumbnail_url)) await supabase.storage.from('thumbnails').remove([video.thumbnail_url])
+      if (isEditing && uploadedVideo && video.provider === 'stream' && video.provider_video_id) await supabase.storage.from('videos').remove([video.provider_video_id])
+      await onSaved(values.title, isEditing)
+    } catch (error) {
+      if (uploadedThumbnail) await supabase.storage.from('thumbnails').remove([uploadedThumbnail])
+      if (uploadedVideo) await supabase.storage.from('videos').remove([uploadedVideo])
+      setMessage(readableMutationError(error))
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -94,9 +152,8 @@ function VideoFormModal({ video, onClose, onSaved }) {
           <label>Názov<input ref={titleRef} name="title" type="text" maxLength="160" defaultValue={video?.title || ''} required /></label>
           <label>Slug<input name="slug" type="text" maxLength="180" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="nazov-videa" defaultValue={video?.slug || ''} required /></label>
           <label className="is-wide">Popis<textarea name="description" rows="4" maxLength="5000" defaultValue={video?.description || ''} required /></label>
-          <label className="is-wide">Thumbnail URL<input name="thumbnail_url" type="url" placeholder="https://…" defaultValue={video?.thumbnail_url || ''} required /></label>
-          <label>Provider<select name="provider" defaultValue={video?.provider || 'youtube'}><option value="youtube">YouTube</option><option value="stream">Stream</option></select></label>
-          <label>Provider video ID<input name="provider_video_id" type="text" maxLength="255" defaultValue={video?.provider_video_id || ''} required /></label>
+          <FileUploadField label="Thumbnail" accept=".jpg,.jpeg,.png,.webp" file={thumbnailFile} progress={thumbnailProgress} onChange={setThumbnailFile} optional={isEditing} />
+          <FileUploadField label="Video MP4" accept="video/mp4,.mp4" file={videoFile} progress={videoProgress} onChange={setVideoFile} optional={isEditing} />
           <label>Prístup<select name="access_level" defaultValue={video?.access_level || 'public'}><option value="public">Verejné</option><option value="member">Pre členov</option><option value="vip">VIP</option></select></label>
           <fieldset><legend>Stav</legend><label className="admin-check"><input name="featured" type="checkbox" defaultChecked={video?.featured || false} /> Featured</label><label className="admin-check"><input name="published" type="checkbox" defaultChecked={video?.published || false} /> Publikované</label></fieldset>
           <div className="admin-form-actions is-wide"><p className={message ? 'is-error' : ''} role={message ? 'alert' : undefined} aria-live="polite">{message}</p><button type="button" onClick={onClose} disabled={submitting}>Zrušiť</button><button className="is-primary" type="submit" disabled={submitting}>{submitting ? 'Ukladám…' : isEditing ? 'Uložiť zmeny' : 'Uložiť video'}</button></div>
@@ -118,6 +175,8 @@ function DeleteVideoModal({ video, onClose, onDeleted }) {
       setDeleting(false)
       return
     }
+    if (video.thumbnail_url && !/^https?:\/\//i.test(video.thumbnail_url)) await supabase.storage.from('thumbnails').remove([video.thumbnail_url])
+    if (video.provider === 'stream' && video.provider_video_id) await supabase.storage.from('videos').remove([video.provider_video_id])
     await onDeleted(video.title)
   }
 
@@ -177,7 +236,7 @@ export default function AdminVideosDashboard() {
     await loadVideos()
     setModalOpen(false)
     setEditingVideo(null)
-    setSuccess(`Video „${title}“ bolo úspešne ${wasEditing ? 'upravené' : 'vytvorené'}.`)
+    setSuccess(wasEditing ? `Video „${title}“ bolo úspešne upravené.` : 'Video bolo úspešne nahrané.')
   }
 
   const handleDeleted = async (title) => {
@@ -209,7 +268,7 @@ export default function AdminVideosDashboard() {
         {!loading && !error && videos.length === 0 && <p className="admin-videos-status">Zatiaľ tu nie sú žiadne publikované videá.</p>}
         {videos.map((video) => (
           <article className="admin-video-row" key={video.id}>
-            <div className="admin-video-thumbnail">{video.thumbnail_url && <img src={video.thumbnail_url} alt="" loading="lazy" onError={(event) => { event.currentTarget.hidden = true }} />}<span aria-hidden="true">VB</span></div>
+            <div className="admin-video-thumbnail"><StorageImage path={video.thumbnail_url} /><span aria-hidden="true">VB</span></div>
             <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
             <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div></dl>
           </article>

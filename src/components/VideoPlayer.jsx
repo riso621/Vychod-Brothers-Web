@@ -1,3 +1,5 @@
+import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
+
 const youtubeIdPattern = /^[a-zA-Z0-9_-]{11}$/
 
 function getYoutubeVideoId(youtubeUrl) {
@@ -40,7 +42,9 @@ export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVide
   const accessMessage = accessLevel === 'vip'
     ? 'Tento obsah je dostupný iba pre VIP členov'
     : 'Tento obsah je určený pre členov'
-  const image = previewImage || poster
+  const imagePath = previewImage || poster
+  const { url: image, loading: imageLoading } = useSignedStorageUrl('thumbnails', imagePath, Boolean(imagePath))
+  const { url: streamUrl, loading: streamLoading } = useSignedStorageUrl('videos', streamVideoId, provider === 'stream' && hasAccess && !accessLoading)
 
   if (accessLoading) {
     return <PlayerState heading="Overujeme prístup…" accessLevel={accessLevel} image={image} />
@@ -51,7 +55,9 @@ export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVide
   }
 
   if (provider === 'stream') {
-    return <div data-stream-video-id={streamVideoId || undefined}><PlayerState heading="Náš vlastný prehrávač bude čoskoro dostupný." description="Pripravujeme čisté a bezpečné prehrávanie priamo na našom webe." accessLevel={accessLevel} image={image} /></div>
+    if (streamLoading || imageLoading) return <PlayerState heading="Načítavam video…" accessLevel={accessLevel} image={image} />
+    if (!streamUrl) return <PlayerState heading="Video momentálne nie je dostupné." accessLevel={accessLevel} image={image} />
+    return <div className="video-detail-stage video-player-stream" data-stream-video-id={streamVideoId || undefined}><video src={streamUrl} poster={image || undefined} controls preload="metadata">Tvoj prehliadač nepodporuje prehrávanie videa.</video></div>
   }
 
   if (provider === 'none') {

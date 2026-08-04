@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getPublishedVideos } from '../lib/videos'
+import { getSignedStorageUrls } from '../lib/storage'
 
 const accessLabels = {
   public: 'Verejné',
@@ -12,13 +13,13 @@ const categoryLabels = {
   stream: 'Stream',
 }
 
-function VideoCard({ video, featured = false }) {
+function VideoCard({ video, thumbnailUrl, featured = false }) {
   const locked = video.accessLevel !== 'public'
 
   return (
     <article className={`catalog-video-card${featured ? ' is-featured' : ''}`}>
       <div className="catalog-video-image">
-        <img src={video.thumbnail} alt="" loading={featured ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.hidden = true }} />
+        {thumbnailUrl && <img src={thumbnailUrl} alt="" loading={featured ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.hidden = true }} />}
         <span className="catalog-video-duration">{video.duration}</span>
         {locked && <span className={`catalog-video-lock access-${video.accessLevel}`} aria-label={accessLabels[video.accessLevel]}>⌁ {accessLabels[video.accessLevel]}</span>}
       </div>
@@ -36,6 +37,7 @@ export default function VideosSection() {
   const [publishedVideos, setPublishedVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
   const featuredVideo = publishedVideos.find((video) => video.featured) || null
   const categories = useMemo(() => [...new Set(publishedVideos.map((video) => video.category))], [publishedVideos])
   const [category, setCategory] = useState('all')
@@ -49,6 +51,29 @@ export default function VideosSection() {
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    let timer
+    const paths = publishedVideos.map((video) => video.thumbnail).filter(Boolean)
+    if (!paths.length) return undefined
+
+    const refresh = async (force = false) => {
+      try {
+        const urls = await getSignedStorageUrls('thumbnails', paths, force)
+        if (active) setThumbnailUrls(urls)
+      } catch {
+        if (active) setThumbnailUrls(new Map())
+      } finally {
+        if (active) timer = window.setTimeout(() => refresh(true), 14 * 60 * 1000)
+      }
+    }
+    refresh()
+    return () => {
+      active = false
+      window.clearTimeout(timer)
+    }
+  }, [publishedVideos])
 
   return (
     <section className="videos-catalog" aria-labelledby="videos-heading">
@@ -65,7 +90,7 @@ export default function VideosSection() {
       {!loading && !error && featuredVideo && (
         <div className="videos-featured" aria-label="Odporúčané video">
           <span className="videos-section-label">Odporúčané</span>
-          <VideoCard video={featuredVideo} featured />
+          <VideoCard video={featuredVideo} thumbnailUrl={thumbnailUrls.get(featuredVideo.thumbnail)} featured />
         </div>
       )}
 
@@ -78,7 +103,7 @@ export default function VideosSection() {
       </div>
 
       <div className="videos-grid">
-        {visibleVideos.map((video) => <VideoCard video={video} key={video.id} />)}
+        {visibleVideos.map((video) => <VideoCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} key={video.id} />)}
       </div></>}
     </section>
   )
