@@ -21,33 +21,41 @@ function getYoutubeVideoId(youtubeUrl) {
   }
 }
 
-export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId }) {
-  const youtubeVideoId = accessLevel === 'public' ? getYoutubeVideoId(youtubeUrl) : null
+function PlayerState({ heading, description, accessMessage, accessLevel, image }) {
+  return (
+    <div className={`video-detail-stage video-player-state access-${accessLevel}`}>
+      {image && <img className="video-player-state-image" src={image} alt="" />}
+      <div className="video-player-state-copy">
+        <span aria-hidden="true">▶</span>
+        <strong>{heading}</strong>
+        {description && <p>{description}</p>}
+        {accessMessage && <small>⌁ {accessMessage}</small>}
+      </div>
+    </div>
+  )
+}
+
+export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '' }) {
+  const youtubeVideoId = provider === 'youtube' && accessLevel === 'public' ? getYoutubeVideoId(youtubeUrl) : null
   const accessMessage = accessLevel === 'vip'
     ? 'Tento obsah je dostupný iba pre VIP členov'
     : 'Tento obsah je určený pre členov'
+  const image = previewImage || poster
 
-  if (accessLevel !== 'public') {
-    return (
-      <div className={`video-detail-stage video-player-locked access-${accessLevel}`} data-stream-video-id={streamVideoId || undefined}>
-        <div className="video-player-lock">
-          <span aria-hidden="true">⌁</span>
-          <strong>{accessLevel === 'vip' ? 'VIP obsah' : 'Pre členov'}</strong>
-          <p>{accessMessage}</p>
-        </div>
-      </div>
-    )
+  if (provider === 'stream') {
+    return <div data-stream-video-id={streamVideoId || undefined}><PlayerState heading="Náš vlastný prehrávač bude čoskoro dostupný." description="Pripravujeme čisté a bezpečné prehrávanie priamo na našom webe." accessMessage={accessLevel === 'public' ? '' : accessMessage} accessLevel={accessLevel} image={image} /></div>
+  }
+
+  if (provider === 'none') {
+    return <PlayerState heading="Video pripravujeme." accessMessage={accessLevel === 'public' ? '' : accessMessage} accessLevel={accessLevel} image={image} />
+  }
+
+  if (provider !== 'youtube' || accessLevel !== 'public') {
+    return <PlayerState heading={accessLevel === 'vip' ? 'VIP obsah' : 'Pre členov'} accessMessage={accessMessage} accessLevel={accessLevel} image={image} />
   }
 
   if (!youtubeVideoId) {
-    return (
-      <div className="video-detail-stage">
-        <div className="video-player-placeholder">
-          <span aria-hidden="true">▶</span>
-          <strong>Video prehrávač pripravujeme</strong>
-        </div>
-      </div>
-    )
+    return <PlayerState heading="Video prehrávač pripravujeme" accessLevel={accessLevel} image={image} />
   }
 
   return (
