@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getPublishedVideos } from '../lib/videos'
 import { getSignedStorageUrls } from '../lib/storage'
+import { useWatchHistory } from '../context/watch-history-context'
+import { useProfile } from '../context/profile-context'
+import { canAccessMembership } from '../lib/membership'
 
 const accessLabels = {
   free: 'FREE',
@@ -14,7 +17,7 @@ const categoryLabels = {
   cloudflare_stream: 'Cloudflare Stream',
 }
 
-function VideoCard({ video, thumbnailUrl, featured = false }) {
+function VideoCard({ video, thumbnailUrl, featured = false, progress = null }) {
   const locked = video.accessLevel !== 'free'
 
   return (
@@ -23,6 +26,7 @@ function VideoCard({ video, thumbnailUrl, featured = false }) {
         {thumbnailUrl && <img src={thumbnailUrl} alt="" loading={featured ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.hidden = true }} />}
         <span className="catalog-video-duration">{video.duration}</span>
         {locked && <span className={`catalog-video-lock access-${video.accessLevel}`} aria-label={accessLabels[video.accessLevel]}>⌁ {accessLabels[video.accessLevel]}</span>}
+        {progress && <div className="catalog-watch-progress" aria-label={progress.completed ? 'Dopozerané' : `Pozreté na ${Math.round(progress.progress_percent || 0)} percent`}><i style={{ width: `${progress.completed ? 100 : Math.min(100, progress.progress_percent || 0)}%` }} />{progress.completed && <span>Dopozerané</span>}</div>}
       </div>
       <div className="catalog-video-copy">
         <div className="catalog-video-meta"><span>{categoryLabels[video.category] ?? video.category}</span><span className={`access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span></div>
@@ -35,6 +39,10 @@ function VideoCard({ video, thumbnailUrl, featured = false }) {
 }
 
 export default function VideosSection() {
+  const { session, profile } = useProfile()
+  const { getProgress, isEnabled: watchHistoryEnabled } = useWatchHistory()
+  const isAdmin = session?.user?.app_metadata?.role === 'admin'
+  const progressFor = (video) => watchHistoryEnabled && canAccessMembership(video.accessLevel, profile, isAdmin) ? getProgress(video.id) : null
   const [publishedVideos, setPublishedVideos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -91,7 +99,7 @@ export default function VideosSection() {
       {!loading && !error && featuredVideo && (
         <div className="videos-featured" aria-label="Odporúčané video">
           <span className="videos-section-label">Odporúčané</span>
-          <VideoCard video={featuredVideo} thumbnailUrl={thumbnailUrls.get(featuredVideo.thumbnail)} featured />
+          <VideoCard video={featuredVideo} thumbnailUrl={thumbnailUrls.get(featuredVideo.thumbnail)} progress={progressFor(featuredVideo)} featured />
         </div>
       )}
 
@@ -104,7 +112,7 @@ export default function VideosSection() {
       </div>
 
       <div className="videos-grid">
-        {visibleVideos.map((video) => <VideoCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} key={video.id} />)}
+        {visibleVideos.map((video) => <VideoCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} progress={progressFor(video)} key={video.id} />)}
       </div></>}
     </section>
   )

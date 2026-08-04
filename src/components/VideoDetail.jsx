@@ -3,6 +3,7 @@ import { getPublishedVideoBySlug } from '../lib/videos'
 import { useProfile } from '../context/profile-context'
 import VideoPlayer from './VideoPlayer'
 import { canAccessMembership } from '../lib/membership'
+import { useWatchHistory } from '../context/watch-history-context'
 
 const accessLabels = {
   free: 'FREE',
@@ -27,6 +28,7 @@ export default function VideoDetail({ slug }) {
   const [video, setVideo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const { getProgress, saveProgress, isEnabled: watchHistoryEnabled } = useWatchHistory()
 
   useEffect(() => {
     let active = true
@@ -56,6 +58,7 @@ export default function VideoDetail({ slug }) {
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const hasAccess = canAccessMembership(video.accessLevel, profile, isAdmin)
   const accessLoading = video.accessLevel !== 'free' && (authLoading || profileLoading)
+  const watchProgress = getProgress(video.id)
 
   return (
     <article className="video-detail">
@@ -70,7 +73,7 @@ export default function VideoDetail({ slug }) {
         <p>{video.shortDescription}</p>
       </header>
 
-      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} />
+      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} videoId={video.id} watchProgress={watchProgress} onWatchProgress={watchHistoryEnabled ? saveProgress : null} />
 
       <div className="video-detail-content">
         <div className="video-detail-description">

@@ -11,10 +11,12 @@ const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
 const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
+const WatchHistoryProvider = lazy(() => import('./context/WatchHistoryProvider'))
 const AdminVideosDashboard = lazy(() => import('./components/AdminVideosDashboard'))
 const AdminMembershipsDashboard = lazy(() => import('./components/AdminMembershipsDashboard'))
 const VideosSection = lazy(() => import('./components/VideosSection'))
 const VideoDetail = lazy(() => import('./components/VideoDetail'))
+const ContinueWatchingSection = lazy(() => import('./components/ContinueWatchingSection'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -107,7 +109,7 @@ function HomePage() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><MembershipSection /><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><ContinueWatchingSection /><MembershipSection /><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {
@@ -141,5 +143,5 @@ export default function App() {
         : path === '/admin/memberships' || path === '/admin/memberships/'
           ? <AdminMembershipsPage />
           : path === '/admin/videos' || path === '/admin/videos/' ? <AdminVideosPage /> : <HomePage />
-  return <Suspense fallback={null}><ProfileProvider>{page}</ProfileProvider></Suspense>
+  return <Suspense fallback={null}><ProfileProvider><WatchHistoryProvider>{page}</WatchHistoryProvider></ProfileProvider></Suspense>
 }
