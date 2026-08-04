@@ -35,3 +35,22 @@ export async function getCloudflarePlaybackUrl(videoUid) {
   if (error || !data?.playerUrl) return null
   return data.playerUrl
 }
+
+export async function deleteVideoFromProvider(videoId) {
+  if (!supabase || !videoId) throw new Error('Video sa nepodarilo odstrániť.')
+  const { data, error } = await supabase.functions.invoke('cloudflare-stream-delete-video', {
+    body: { id: videoId },
+  })
+  if (error || !data?.deleted) {
+    let message = data?.error
+    if (!message && error?.context instanceof Response) {
+      try {
+        message = (await error.context.clone().json())?.error
+      } catch {
+        // Supabase may return a response without a JSON body.
+      }
+    }
+    throw new Error(message || 'Video sa nepodarilo bezpečne odstrániť.')
+  }
+  return data
+}

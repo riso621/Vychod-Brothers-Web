@@ -3,7 +3,7 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useProfile } from '../context/profile-context'
 import { invalidateVideoCache } from '../lib/videos'
 import { createStoragePath, uploadThumbnailFile } from '../lib/storage'
-import { createCloudflareUpload, uploadCloudflareVideo } from '../lib/cloudflare-stream'
+import { createCloudflareUpload, deleteVideoFromProvider, uploadCloudflareVideo } from '../lib/cloudflare-stream'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 
 const accessLabels = { public: 'Verejné', member: 'Pre členov', vip: 'VIP' }
@@ -169,14 +169,13 @@ function DeleteVideoModal({ video, onClose, onDeleted }) {
 
   const handleDelete = async () => {
     setDeleting(true)
-    const { error } = await supabase.from('videos').delete().eq('id', video.id)
-    if (error) {
-      setMessage(readableMutationError(error, 'odstrániť'))
+    try {
+      await deleteVideoFromProvider(video.id)
+    } catch (error) {
+      setMessage(error?.message || readableMutationError(error, 'odstrániť'))
       setDeleting(false)
       return
     }
-    if (video.thumbnail_url && !/^https?:\/\//i.test(video.thumbnail_url)) await supabase.storage.from('thumbnails').remove([video.thumbnail_url])
-    if (video.provider === 'stream' && video.provider_video_id) await supabase.storage.from('videos').remove([video.provider_video_id])
     await onDeleted(video.title)
   }
 
