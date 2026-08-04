@@ -112,5 +112,8 @@ export const getFeaturedVideo = () =>
 export const getVideosByAccessLevel = (accessLevel) =>
   videos.filter((video) => video.accessLevel === accessLevel)
 
+export const getVideosByCategory = (category) =>
+  getPublishedVideos().filter((video) => video.category === category)
+
 export const getVideoBySlug = (slug) =>
   videos.find((video) => video.slug === slug) ?? null

@@ -4,6 +4,7 @@ import { activeSocialProfiles, contentCards, media, navItems, socialProfiles, st
 import MembershipSection from './components/MembershipSection'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
+import VideosSection from './components/VideosSection'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -15,18 +16,22 @@ const reveal = {
 }
 
 function Logo() {
-  return <a className="brand" href="#domov" aria-label="Východ Brothers – domov"><i>V</i>B</a>
+  return <a className="brand" href={window.location.pathname === '/videos' ? '/' : '#domov'} aria-label="Východ Brothers – domov"><i>V</i>B</a>
 }
 
 function Header() {
   const [open, setOpen] = useState(false)
+  const isVideosPage = window.location.pathname === '/videos'
+  const hrefs = isVideosPage
+    ? ['/', '/videos', '/#onas', '/#clenstvo', '/#merch', '/#kontakt']
+    : ['#domov', '/videos', '#onas', '#clenstvo', '#merch', '#kontakt']
   return (
     <header className="topbar">
       <Logo />
       <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
-        {navItems.map((item, index) => <a className={index === 0 ? 'active' : ''} href={`#${['domov','videa','onas','clenstvo','merch','kontakt'][index]}`} key={item} onClick={() => setOpen(false)}>{item}</a>)}
+        {navItems.map((item, index) => <a className={isVideosPage ? index === 1 ? 'active' : '' : index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
-      <a className="join-brush" href="#clenstvo">STAŤ SA ČLENOM</a>
+      <a className="join-brush" href={isVideosPage ? '/#clenstvo' : '#clenstvo'}>STAŤ SA ČLENOM</a>
       <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
     </header>
   )
@@ -89,9 +94,17 @@ function ContentGrid() {
   return <section className="content-grid" id="videa" aria-label="Obsah Východ Brothers">{contentCards.map((card, index) => <FeatureCard card={card} index={index} key={card.id} />)}</section>
 }
 
-export default function App() {
+function HomePage() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
   return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><ContentGrid /><MembershipSection /><NewsletterSection /><Footer /></main></>
+}
+
+function VideosPage() {
+  return <main className="videos-page"><Header /><VideosSection /><Footer /></main>
+}
+
+export default function App() {
+  return window.location.pathname === '/videos' ? <VideosPage /> : <HomePage />
 }
