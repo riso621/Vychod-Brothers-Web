@@ -39,7 +39,7 @@ function SideRail() {
 function FilmStrip() {
   const { scrollY } = useScroll()
   const stripX = useTransform(scrollY, [0, 900], [0, 36])
-  return <motion.div className="film-strip" style={{ x: stripX }} initial={{ opacity: 0, y: 35 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .75, duration: 1 }} aria-label="Ukážky z videí"><div className="perforations top" />{media.film.map((image, index) => <div className="frame" key={image}><img src={image} alt={`Momentka z natáčania ${index + 1}`} loading="eager" decoding="async" /></div>)}<div className="perforations bottom" /></motion.div>
+  return <motion.div className="film-strip" style={{ x: stripX }} initial={{ opacity: 0, y: 35 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .75, duration: 1 }} aria-label="Ukážky z videí"><div className="perforations top" />{media.film.map((image, index) => <div className="frame" key={`${image}-${index}`}><img src={image} alt={`Momentka z natáčania ${index + 1}`} loading="eager" decoding="async" /></div>)}<div className="perforations bottom" /></motion.div>
 }
 
 function Hero() {
