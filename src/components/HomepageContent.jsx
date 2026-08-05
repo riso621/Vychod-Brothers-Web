@@ -28,19 +28,16 @@ function Thumbnail({ url, eager = false }) {
 
 function PremiumCard({ video, thumbnailUrl, hasAccess }) {
   const destination = hasAccess ? `/videos/${video.slug}` : '/clenstvo'
-  const teaser = shortDescription(video.shortDescription || video.description) || 'Exkluzívny obsah Východ Brothers dostupný iba našim členom.'
   return <motion.article className={`home-premium-card${hasAccess ? ' is-unlocked' : ' is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} variants={reveal}>
     <a className="home-premium-image" href={destination} aria-label={hasAccess ? `Pozrieť video ${video.title}` : `Odomknúť ${accessLabels[video.accessLevel]} video ${video.title}`}>
       <Thumbnail url={thumbnailUrl} />
-      {!hasAccess && <><span className="home-premium-shade" /><span className="home-premium-lock" aria-hidden="true">🔒</span></>}
+      <span className="home-premium-shade" />
       <span className={`home-premium-level access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span>
+      {hasAccess
+        ? <span className="home-premium-unlocked"><i aria-hidden="true">▶</i><b>PREHRAŤ VIDEO</b></span>
+        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true">🔒</i><strong>{prices[video.accessLevel]}</strong><b>ODOMKNÚŤ ČLENSTVO</b></span>}
+      <span className="home-premium-title">{video.title}</span>
     </a>
-    <div className="home-premium-copy">
-      <span>{hasAccess ? 'ODOMKNUTÝ OBSAH' : prices[video.accessLevel]}</span>
-      <h3>{video.title}</h3>
-      <p>{teaser}</p>
-      <a href={destination}>{hasAccess ? 'Pozrieť video' : 'ODOMKNÚŤ ČLENSTVO'} <b aria-hidden="true">→</b></a>
-    </div>
   </motion.article>
 }
 
