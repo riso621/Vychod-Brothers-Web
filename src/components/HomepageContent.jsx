@@ -5,10 +5,8 @@ import { getPublishedVideos } from '../lib/videos'
 import { getSignedStorageUrls } from '../lib/storage'
 import { getLatestYouTubeVideo } from '../lib/youtube'
 import { useProfile } from '../context/profile-context'
-import { canAccessMembership } from '../lib/membership'
+import PremiumShowcase from './PremiumShowcase'
 
-const accessLabels = { member: 'MEMBER', vip: 'VIP' }
-const prices = { member: '4,99 € / mesiac', vip: '9,99 € / mesiac' }
 const reveal = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: .7, ease: [.2, .7, .2, 1] } } }
 
 function formatDate(value) {
@@ -24,29 +22,6 @@ function shortDescription(value) {
 function Thumbnail({ url, eager = false }) {
   if (!url) return <span className="home-video-placeholder" aria-hidden="true">VB</span>
   return <img src={url} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" onError={(event) => { event.currentTarget.hidden = true }} />
-}
-
-function PremiumThumbnail({ url }) {
-  const [failed, setFailed] = useState(false)
-  useEffect(() => setFailed(false), [url])
-  if (!url || failed) return <span className="home-premium-fallback" aria-hidden="true"><b>VB</b><small>EXKLUZÍVNY OBSAH</small></span>
-  return <img src={url} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
-}
-
-function PremiumCard({ video, thumbnailUrl, hasAccess }) {
-  const destination = hasAccess ? `/videos/${video.slug}` : '/clenstvo'
-  const visual = <>
-      <PremiumThumbnail url={thumbnailUrl} />
-      <span className="home-premium-shade" />
-      <span className={`home-premium-level access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span>
-      {hasAccess && <span className="home-premium-unlocked"><i aria-hidden="true">▶</i><b>PREHRAŤ VIDEO</b></span>}
-      <span className="home-premium-footer"><span className="home-premium-title"><b>{video.title}</b><small>{video.duration || '—'}</small></span>{!hasAccess && <span className="home-premium-price"><i aria-hidden="true" /><span>{prices[video.accessLevel]}</span></span>}</span>
-    </>
-  return <motion.article className={`home-premium-card${hasAccess ? ' is-unlocked' : ' is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} variants={reveal}>
-    {hasAccess
-      ? <a className="home-premium-image" href={destination} aria-label={`Pozrieť video ${video.title}`}>{visual}</a>
-      : <details className="home-premium-image"><summary aria-label={`Zobraziť možnosť odomknúť ${accessLabels[video.accessLevel]} video ${video.title}`}>{visual}</summary><a className="home-premium-cta" href="/clenstvo">Odomknúť za {prices[video.accessLevel]} <span aria-hidden="true">→</span></a></details>}
-  </motion.article>
 }
 
 export default function HomepageContent() {
@@ -96,13 +71,7 @@ export default function HomepageContent() {
       </motion.article>}
     </section>
 
-    {premiumVideos.length > 0 && <section className={`home-premium items-${premiumVideos.length}`} aria-labelledby="home-premium-heading">
-      <header className="home-premium-heading">
-        <div><span>EXKLUZÍVNE VIDEO PREMIÉRY</span><h2 id="home-premium-heading">Len pre členov</h2><p>Bonusové videá, zákulisie a premiéry, ktoré na verejnom YouTube neuvidíš.</p></div>
-        <a href="/clenstvo">Porovnať členstvá <span aria-hidden="true">→</span></a>
-      </header>
-      <div className="home-premium-grid">{premiumVideos.map((video) => <PremiumCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} hasAccess={canAccessMembership(video.accessLevel, profile, isAdmin)} key={video.id} />)}</div>
-    </section>}
+    <PremiumShowcase videos={premiumVideos} thumbnailUrls={thumbnailUrls} profile={profile} isAdmin={isAdmin} />
 
     <ContinueWatchingSection />
   </div>
