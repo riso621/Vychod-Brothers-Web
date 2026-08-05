@@ -28,13 +28,19 @@ function Thumbnail({ url, eager = false }) {
 
 function PremiumCard({ video, thumbnailUrl, hasAccess }) {
   const destination = hasAccess ? `/videos/${video.slug}` : '/clenstvo'
+  const teaser = shortDescription(video.shortDescription || video.description) || 'Exkluzívny obsah Východ Brothers dostupný iba našim členom.'
   return <motion.article className={`home-premium-card${hasAccess ? ' is-unlocked' : ' is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} variants={reveal}>
     <a className="home-premium-image" href={destination} aria-label={hasAccess ? `Pozrieť video ${video.title}` : `Odomknúť ${accessLabels[video.accessLevel]} video ${video.title}`}>
       <Thumbnail url={thumbnailUrl} />
       {!hasAccess && <><span className="home-premium-shade" /><span className="home-premium-lock" aria-hidden="true">🔒</span></>}
       <span className={`home-premium-level access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span>
     </a>
-    <div className="home-premium-copy"><span>{hasAccess ? 'ODOMKNUTÝ OBSAH' : prices[video.accessLevel]}</span><h3>{video.title}</h3><a href={destination}>{hasAccess ? 'Pozrieť video' : 'Odomknúť členstvo'} <b aria-hidden="true">→</b></a></div>
+    <div className="home-premium-copy">
+      <span>{hasAccess ? 'ODOMKNUTÝ OBSAH' : prices[video.accessLevel]}</span>
+      <h3>{video.title}</h3>
+      <p>{teaser}</p>
+      <a href={destination}>{hasAccess ? 'Pozrieť video' : 'ODOMKNÚŤ ČLENSTVO'} <b aria-hidden="true">→</b></a>
+    </div>
   </motion.article>
 }
 
@@ -85,7 +91,13 @@ export default function HomepageContent() {
       </motion.article>}
     </section>
 
-    {premiumVideos.length > 0 && <section className="home-premium" aria-labelledby="home-premium-heading"><header className="home-section-heading is-row"><div><span>EXKLUZÍVNE VIDEO PREMIÉRY</span><h2 id="home-premium-heading">Len pre členov</h2></div><a href="/clenstvo">Porovnať členstvá <span aria-hidden="true">→</span></a></header><div className="home-premium-grid">{premiumVideos.map((video) => <PremiumCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} hasAccess={canAccessMembership(video.accessLevel, profile, isAdmin)} key={video.id} />)}</div></section>}
+    {premiumVideos.length > 0 && <section className={`home-premium items-${premiumVideos.length}`} aria-labelledby="home-premium-heading">
+      <header className="home-premium-heading">
+        <div><span>EXKLUZÍVNE VIDEO PREMIÉRY</span><h2 id="home-premium-heading">Len pre členov</h2><p>Bonusové videá, zákulisie a premiéry, ktoré na verejnom YouTube neuvidíš.</p></div>
+        <a href="/clenstvo">Porovnať členstvá <span aria-hidden="true">→</span></a>
+      </header>
+      <div className="home-premium-grid">{premiumVideos.map((video) => <PremiumCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} hasAccess={canAccessMembership(video.accessLevel, profile, isAdmin)} key={video.id} />)}</div>
+    </section>}
 
     <ContinueWatchingSection />
   </div>
