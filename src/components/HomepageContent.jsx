@@ -35,16 +35,19 @@ function PremiumThumbnail({ url }) {
 
 function PremiumCard({ video, thumbnailUrl, hasAccess }) {
   const destination = hasAccess ? `/videos/${video.slug}` : '/clenstvo'
-  return <motion.article className={`home-premium-card${hasAccess ? ' is-unlocked' : ' is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} variants={reveal}>
-    <a className="home-premium-image" href={destination} aria-label={hasAccess ? `Pozrieť video ${video.title}` : `Odomknúť ${accessLabels[video.accessLevel]} video ${video.title}`}>
+  const visual = <>
       <PremiumThumbnail url={thumbnailUrl} />
       <span className="home-premium-shade" />
       <span className={`home-premium-level access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span>
       {hasAccess
         ? <span className="home-premium-unlocked"><i aria-hidden="true">▶</i><b>PREHRAŤ VIDEO</b></span>
-        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true"><span /></i><em>{accessLabels[video.accessLevel]}</em><strong>{prices[video.accessLevel]}</strong><b>ODOMKNÚŤ ČLENSTVO</b></span>}
+        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true"><span /></i><strong>{prices[video.accessLevel]}</strong></span>}
       <span className="home-premium-title"><b>{video.title}</b><small>{video.duration || '—'}</small></span>
-    </a>
+    </>
+  return <motion.article className={`home-premium-card${hasAccess ? ' is-unlocked' : ' is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} variants={reveal}>
+    {hasAccess
+      ? <a className="home-premium-image" href={destination} aria-label={`Pozrieť video ${video.title}`}>{visual}</a>
+      : <details className="home-premium-image"><summary aria-label={`Zobraziť možnosť odomknúť ${accessLabels[video.accessLevel]} video ${video.title}`}>{visual}</summary><a className="home-premium-cta" href="/clenstvo">ODOMKNÚŤ ČLENSTVO <span aria-hidden="true">→</span></a></details>}
   </motion.article>
 }
 
