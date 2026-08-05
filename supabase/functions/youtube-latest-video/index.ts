@@ -54,6 +54,27 @@ async function thumbnailFor(videoId: string) {
   return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
 }
 
+async function isShortVideo(videoId: string) {
+  const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en&bpctr=9999999999`
+  const result = await fetch(watchUrl, {
+    headers: {
+      Accept: 'text/html',
+      'Accept-Language': 'en-US,en;q=0.8',
+      'User-Agent': 'Mozilla/5.0 (compatible; VychodBrothersWebsite/1.0)',
+    },
+  })
+  if (!result.ok) throw new Error(`YouTube public metadata request failed (${result.status})`)
+  const html = await result.text()
+  const duration = Number(html.match(/"lengthSeconds":"(\d+)"/)?.[1] || 0)
+  const formatsStart = html.indexOf('"adaptiveFormats":[')
+  const formats = formatsStart >= 0 ? html.slice(formatsStart, formatsStart + 120_000) : ''
+  const dimensions = formats.match(/"width":(\d+),"height":(\d+)/)
+  const width = Number(dimensions?.[1] || 0)
+  const height = Number(dimensions?.[2] || 0)
+  const isPortrait = width > 0 && height > 0 && width / height <= 0.75
+  return (duration > 0 && duration <= 60) || isPortrait
+}
+
 async function fetchLatestPublicVideo() {
   const channelId = Deno.env.get('YOUTUBE_CHANNEL_ID')?.trim() || ''
   if (!/^UC[A-Za-z0-9_-]{20,}$/.test(channelId)) throw new Error('YouTube channel is not configured')
@@ -62,20 +83,31 @@ async function fetchLatestPublicVideo() {
   const result = await fetch(feedUrl, { headers: { Accept: 'application/atom+xml, application/xml, text/xml' } })
   if (!result.ok) throw new Error(`YouTube RSS request failed (${result.status})`)
   const xml = await result.text()
-  const entry = xml.match(/<entry>[\s\S]*?<\/entry>/i)?.[0] || ''
-  const videoId = tagValue(entry, 'yt:videoId')
-  const title = tagValue(entry, 'title')
-  const publishedAt = tagValue(entry, 'published')
-  if (!videoId || !title || !publishedAt) throw new Error('YouTube RSS feed did not contain a video')
-
-  return {
-    videoId,
-    title,
-    description: tagValue(entry, 'media:description'),
-    thumbnail: await thumbnailFor(videoId),
-    publishedAt,
-    youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+  const entries = [...xml.matchAll(/<entry>[\s\S]*?<\/entry>/gi)].map((match) => match[0])
+  for (const entry of entries) {
+    const videoId = tagValue(entry, 'yt:videoId')
+    const title = tagValue(entry, 'title')
+    const publishedAt = tagValue(entry, 'published')
+    if (!videoId || !title || !publishedAt) continue
+    const alternateUrl = decodeXml(entry.match(/<link\s+rel="alternate"\s+href="([^"]+)"\s*\/?\s*>/i)?.[1] || '')
+    if (/youtube\.com\/shorts\//i.test(alternateUrl)) continue
+    const video = {
+      videoId,
+      title,
+      description: tagValue(entry, 'media:description'),
+      thumbnail: await thumbnailFor(videoId),
+      publishedAt,
+      youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+    }
+    try {
+      if (await isShortVideo(videoId)) continue
+      return video
+    } catch (error) {
+      console.warn('YouTube video metadata could not be inspected', videoId, error instanceof Error ? error.message : 'Unknown error')
+      return video
+    }
   }
+  throw new Error('YouTube RSS feed did not contain a classic video')
 }
 
 async function latestVideo() {
