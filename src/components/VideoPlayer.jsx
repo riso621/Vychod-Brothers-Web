@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react'
-import Hls from 'hls.js/light'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Hls from 'hls.js'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 import { useCloudflarePlaybackUrl } from '../hooks/useCloudflarePlaybackUrl'
 
@@ -47,6 +47,10 @@ const formatTime = (seconds) => {
 
 function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onWatchProgress }) {
   const videoRef = useRef(null)
+  const hlsRef = useRef(null)
+  const [qualityLevels, setQualityLevels] = useState([])
+  const [selectedQuality, setSelectedQuality] = useState('auto')
+  const [audioTrackCount, setAudioTrackCount] = useState(0)
   const latestRef = useRef({ positionSeconds: 0, durationSeconds: 0 })
   const lastSavedRef = useRef(watchProgress?.position_seconds || 0)
   const resumePositionRef = useRef(watchProgress && !watchProgress.completed && watchProgress.position_seconds > 10 ? watchProgress.position_seconds : 0)
@@ -84,6 +88,18 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
 
     if (Hls.isSupported()) {
       hls = new Hls({ enableWorker: true })
+      hlsRef.current = hls
+      hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+        const uniqueLevels = new Map()
+        data.levels.forEach((level, index) => {
+          if (!level.height) return
+          const existing = uniqueLevels.get(level.height)
+          if (!existing || (level.bitrate || 0) > existing.bitrate) uniqueLevels.set(level.height, { index, height: level.height, bitrate: level.bitrate || 0 })
+        })
+        setQualityLevels([...uniqueLevels.values()].sort((a, b) => b.height - a.height))
+        setAudioTrackCount(data.audioTracks?.length || hls.audioTracks.length || 0)
+      })
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => setAudioTrackCount(data.audioTracks.length))
       hls.loadSource(manifestUrl)
       hls.attachMedia(video)
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -105,10 +121,24 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('pagehide', handlePageHide)
       hls?.destroy()
+      hlsRef.current = null
     }
   }, [manifestUrl, onWatchProgress, resumePosition, videoId])
 
-  return <div className="video-detail-stage video-player-cloudflare" data-stream-video-id={videoId || undefined}><video ref={videoRef} title={`Prehrať video ${title}`} controls preload="metadata">Tvoj prehliadač nepodporuje prehrávanie videa.</video>{resumePosition > 0 && <span className="video-resume-notice">Pokračujeme od {formatTime(resumePosition)}</span>}</div>
+  const handleQualityChange = (event) => {
+    const value = event.target.value
+    setSelectedQuality(value)
+    if (!hlsRef.current) return
+    hlsRef.current.currentLevel = value === 'auto' ? -1 : Number(value)
+  }
+
+  const handleFullscreen = () => {
+    const video = videoRef.current
+    if (video?.requestFullscreen) video.requestFullscreen()
+    else video?.webkitEnterFullscreen?.()
+  }
+
+  return <div className="video-detail-stage video-player-cloudflare" data-stream-video-id={videoId || undefined} data-audio-tracks={audioTrackCount}><video ref={videoRef} title={`Prehrať video ${title}`} controls playsInline preload="metadata">Tvoj prehliadač nepodporuje prehrávanie videa.</video><div className="video-player-tools">{qualityLevels.length > 0 && <label className="video-quality-control"><span>Kvalita</span><select aria-label="Kvalita videa" value={selectedQuality} onChange={handleQualityChange}><option value="auto">Auto</option>{qualityLevels.map((level) => <option value={level.index} key={level.height}>{level.height}p</option>)}</select></label>}<button type="button" className="video-fullscreen-button" onClick={handleFullscreen} aria-label="Prepnúť video na celú obrazovku">⛶</button></div>{resumePosition > 0 && <span className="video-resume-notice">Pokračujeme od {formatTime(resumePosition)}</span>}</div>
 }
 
 export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '', hasAccess = accessLevel === 'free', accessLoading = false, videoId = '', watchProgress = null, onWatchProgress = null }) {
