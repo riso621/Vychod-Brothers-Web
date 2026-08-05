@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
+import Hls from 'hls.js/light'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 import { useCloudflarePlaybackUrl } from '../hooks/useCloudflarePlaybackUrl'
-import { loadCloudflarePlayerSdk } from '../lib/cloudflare-player'
 
 const youtubeIdPattern = /^[a-zA-Z0-9_-]{11}$/
 
@@ -46,22 +46,21 @@ const formatTime = (seconds) => {
 }
 
 function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onWatchProgress }) {
-  const iframeRef = useRef(null)
+  const videoRef = useRef(null)
   const latestRef = useRef({ positionSeconds: 0, durationSeconds: 0 })
   const lastSavedRef = useRef(watchProgress?.position_seconds || 0)
   const resumePositionRef = useRef(watchProgress && !watchProgress.completed && watchProgress.position_seconds > 10 ? watchProgress.position_seconds : 0)
   const resumePosition = resumePositionRef.current
-  const source = useMemo(() => {
-    if (!resumePosition) return playerUrl
+  const manifestUrl = useMemo(() => {
     const url = new URL(playerUrl)
-    url.searchParams.set('startTime', String(resumePosition))
+    url.pathname = url.pathname.replace(/\/iframe$/, '/manifest/video.m3u8')
     return url.toString()
-  }, [playerUrl, resumePosition])
+  }, [playerUrl])
 
   useEffect(() => {
-    let active = true
-    let player
-    const listeners = []
+    const video = videoRef.current
+    if (!video) return undefined
+    let hls
     const persist = (force = false, completed = false) => {
       if (!onWatchProgress || !videoId) return
       const { positionSeconds, durationSeconds } = latestRef.current
@@ -70,40 +69,46 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
       lastSavedRef.current = positionSeconds
       onWatchProgress(videoId, { positionSeconds, durationSeconds, completed }).catch(() => {})
     }
-    const add = (event, handler) => {
-      player.addEventListener(event, handler)
-      listeners.push([event, handler])
+    const updateSnapshot = () => {
+      latestRef.current = { positionSeconds: Number(video.currentTime) || 0, durationSeconds: Number(video.duration) || 0 }
     }
+    const handleMetadata = () => {
+      updateSnapshot()
+      if (resumePosition) video.currentTime = resumePosition
+    }
+    const handleTimeUpdate = () => { updateSnapshot(); persist() }
+    const handlePause = () => { updateSnapshot(); persist(true) }
+    const handleEnded = () => { updateSnapshot(); persist(true, true) }
     const handleVisibility = () => { if (document.visibilityState === 'hidden') persist(true) }
     const handlePageHide = () => persist(true)
 
-    loadCloudflarePlayerSdk().then((Stream) => {
-      if (!active || !iframeRef.current) return
-      player = Stream(iframeRef.current)
-      const updateSnapshot = () => {
-        latestRef.current = { positionSeconds: Number(player.currentTime) || 0, durationSeconds: Number(player.duration) || 0 }
-      }
-      add('loadedmetadata', () => {
-        updateSnapshot()
-        if (resumePosition) player.currentTime = resumePosition
-      })
-      add('timeupdate', () => { updateSnapshot(); persist() })
-      add('pause', () => { updateSnapshot(); persist(true) })
-      add('ended', () => { updateSnapshot(); persist(true, true) })
-      document.addEventListener('visibilitychange', handleVisibility)
-      window.addEventListener('pagehide', handlePageHide)
-    }).catch(() => {})
+    if (Hls.isSupported()) {
+      hls = new Hls({ enableWorker: true })
+      hls.loadSource(manifestUrl)
+      hls.attachMedia(video)
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = manifestUrl
+    }
+    video.addEventListener('loadedmetadata', handleMetadata)
+    video.addEventListener('timeupdate', handleTimeUpdate)
+    video.addEventListener('pause', handlePause)
+    video.addEventListener('ended', handleEnded)
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('pagehide', handlePageHide)
 
     return () => {
-      active = false
       persist(true)
+      video.removeEventListener('loadedmetadata', handleMetadata)
+      video.removeEventListener('timeupdate', handleTimeUpdate)
+      video.removeEventListener('pause', handlePause)
+      video.removeEventListener('ended', handleEnded)
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('pagehide', handlePageHide)
-      if (player) listeners.forEach(([event, handler]) => player.removeEventListener(event, handler))
+      hls?.destroy()
     }
-  }, [onWatchProgress, resumePosition, videoId])
+  }, [manifestUrl, onWatchProgress, resumePosition, videoId])
 
-  return <div className="video-detail-stage video-player-cloudflare" data-stream-video-id={videoId || undefined}><iframe ref={iframeRef} src={source} title={`Prehrať video ${title}`} allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowFullScreen />{resumePosition > 0 && <span className="video-resume-notice">Pokračujeme od {formatTime(resumePosition)}</span>}</div>
+  return <div className="video-detail-stage video-player-cloudflare" data-stream-video-id={videoId || undefined}><video ref={videoRef} title={`Prehrať video ${title}`} controls preload="metadata">Tvoj prehliadač nepodporuje prehrávanie videa.</video>{resumePosition > 0 && <span className="video-resume-notice">Pokračujeme od {formatTime(resumePosition)}</span>}</div>
 }
 
 export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '', hasAccess = accessLevel === 'free', accessLoading = false, videoId = '', watchProgress = null, onWatchProgress = null }) {
