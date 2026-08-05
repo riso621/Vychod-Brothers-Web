@@ -26,16 +26,23 @@ function Thumbnail({ url, eager = false }) {
   return <img src={url} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" onError={(event) => { event.currentTarget.hidden = true }} />
 }
 
+function PremiumThumbnail({ url }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [url])
+  if (!url || failed) return <span className="home-premium-fallback" aria-hidden="true"><b>VB</b><small>EXKLUZÍVNY OBSAH</small></span>
+  return <img src={url} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+}
+
 function PremiumCard({ video, thumbnailUrl, hasAccess }) {
   const destination = hasAccess ? `/videos/${video.slug}` : '/clenstvo'
   return <motion.article className={`home-premium-card${hasAccess ? ' is-unlocked' : ' is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} variants={reveal}>
     <a className="home-premium-image" href={destination} aria-label={hasAccess ? `Pozrieť video ${video.title}` : `Odomknúť ${accessLabels[video.accessLevel]} video ${video.title}`}>
-      <Thumbnail url={thumbnailUrl} />
+      <PremiumThumbnail url={thumbnailUrl} />
       <span className="home-premium-shade" />
       <span className={`home-premium-level access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span>
       {hasAccess
         ? <span className="home-premium-unlocked"><i aria-hidden="true">▶</i><b>PREHRAŤ VIDEO</b></span>
-        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true">🔒</i><strong>{prices[video.accessLevel]}</strong><b>ODOMKNÚŤ ČLENSTVO</b></span>}
+        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true">🔒</i><em>{accessLabels[video.accessLevel]}</em><strong>{prices[video.accessLevel]}</strong><b>ODOMKNÚŤ ČLENSTVO</b></span>}
       <span className="home-premium-title">{video.title}</span>
     </a>
   </motion.article>
