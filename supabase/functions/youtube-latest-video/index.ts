@@ -25,49 +25,56 @@ function response(body: unknown, status = 200, cacheControl = 'no-store') {
   })
 }
 
-async function youtubeRequest(path: string, params: Record<string, string>, apiKey: string) {
-  const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`)
-  Object.entries({ ...params, key: apiKey }).forEach(([key, value]) => url.searchParams.set(key, value))
-  const result = await fetch(url)
-  if (!result.ok) throw new Error(`YouTube API request failed (${result.status})`)
-  return result.json()
+function decodeXml(value = '') {
+  return value
+    .replace(/^<!\[CDATA\[|\]\]>$/g, '')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .trim()
 }
 
-async function resolveUploadsPlaylist(apiKey: string) {
-  const configuredPlaylist = Deno.env.get('YOUTUBE_UPLOADS_PLAYLIST_ID')?.trim()
-  if (configuredPlaylist) return configuredPlaylist
-
-  const channelId = Deno.env.get('YOUTUBE_CHANNEL_ID')?.trim()
-  if (!channelId) throw new Error('YouTube channel is not configured')
-  const channels = await youtubeRequest('channels', { part: 'contentDetails', id: channelId }, apiKey)
-  const playlistId = channels?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
-  if (!playlistId) throw new Error('YouTube uploads playlist was not found')
-  return String(playlistId)
+function tagValue(xml: string, tag: string) {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))
+  return decodeXml(match?.[1] || '')
 }
 
-function bestThumbnail(thumbnails: Record<string, { url?: string }> | undefined) {
-  return thumbnails?.maxres?.url || thumbnails?.standard?.url || thumbnails?.high?.url || thumbnails?.medium?.url || thumbnails?.default?.url || ''
+async function thumbnailFor(videoId: string) {
+  const maxres = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+  try {
+    const result = await fetch(maxres, { method: 'HEAD' })
+    if (result.ok) return maxres
+  } catch {
+    // A missing max-resolution image safely falls back to the standard thumbnail.
+  }
+  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
 }
 
 async function fetchLatestPublicVideo() {
-  const apiKey = Deno.env.get('YOUTUBE_API_KEY')?.trim()
-  if (!apiKey) throw new Error('YouTube API is not configured')
-  const playlistId = await resolveUploadsPlaylist(apiKey)
-  const playlist = await youtubeRequest('playlistItems', { part: 'contentDetails', playlistId, maxResults: '5' }, apiKey)
-  const ids = (playlist?.items || []).map((item: { contentDetails?: { videoId?: string } }) => item.contentDetails?.videoId).filter(Boolean).join(',')
-  if (!ids) throw new Error('YouTube uploads playlist is empty')
+  const channelId = Deno.env.get('YOUTUBE_CHANNEL_ID')?.trim() || ''
+  if (!/^UC[A-Za-z0-9_-]{20,}$/.test(channelId)) throw new Error('YouTube channel is not configured')
 
-  const videos = await youtubeRequest('videos', { part: 'snippet,status', id: ids }, apiKey)
-  const latest = (videos?.items || []).find((item: { status?: { privacyStatus?: string } }) => item.status?.privacyStatus === 'public')
-  if (!latest?.id || !latest?.snippet) throw new Error('No public YouTube video was found')
-  const snippet = latest.snippet
+  const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`
+  const result = await fetch(feedUrl, { headers: { Accept: 'application/atom+xml, application/xml, text/xml' } })
+  if (!result.ok) throw new Error(`YouTube RSS request failed (${result.status})`)
+  const xml = await result.text()
+  const entry = xml.match(/<entry>[\s\S]*?<\/entry>/i)?.[0] || ''
+  const videoId = tagValue(entry, 'yt:videoId')
+  const title = tagValue(entry, 'title')
+  const publishedAt = tagValue(entry, 'published')
+  if (!videoId || !title || !publishedAt) throw new Error('YouTube RSS feed did not contain a video')
+
   return {
-    videoId: String(latest.id),
-    title: String(snippet.title || ''),
-    description: String(snippet.description || ''),
-    thumbnail: bestThumbnail(snippet.thumbnails),
-    publishedAt: String(snippet.publishedAt || ''),
-    youtubeUrl: `https://www.youtube.com/watch?v=${latest.id}`,
+    videoId,
+    title,
+    description: tagValue(entry, 'media:description'),
+    thumbnail: await thumbnailFor(videoId),
+    publishedAt,
+    youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
   }
 }
 
@@ -76,7 +83,7 @@ async function latestVideo() {
   if (!pendingRequest) pendingRequest = fetchLatestPublicVideo().finally(() => { pendingRequest = null })
   const video = await pendingRequest
   cachedResult = { video, expiresAt: Date.now() + CACHE_TTL_MS }
-  return { video, source: 'youtube' }
+  return { video, source: 'youtube-rss' }
 }
 
 Deno.serve(async (request) => {
@@ -87,7 +94,7 @@ Deno.serve(async (request) => {
     const result = await latestVideo()
     return response(result, 200, 'public, max-age=300, stale-while-revalidate=3600')
   } catch (error) {
-    console.error('Latest YouTube video could not be refreshed', error instanceof Error ? error.message : 'Unknown error')
+    console.error('Latest YouTube RSS video could not be refreshed', error instanceof Error ? error.message : 'Unknown error')
     if (cachedResult?.video) return response({ video: cachedResult.video, source: 'stale' }, 200, 'public, max-age=60, stale-while-revalidate=3600')
     return response({ video: null, source: 'fallback', error: 'Najnovšie YouTube video momentálne nie je dostupné.' }, 503, 'public, max-age=30')
   }
