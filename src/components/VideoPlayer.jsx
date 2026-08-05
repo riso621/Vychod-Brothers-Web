@@ -73,7 +73,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
     return url.toString()
   }, [playerUrl])
 
-  const revealControls = useCallback((delay = 9000) => {
+  const revealControls = useCallback((delay = 5000) => {
     setControlsVisible(true)
     setControlsHideDelay(delay)
     setControlsActivity((value) => value + 1)
