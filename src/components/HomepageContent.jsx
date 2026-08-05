@@ -42,8 +42,8 @@ function PremiumCard({ video, thumbnailUrl, hasAccess }) {
       <span className={`home-premium-level access-${video.accessLevel}`}>{accessLabels[video.accessLevel]}</span>
       {hasAccess
         ? <span className="home-premium-unlocked"><i aria-hidden="true">▶</i><b>PREHRAŤ VIDEO</b></span>
-        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true">🔒</i><em>{accessLabels[video.accessLevel]}</em><strong>{prices[video.accessLevel]}</strong><b>ODOMKNÚŤ ČLENSTVO</b></span>}
-      <span className="home-premium-title">{video.title}</span>
+        : <span className="home-premium-offer"><i className="home-premium-lock" aria-hidden="true"><span /></i><em>{accessLabels[video.accessLevel]}</em><strong>{prices[video.accessLevel]}</strong><b>ODOMKNÚŤ ČLENSTVO</b></span>}
+      <span className="home-premium-title"><b>{video.title}</b><small>{video.duration || '—'}</small></span>
     </a>
   </motion.article>
 }
