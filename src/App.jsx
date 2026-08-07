@@ -17,6 +17,8 @@ const AdminMembershipsDashboard = lazy(() => import('./components/AdminMembershi
 const VideosSection = lazy(() => import('./components/VideosSection'))
 const VideoDetail = lazy(() => import('./components/VideoDetail'))
 const HomepageContent = lazy(() => import('./components/HomepageContent'))
+const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
+const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -124,6 +126,10 @@ function AdminMembershipsPage() {
   return <main className="admin-videos-page"><Header /><AdminMembershipsDashboard /><Footer /></main>
 }
 
+function AuthFlowPage({ type }) {
+  return <main className="account-page"><Header />{type === 'reset' ? <PasswordResetPage /> : <AuthCallbackPage />}<Footer /></main>
+}
+
 export default function App() {
   const path = window.location.pathname
   const page = path.startsWith('/videos')
@@ -132,6 +138,10 @@ export default function App() {
       ? <AccountPage />
       : path === '/clenstvo' || path === '/clenstvo/'
         ? <MembershipPage />
+        : path === '/reset-hesla' || path === '/reset-hesla/'
+          ? <AuthFlowPage type="reset" />
+          : path === '/auth/callback' || path === '/auth/callback/'
+            ? <AuthFlowPage type="callback" />
         : path === '/admin/memberships' || path === '/admin/memberships/'
           ? <AdminMembershipsPage />
           : path === '/admin/videos' || path === '/admin/videos/' ? <AdminVideosPage /> : <HomePage />

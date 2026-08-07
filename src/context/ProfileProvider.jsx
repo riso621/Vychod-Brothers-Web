@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { ProfileContext } from './profile-context'
 
@@ -10,12 +10,15 @@ export default function ProfileProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState('')
+  const profileRequestRef = useRef(0)
 
   const loadProfile = useCallback(async (userId) => {
     if (!supabase || !userId) return
+    const requestId = ++profileRequestRef.current
     setProfileLoading(true)
     setProfileError('')
     const { data, error } = await supabase.from('profiles').select(profileColumns).eq('id', userId).maybeSingle()
+    if (requestId !== profileRequestRef.current) return
     setProfile(data)
     setProfileError(error
       ? 'Profil sa nepodarilo bezpečne načítať.'
@@ -39,6 +42,12 @@ export default function ProfileProvider({ children }) {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession)
+      if (!nextSession) {
+        profileRequestRef.current += 1
+        setProfile(null)
+        setProfileLoading(false)
+        setProfileError('')
+      }
       setAuthLoading(false)
     })
 
@@ -50,6 +59,7 @@ export default function ProfileProvider({ children }) {
 
   useEffect(() => {
     if (!supabase || !session?.user?.id) {
+      profileRequestRef.current += 1
       setProfile(null)
       setProfileLoading(false)
       return undefined
@@ -60,7 +70,14 @@ export default function ProfileProvider({ children }) {
   }, [session?.user?.id, loadProfile])
 
   const signOut = async () => {
-    if (supabase) await supabase.auth.signOut()
+    if (!supabase) return { error: null }
+    profileRequestRef.current += 1
+    setSession(null)
+    setProfile(null)
+    setProfileLoading(false)
+    setProfileError('')
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
+    return { error }
   }
 
   const refreshProfile = useCallback(() => loadProfile(session?.user?.id), [loadProfile, session?.user?.id])
