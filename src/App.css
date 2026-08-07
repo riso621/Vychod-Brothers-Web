@@ -138,9 +138,15 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 }
 
 .account-heading {
-  max-width: 720px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
   margin-bottom: clamp(38px, 5vw, 68px);
 }
+
+.account-heading > div { max-width: 720px; }
+.account-signout,.account-retry{flex:0 0 auto;min-height:46px;padding:0 18px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.025);color:#e8e9e4;cursor:pointer;font:750 11px var(--condensed);letter-spacing:.07em;text-transform:uppercase}.account-signout:hover,.account-signout:focus-visible,.account-retry:hover,.account-retry:focus-visible{border-color:var(--yellow);color:var(--yellow);outline:none}.account-signout:disabled{cursor:wait;opacity:.6}.account-retry{width:max-content;margin-top:24px}
 
 .account-eyebrow {
   display: block;
@@ -194,9 +200,10 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 .account-identity > span,
 .account-details dt { color: rgba(244, 243, 237, .5); font: 700 .72rem/1.2 var(--condensed); letter-spacing: .12em; text-transform: uppercase; }
 .account-identity h2 { margin: 8px 0 0; font: 700 clamp(1.65rem, 2.4vw, 2.5rem)/1 var(--display); }
+.account-identity p{max-width:360px;margin:9px 0 0;overflow-wrap:anywhere;color:rgba(244,243,237,.63);font:500 13px/1.5 Inter,sans-serif}
 .account-details { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin: 0; }
 .account-details div { padding-left: 24px; border-left: 1px solid rgba(255, 255, 255, .12); }
-.account-details dd { margin: 9px 0 0; color: var(--white); font-weight: 650; }
+.account-details dd { margin: 9px 0 0; overflow-wrap:anywhere; color: var(--white); font-weight: 650; }
 
 .account-grid {
   display: grid;
@@ -230,6 +237,7 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
   .account-dashboard,
   .account-state { width: min(100% - 40px, 720px); padding-top: 70px; }
   .account-profile { grid-template-columns: auto 1fr; }
+  .account-heading{align-items:flex-start}
   .account-details { grid-column: 1 / -1; }
   .account-grid { grid-template-columns: 1fr; }
 }
@@ -237,7 +245,8 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 @media (max-width: 560px) {
   .account-dashboard,
   .account-state { width: calc(100% - 28px); padding: 52px 0 86px; }
-  .account-heading { margin-bottom: 32px; }
+  .account-heading { margin-bottom: 32px; flex-direction:column; }
+  .account-signout{width:100%}
   .account-profile { grid-template-columns: auto 1fr; padding: 22px 18px; border-radius: 16px; }
   .account-details { grid-template-columns: 1fr; gap: 18px; }
   .account-details div { padding-left: 0; border-left: 0; }
