@@ -6,6 +6,7 @@ export default function PasswordResetPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [completed, setCompleted] = useState(false)
   const [status, setStatus] = useState({ type: '', message: '' })
   const { session, authLoading, signOut } = useProfile()
   const recoveryRequested = new URLSearchParams(window.location.search).get('recovery') === '1'
@@ -38,10 +39,11 @@ export default function PasswordResetPage() {
       setSubmitting(false)
       return
     }
-    await signOut()
     setPassword('')
     setConfirmPassword('')
+    setCompleted(true)
     setStatus({ type: 'success', message: 'Heslo bolo úspešne zmenené. Teraz sa môžeš prihlásiť.' })
+    await signOut()
     setSubmitting(false)
   }
 
@@ -53,7 +55,12 @@ export default function PasswordResetPage() {
       <div className="auth-page-card">
         <span className="auth-eyebrow">VÝCHOD BROTHERS · ÚČET</span>
         <h1 id="reset-password-heading">Nové heslo</h1>
-        {invalidRecovery ? <>
+        {completed ? <>
+          <p className="auth-status is-success" role="status" aria-live="polite">{status.message}</p>
+          {submitting
+            ? <p aria-live="polite">Bezpečne ťa odhlasujem…</p>
+            : <a className="auth-page-link" href="/?auth=login">Prihlásiť sa novým heslom</a>}
+        </> : invalidRecovery ? <>
           <p className="auth-page-error" role="alert">Odkaz na obnovu hesla nie je platný alebo už expiroval.</p>
           <a className="auth-page-link" href="/?auth=login">Späť na prihlásenie</a>
         </> : <>
@@ -66,7 +73,6 @@ export default function PasswordResetPage() {
             <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? 'Ukladám…' : 'Nastaviť nové heslo'}</button>
           </form>
           <p className={`auth-status${status.type ? ` is-${status.type}` : ''}`} role={status.type === 'error' ? 'alert' : undefined} aria-live="polite">{status.message}</p>
-          {status.type === 'success' && <a className="auth-page-link" href="/?auth=login">Prihlásiť sa</a>}
         </>}
       </div>
     </section>
