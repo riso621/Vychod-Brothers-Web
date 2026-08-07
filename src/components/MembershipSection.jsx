@@ -4,6 +4,7 @@ import { useProfile } from '../context/profile-context'
 import { canAccessMembership, membershipPlans } from '../lib/membership'
 import { getSignedStorageUrls } from '../lib/storage'
 import { getPublishedVideos } from '../lib/videos'
+import { createCheckoutSession } from '../lib/billing'
 
 const planMeta = {
   free: { price: '0 €', note: 'navždy', cta: 'Začať sledovať' },
@@ -57,6 +58,8 @@ function Reveal({ children, className = '', delay = 0 }) {
 export default function MembershipSection() {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState('member')
+  const [checkoutPlan, setCheckoutPlan] = useState('')
+  const [checkoutError, setCheckoutError] = useState('')
   const [openFaq, setOpenFaq] = useState(0)
   const [premiumVideos, setPremiumVideos] = useState([])
   const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
@@ -91,16 +94,34 @@ export default function MembershipSection() {
     return () => document.removeEventListener('keydown', closeOnEscape)
   }, [isOpen])
 
-  const showModal = (plan) => { setSelectedPlan(plan); setIsOpen(true) }
+  const showModal = async (plan) => {
+    if (!session) {
+      window.location.assign('/?auth=login&next=/clenstvo')
+      return
+    }
+    if (checkoutPlan) return
+    setSelectedPlan(plan)
+    setCheckoutError('')
+    setCheckoutPlan(plan)
+    try {
+      window.location.assign(await createCheckoutSession(plan))
+    } catch (error) {
+      setCheckoutError(error.message || 'Checkout sa nepodarilo spustiť.')
+      setIsOpen(true)
+      setCheckoutPlan('')
+    }
+  }
   const collageVideos = useMemo(() => premiumVideos.slice(0, 4), [premiumVideos])
   const previewVideos = useMemo(() => premiumVideos.slice(0, 6), [premiumVideos])
   const fallbackImages = ['/images/team/vychod-brothers-team-day.jpeg', '/images/team/vychod-brothers-team-evening.jpeg']
   const imageFor = (video, index) => video
     ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail)) || fallbackImages[index % fallbackImages.length]
     : fallbackImages[index % fallbackImages.length]
+  const checkoutCancelled = new URLSearchParams(window.location.search).get('checkout') === 'cancelled'
 
   return (
     <div className="membership-landing" id="clenstvo">
+      {checkoutCancelled && <p className="membership-checkout-notice" role="status">Checkout bol zrušený. Nič vám nebolo účtované.</p>}
       <section className="membership-landing-hero">
         <div className="membership-hero-copy">
           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .6 }}>VÝCHOD BROTHERS · MEMBERSHIP</motion.span>
@@ -187,7 +208,7 @@ export default function MembershipSection() {
         <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></h2><p>Odomkni celý svet Východ Brothers a buď pri každej premiére od prvej sekundy.</p><button type="button" onClick={() => showModal('vip')}>Chcem byť členom <b>→</b></button></Reveal>
       </section>
 
-      <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Členstvo pripravujeme</h2><p>Účty a prístupy sú pripravené. Platby zatiaľ nie sú aktívne.</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>
+      <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Checkout sa nepodarilo spustiť</h2><p role="alert">{checkoutError || 'Platobná služba momentálne nie je dostupná.'}</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>
     </div>
   )
 }
