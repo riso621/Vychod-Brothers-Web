@@ -96,7 +96,7 @@ export default function MembershipSection() {
   const previewVideos = useMemo(() => premiumVideos.slice(0, 6), [premiumVideos])
   const fallbackImages = ['/images/team/vychod-brothers-team-day.jpeg', '/images/team/vychod-brothers-team-evening.jpeg']
   const imageFor = (video, index) => video
-    ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail))
+    ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail)) || fallbackImages[index % fallbackImages.length]
     : fallbackImages[index % fallbackImages.length]
 
   return (
@@ -132,17 +132,21 @@ export default function MembershipSection() {
 
       <section className="membership-preview">
         <Reveal className="membership-preview-heading"><div><span>ORIGINÁLY VÝCHOD BROTHERS</span><h2>OBSAH, KTORÝ INDE <em>NEUVIDÍŠ.</em></h2></div><p>Členská knižnica plná premiér, bonusov a zákulisia. Posúvaj horizontálne a objav, čo ťa čaká.</p></Reveal>
-        <div className="membership-preview-rail">
+        <div className={`membership-preview-rail items-${previewVideos.length || 4}`}>
           {(previewVideos.length ? previewVideos : [null, null, null, null]).map((video, index) => {
             const accessLevel = video?.accessLevel || (index % 3 === 0 ? 'vip' : 'member')
             const unlocked = video ? canAccessMembership(accessLevel, profile, isAdmin) : false
             const card = <article className={`membership-preview-card${unlocked ? ' is-unlocked' : ' is-locked'}`}>
-              <img src={imageFor(video, index)} alt={video?.title || 'Ukážka členského videa'} />
+              <img src={imageFor(video, index)} alt={video?.title || 'Ukážka členského videa'} onError={(event) => { event.currentTarget.src = fallbackImages[index % fallbackImages.length] }} />
               <div className="membership-preview-shade" />
-              <span className={`membership-preview-badge is-${accessLevel}`}>{accessLevel.toUpperCase()}</span>
-              {!unlocked && <div className="membership-preview-lock"><Icon name="lock"/><strong>{accessLevel === 'vip' ? '9,99 €' : '4,99 €'} <small>/ mesiac</small></strong></div>}
+              {!unlocked && <div className="membership-preview-lock"><Icon name="lock"/></div>}
               {unlocked && <div className="membership-preview-play"><Icon name="play"/></div>}
-              <footer><strong>{video?.title || ['Exkluzívny minifilm', 'Bonus zo zákulisia', 'Premiéra pre členov', 'Nevydané scény'][index]}</strong><span>{video?.duration || 'Už čoskoro'}</span></footer>
+              <span className="membership-preview-action">{unlocked ? 'POZRIEŤ VIDEO' : 'ODOMKNÚŤ VIDEO'} <i aria-hidden="true">→</i></span>
+              <div className="membership-preview-meta">
+                <span className={`membership-preview-badge is-${accessLevel}`}>{accessLevel.toUpperCase()}</span>
+                <strong>{video?.title || ['Exkluzívny minifilm', 'Bonus zo zákulisia', 'Premiéra pre členov', 'Nevydané scény'][index]}</strong>
+                <small>{video?.duration || 'Už čoskoro'}</small>
+              </div>
             </article>
             return unlocked && video ? <a href={`/videos/${video.slug}`} key={video.id}>{card}</a> : <button type="button" onClick={() => showModal(accessLevel)} key={video?.id || index}>{card}</button>
           })}
