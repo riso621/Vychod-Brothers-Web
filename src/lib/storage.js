@@ -1,9 +1,9 @@
-import * as tus from 'tus-js-client'
 import { supabase } from './supabase'
 
 export const SIGNED_URL_TTL_SECONDS = 15 * 60
 const SIGNED_URL_REFRESH_MS = 14 * 60 * 1000
 const signedUrlCache = new Map()
+const THUMBNAIL_TRANSFORM = { width: 1280, quality: 85, resize: 'contain' }
 
 function getStorageEndpoint() {
   const projectUrl = import.meta.env?.VITE_SUPABASE_URL
@@ -18,11 +18,12 @@ export function createStoragePath(userId, file) {
 }
 
 export async function uploadThumbnailFile({ path, file, onProgress }) {
+  const { Upload } = await import('tus-js-client')
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Prihlásenie vypršalo. Prihlás sa znova.')
 
   return new Promise((resolve, reject) => {
-    const upload = new tus.Upload(file, {
+    const upload = new Upload(file, {
       endpoint: getStorageEndpoint(),
       retryDelays: [0, 3000, 5000, 10000],
       headers: { authorization: `Bearer ${session.access_token}` },
@@ -49,7 +50,8 @@ export async function getSignedStorageUrl(bucket, path, force = false) {
   const cached = signedUrlCache.get(key)
   if (!force && cached?.refreshAt > Date.now()) return cached.url
 
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS)
+  const options = bucket === 'thumbnails' ? { transform: THUMBNAIL_TRANSFORM } : undefined
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL_SECONDS, options)
   if (error || !data?.signedUrl) return null
   signedUrlCache.set(key, { url: data.signedUrl, refreshAt: Date.now() + SIGNED_URL_REFRESH_MS })
   return data.signedUrl
@@ -67,14 +69,8 @@ export async function getSignedStorageUrls(bucket, paths, force = false) {
   })
 
   if (missing.length) {
-    const { data, error } = await supabase.storage.from(bucket).createSignedUrls(missing, SIGNED_URL_TTL_SECONDS)
-    if (!error) {
-      ;(data || []).forEach((item) => {
-        if (!item.signedUrl) return
-        signedUrlCache.set(`${bucket}:${item.path}`, { url: item.signedUrl, refreshAt: Date.now() + SIGNED_URL_REFRESH_MS })
-        result.set(item.path, item.signedUrl)
-      })
-    }
+    const signed = await Promise.all(missing.map(async (path) => [path, await getSignedStorageUrl(bucket, path, true)]))
+    signed.forEach(([path, url]) => { if (url) result.set(path, url) })
   }
   return result
 }

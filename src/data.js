@@ -1,9 +1,9 @@
 export const media = {
-  hero: '/images/team/vychod-brothers-team-day.jpeg',
+  hero: '/images/vychod-brothers-hero.webp',
   film: [
-    '/images/team/vychod-brothers-team-evening.jpeg',
-    '/images/team/vychod-brothers-team-day.jpeg',
-    '/images/team/vychod-brothers-team-evening.jpeg',
+    '/images/team/vychod-brothers-team-evening.webp',
+    '/images/team/vychod-brothers-team-day.webp',
+    '/images/team/vychod-brothers-team-evening.webp',
   ],
   latest: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=1200&q=82',
   backstage: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=82',

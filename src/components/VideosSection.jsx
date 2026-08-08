@@ -23,7 +23,7 @@ function VideoCard({ video, thumbnailUrl, featured = false, progress = null }) {
   return (
     <article className={`catalog-video-card${featured ? ' is-featured' : ''}`}>
       <div className="catalog-video-image">
-        {thumbnailUrl && <img src={thumbnailUrl} alt="" loading={featured ? 'eager' : 'lazy'} onError={(event) => { event.currentTarget.hidden = true }} />}
+        {thumbnailUrl && <img src={thumbnailUrl} alt="" loading={featured ? 'eager' : 'lazy'} decoding="async" fetchPriority={featured ? 'high' : 'auto'} onError={(event) => { event.currentTarget.hidden = true }} />}
         <span className="catalog-video-duration">{video.duration}</span>
         {locked && <span className={`catalog-video-lock access-${video.accessLevel}`} aria-label={accessLabels[video.accessLevel]}>⌁ {accessLabels[video.accessLevel]}</span>}
         {progress && <div className="catalog-watch-progress" aria-label={progress.completed ? 'Dopozerané' : `Pozreté na ${Math.round(progress.progress_percent || 0)} percent`}><i style={{ width: `${progress.completed ? 100 : Math.min(100, progress.progress_percent || 0)}%` }} />{progress.completed && <span>Dopozerané</span>}</div>}

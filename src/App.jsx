@@ -1,10 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { activeSocialProfiles, media, navItems, socialProfiles, stats } from './data'
-import MembershipSection from './components/MembershipSection'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
-import AccountDashboard from './components/AccountDashboard'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -17,6 +15,8 @@ const AdminMembershipsDashboard = lazy(() => import('./components/AdminMembershi
 const VideosSection = lazy(() => import('./components/VideosSection'))
 const VideoDetail = lazy(() => import('./components/VideoDetail'))
 const HomepageContent = lazy(() => import('./components/HomepageContent'))
+const MembershipSection = lazy(() => import('./components/MembershipSection'))
+const AccountDashboard = lazy(() => import('./components/AccountDashboard'))
 const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
 const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 

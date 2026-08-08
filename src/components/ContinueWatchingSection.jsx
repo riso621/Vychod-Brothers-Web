@@ -53,7 +53,7 @@ export default function ContinueWatchingSection() {
           <article className="continue-card" key={video.id}>
             <a href={`/videos/${video.slug}`} aria-label={`Pokračovať vo videu ${video.title}`}>
               <div className="continue-card-image">
-                {thumbnails.get(video.thumbnail) && <img src={thumbnails.get(video.thumbnail)} alt="" loading="lazy" />}
+                {thumbnails.get(video.thumbnail) && <img src={thumbnails.get(video.thumbnail)} alt="" loading="lazy" decoding="async" />}
                 <span>Pokračovať od {formatTime(progress.position_seconds)}</span>
                 <i style={{ width: `${Math.min(100, progress.progress_percent || 0)}%` }} />
               </div>

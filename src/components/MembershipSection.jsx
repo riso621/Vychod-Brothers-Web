@@ -116,7 +116,7 @@ export default function MembershipSection() {
   }
   const collageVideos = useMemo(() => premiumVideos.slice(0, 4), [premiumVideos])
   const previewVideos = useMemo(() => premiumVideos.slice(0, 6), [premiumVideos])
-  const fallbackImages = ['/images/team/vychod-brothers-team-day.jpeg', '/images/team/vychod-brothers-team-evening.jpeg']
+  const fallbackImages = ['/images/team/vychod-brothers-team-day.webp', '/images/team/vychod-brothers-team-evening.webp']
   const imageFor = (video, index) => video
     ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail)) || fallbackImages[index % fallbackImages.length]
     : fallbackImages[index % fallbackImages.length]
@@ -140,7 +140,7 @@ export default function MembershipSection() {
           {[0, 1, 2, 3].map((index) => {
             const video = collageVideos[index]
             return <motion.article className={`membership-collage-card collage-${index + 1}`} animate={{ y: index % 2 ? [0, -7, 0] : [0, 6, 0] }} transition={{ duration: 7 + index, repeat: Infinity, ease: 'easeInOut' }} key={video?.id || index}>
-              <img src={imageFor(video, index)} alt="" />
+              <img src={imageFor(video, index)} alt="" decoding="async" fetchPriority={index < 2 ? 'high' : 'auto'} />
               <div><span>{video?.accessLevel?.toUpperCase() || (index % 2 ? 'VIP' : 'MEMBER')}</span><strong>{video?.title || ['Iba pre našich členov', 'Zákulisie bez filtra', 'Exkluzívna premiéra', 'Bonusový príbeh'][index]}</strong></div>
             </motion.article>
           })}
@@ -161,7 +161,7 @@ export default function MembershipSection() {
             const accessLevel = video?.accessLevel || (index % 3 === 0 ? 'vip' : 'member')
             const unlocked = video ? canAccessMembership(accessLevel, profile, isAdmin) : false
             const card = <article className={`membership-preview-card${unlocked ? ' is-unlocked' : ' is-locked'}`}>
-              <img src={imageFor(video, index)} alt={video?.title || 'Ukážka členského videa'} onError={(event) => { event.currentTarget.src = fallbackImages[index % fallbackImages.length] }} />
+              <img src={imageFor(video, index)} alt={video?.title || 'Ukážka členského videa'} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.src = fallbackImages[index % fallbackImages.length] }} />
               <div className="membership-preview-shade" />
               {!unlocked && <div className="membership-preview-lock"><Icon name="lock"/></div>}
               {unlocked && <div className="membership-preview-play"><Icon name="play"/></div>}
@@ -192,7 +192,7 @@ export default function MembershipSection() {
         <Reveal className="membership-section-heading"><span>CELÝ PRÍBEH BEZ STRIHU</span><h2>ČO VŠETKO<br/><em>ODOMKNEŠ?</em></h2></Reveal>
         <div className="membership-unlock-grid">{unlocks.map(([title, text], index) => {
           const video = premiumVideos[index % Math.max(premiumVideos.length, 1)]
-          return <Reveal className={`membership-unlock-card unlock-${index + 1}`} delay={index * .05} key={title}><img src={imageFor(video, index)} alt=""/><div><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></div></Reveal>
+          return <Reveal className={`membership-unlock-card unlock-${index + 1}`} delay={index * .05} key={title}><img src={imageFor(video, index)} alt="" loading="lazy" decoding="async"/><div><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></div></Reveal>
         })}</div>
       </section>
 
