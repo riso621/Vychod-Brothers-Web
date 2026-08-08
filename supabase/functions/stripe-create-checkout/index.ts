@@ -26,8 +26,17 @@ Deno.serve(async (request) => {
   const admin = createAdminClient()
   const { data: profile, error: profileError } = await admin.from('profiles')
     .select('stripe_customer_id, stripe_subscription_id, stripe_subscription_status')
-    .eq('id', user.id).single()
-  if (profileError) return json({ error: 'Profil sa nepodarilo načítať.' }, 500)
+    .eq('id', user.id).maybeSingle()
+  if (profileError) {
+    console.error('stripe-create-checkout profile query failed', {
+      code: profileError.code,
+      message: profileError.message,
+      details: profileError.details,
+      hint: profileError.hint,
+    })
+    return json({ error: 'Profil sa nepodarilo načítať.' }, 500)
+  }
+  if (!profile) return json({ error: 'Profil používateľa neexistuje.' }, 409)
   if (profile.stripe_subscription_id && ['active', 'trialing', 'past_due'].includes(profile.stripe_subscription_status || '')) {
     return json({ error: 'Predplatné už máte aktívne. Spravujte ho v Mojom účte.' }, 409)
   }
