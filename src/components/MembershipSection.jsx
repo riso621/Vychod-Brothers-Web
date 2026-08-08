@@ -64,6 +64,7 @@ export default function MembershipSection() {
   const [premiumVideos, setPremiumVideos] = useState([])
   const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
   const closeButtonRef = useRef(null)
+  const checkoutLockRef = useRef(false)
   const { profile, session } = useProfile()
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
 
@@ -99,7 +100,8 @@ export default function MembershipSection() {
       window.location.assign('/?auth=login&next=/clenstvo')
       return
     }
-    if (checkoutPlan) return
+    if (checkoutLockRef.current) return
+    checkoutLockRef.current = true
     setSelectedPlan(plan)
     setCheckoutError('')
     setCheckoutPlan(plan)
@@ -109,6 +111,7 @@ export default function MembershipSection() {
       setCheckoutError(error.message || 'Checkout sa nepodarilo spustiť.')
       setIsOpen(true)
       setCheckoutPlan('')
+      checkoutLockRef.current = false
     }
   }
   const collageVideos = useMemo(() => premiumVideos.slice(0, 4), [premiumVideos])
@@ -128,8 +131,8 @@ export default function MembershipSection() {
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08 }}>STAŇ SA ČLENOM<br/><em>VÝCHOD BROTHERS</em></motion.h1>
           <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .18 }}>Exkluzívne videá, bonusový obsah, premiéry, zákulisie a množstvo ďalšieho obsahu, ktorý na YouTube nikdy neuvidíš.</motion.p>
           <motion.div className="membership-hero-actions" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .28 }}>
-            <button type="button" onClick={() => showModal('member')}>Stať sa MEMBER <span>→</span></button>
-            <button type="button" onClick={() => showModal('vip')}>Stať sa VIP <span>→</span></button>
+            <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('member')}>{checkoutPlan === 'member' ? 'Otváram Checkout…' : 'Stať sa MEMBER'} <span>→</span></button>
+            <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('vip')}>{checkoutPlan === 'vip' ? 'Otváram Checkout…' : 'Stať sa VIP'} <span>→</span></button>
           </motion.div>
           <motion.small initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .55 }}>BEZ ZÁVÄZKOV · ZRUŠÍŠ KEDYKOĽVEK</motion.small>
         </div>
@@ -169,7 +172,7 @@ export default function MembershipSection() {
                 <small>{video?.duration || 'Už čoskoro'}</small>
               </div>
             </article>
-            return unlocked && video ? <a href={`/videos/${video.slug}`} key={video.id}>{card}</a> : <button type="button" onClick={() => showModal(accessLevel)} key={video?.id || index}>{card}</button>
+            return unlocked && video ? <a href={`/videos/${video.slug}`} key={video.id}>{card}</a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal(accessLevel)} key={video?.id || index}>{card}</button>
           })}
         </div>
       </section>
@@ -181,7 +184,7 @@ export default function MembershipSection() {
           <header><span>PLÁN {plan.name}</span><h3>{plan.name}</h3><p>{plan.description}</p></header>
           <div className="membership-plan-price"><strong>{planMeta[plan.id].price}</strong><span>{planMeta[plan.id].note}</span></div>
           <ul>{plan.perks.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
-          {plan.id === 'free' ? <a href="/videos">{planMeta[plan.id].cta}<span>→</span></a> : <button type="button" onClick={() => showModal(plan.id)}>{planMeta[plan.id].cta}<span>→</span></button>}
+          {plan.id === 'free' ? <a href="/videos">{planMeta[plan.id].cta}<span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal(plan.id)}>{checkoutPlan === plan.id ? 'Otváram Checkout…' : planMeta[plan.id].cta}<span>→</span></button>}
         </motion.article>)}</div>
       </section>
 
@@ -205,7 +208,7 @@ export default function MembershipSection() {
 
       <section className="membership-final-cta">
         <div className="membership-final-orbit" aria-hidden="true">VB</div>
-        <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></h2><p>Odomkni celý svet Východ Brothers a buď pri každej premiére od prvej sekundy.</p><button type="button" onClick={() => showModal('vip')}>Chcem byť členom <b>→</b></button></Reveal>
+        <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></h2><p>Odomkni celý svet Východ Brothers a buď pri každej premiére od prvej sekundy.</p><button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('vip')}>{checkoutPlan === 'vip' ? 'Otváram Checkout…' : 'Chcem byť členom'} <b>→</b></button></Reveal>
       </section>
 
       <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Checkout sa nepodarilo spustiť</h2><p role="alert">{checkoutError || 'Platobná služba momentálne nie je dostupná.'}</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>
