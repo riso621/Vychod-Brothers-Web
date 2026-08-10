@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js'
+import { useEffect, useRef, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { useProfile } from '../context/profile-context'
 import { createCheckoutSession, createCustomerPortalSession } from '../lib/billing'
@@ -15,8 +14,11 @@ const stripePromise = publishableKey ? loadStripe(publishableKey) : null
 export default function CheckoutPage({ plan }) {
   const { session, profile, authLoading, profileLoading } = useProfile()
   const [error, setError] = useState('')
+  const [checkoutMounted, setCheckoutMounted] = useState(false)
+  const [mountAttempt, setMountAttempt] = useState(0)
   const [portalLoading, setPortalLoading] = useState(false)
   const requestRef = useRef(null)
+  const checkoutContainerRef = useRef(null)
   const details = planDetails[plan]
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
@@ -27,18 +29,47 @@ export default function CheckoutPage({ plan }) {
     }
   }, [authLoading, session, plan])
 
-  const fetchClientSecret = useCallback(() => {
-    if (!requestRef.current) {
-      requestRef.current = createCheckoutSession(plan).catch((checkoutError) => {
-        requestRef.current = null
-        setError(checkoutError.message || 'Bezpečnú platbu sa nepodarilo pripraviť.')
-        throw checkoutError
-      })
-    }
-    return requestRef.current
-  }, [plan])
+  useEffect(() => {
+    if (!stripePromise || !session || profileLoading || activeSubscription || !details) return undefined
+    let cancelled = false
+    let checkout
 
-  const options = useMemo(() => ({ fetchClientSecret }), [fetchClientSecret])
+    const mountCheckout = async () => {
+      setError('')
+      setCheckoutMounted(false)
+      try {
+        const stripe = await stripePromise
+        if (!stripe) throw new Error('Stripe.js sa nepodarilo načítať.')
+        if (!requestRef.current) requestRef.current = createCheckoutSession(plan)
+        const clientSecret = await requestRef.current
+        if (!/^cs_(?:test|live)_.+_secret_/.test(clientSecret)) throw new Error('Stripe vrátil neplatný checkout token.')
+        if (cancelled) return
+        checkout = await stripe.initEmbeddedCheckout({ clientSecret })
+        if (cancelled) {
+          checkout.destroy()
+          return
+        }
+        if (!checkoutContainerRef.current) throw new Error('Platobný formulár nemá dostupný kontajner.')
+        checkout.mount(checkoutContainerRef.current)
+        setCheckoutMounted(true)
+      } catch (checkoutError) {
+        requestRef.current = null
+        if (!cancelled) {
+          console.error('Embedded Checkout mount failed', {
+            name: checkoutError?.name || 'Error',
+            message: checkoutError?.message || 'unknown',
+          })
+          setError('Stripe platobný formulár sa nepodarilo načítať. Skús to prosím znova.')
+        }
+      }
+    }
+
+    mountCheckout()
+    return () => {
+      cancelled = true
+      if (checkout) checkout.destroy()
+    }
+  }, [plan, session, profileLoading, activeSubscription, details, mountAttempt])
 
   const openPortal = async () => {
     if (portalLoading) return
@@ -75,11 +106,12 @@ export default function CheckoutPage({ plan }) {
         ) : !stripePromise ? (
           <div className="checkout-existing is-error" role="alert"><h2>Platbu zatiaľ nemožno načítať</h2><p>Chýba verejná Stripe konfigurácia. Skús to prosím neskôr.</p></div>
         ) : (
-          <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
-            <EmbeddedCheckout />
-          </EmbeddedCheckoutProvider>
+          <div className="embedded-checkout-mount-wrap">
+            {!checkoutMounted && !error && <p className="embedded-checkout-loading" aria-live="polite">Pripravujem bezpečný Stripe formulár…</p>}
+            <div ref={checkoutContainerRef} className="embedded-checkout-mount" />
+          </div>
         )}
-        {error && <p className="embedded-checkout-error" role="alert">{error}</p>}
+        {error && <div className="embedded-checkout-error" role="alert"><p>{error}</p><button type="button" onClick={() => setMountAttempt((value) => value + 1)}>Skúsiť znova</button></div>}
       </div>
     </section>
   )
