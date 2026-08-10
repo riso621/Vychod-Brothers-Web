@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { useProfile } from '../context/profile-context'
 import { createCheckoutSession, createCustomerPortalSession } from '../lib/billing'
+import { formatMembershipDate } from '../lib/membership'
 
 const planDetails = {
   member: { name: 'MEMBER', price: '4,99 €', description: 'Mesačné členstvo Východ Brothers s prístupom k exkluzívnemu obsahu pre členov.' },
@@ -26,6 +27,30 @@ const appearance = {
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim() || ''
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null
+const checkoutFlowKey = 'vb-checkout-payment-flow'
+const pollingDelayMs = 1250
+const pollingAttempts = 16
+
+function readCheckoutFlow(plan) {
+  const isStripeReturn = new URLSearchParams(window.location.search).get('payment') === 'return'
+  try {
+    const stored = JSON.parse(sessionStorage.getItem(checkoutFlowKey) || 'null')
+    if (stored?.plan === plan && Date.now() - stored.createdAt < 30 * 60 * 1000) {
+      return stored.status === 'success' ? 'success' : 'verifying'
+    }
+  } catch { sessionStorage.removeItem(checkoutFlowKey) }
+  return isStripeReturn ? 'verifying' : 'payment'
+}
+
+function storeCheckoutFlow(plan, status = 'verifying') {
+  sessionStorage.setItem(checkoutFlowKey, JSON.stringify({ plan, status, createdAt: Date.now() }))
+}
+
+function membershipConfirmed(profile, plan) {
+  return profile?.membership === plan
+    && profile?.membership_status === 'active'
+    && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
+}
 
 function friendlyPaymentError(error) {
   if (error?.type === 'card_error' || error?.type === 'validation_error') {
@@ -35,12 +60,13 @@ function friendlyPaymentError(error) {
 }
 
 export default function CheckoutPage({ plan }) {
-  const { session, profile, authLoading, profileLoading } = useProfile()
+  const { session, profile, authLoading, profileLoading, refreshProfile } = useProfile()
   const [error, setError] = useState('')
   const [ready, setReady] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [portalLoading, setPortalLoading] = useState(false)
+  const [flow, setFlow] = useState(() => readCheckoutFlow(plan))
   const elementsRef = useRef(null)
   const requestRef = useRef(null)
   const mountRef = useRef(null)
@@ -53,7 +79,7 @@ export default function CheckoutPage({ plan }) {
   }, [authLoading, session, plan])
 
   useEffect(() => {
-    if (!stripePromise || !session || profileLoading || activeSubscription || !details) return undefined
+    if (flow !== 'payment' || !stripePromise || !session || profileLoading || activeSubscription || !details) return undefined
     let cancelled = false
     let paymentElement
 
@@ -88,25 +114,63 @@ export default function CheckoutPage({ plan }) {
       paymentElement?.destroy()
       elementsRef.current = null
     }
-  }, [plan, session, profileLoading, activeSubscription, details, attempt])
+  }, [plan, session, profileLoading, activeSubscription, details, attempt, flow])
+
+  useEffect(() => {
+    if (flow !== 'verifying' || !session || !details) return undefined
+    const controller = new AbortController()
+
+    const verifyMembership = async () => {
+      for (let attemptIndex = 0; attemptIndex < pollingAttempts && !controller.signal.aborted; attemptIndex += 1) {
+        const latestProfile = await refreshProfile({ silent: true })
+        if (controller.signal.aborted) return
+        if (membershipConfirmed(latestProfile, plan)) {
+          storeCheckoutFlow(plan, 'success')
+          window.history.replaceState(window.history.state, '', `/checkout/${plan}`)
+          setFlow('success')
+          return
+        }
+        if (attemptIndex < pollingAttempts - 1) {
+          await new Promise((resolve) => {
+            const timer = window.setTimeout(resolve, pollingDelayMs)
+            controller.signal.addEventListener('abort', () => {
+              window.clearTimeout(timer)
+              resolve()
+            }, { once: true })
+          })
+        }
+      }
+      if (!controller.signal.aborted) setFlow('pending')
+    }
+
+    verifyMembership()
+    return () => controller.abort()
+  }, [flow, session, details, plan, refreshProfile])
+
+  useEffect(() => {
+    if (flow === 'success' && !profileLoading && !membershipConfirmed(profile, plan)) setFlow('verifying')
+  }, [flow, profileLoading, profile, plan])
 
   const submitPayment = async (event) => {
     event.preventDefault()
     if (submitting || !elementsRef.current || !stripePromise) return
     setSubmitting(true)
     setError('')
-    const stripe = await stripePromise
-    const { error: paymentError } = await stripe.confirmPayment({
-      elements: elementsRef.current,
-      confirmParams: { return_url: `${window.location.origin}/account?checkout=success` },
-      redirect: 'if_required',
-    })
-    if (paymentError) {
+    storeCheckoutFlow(plan)
+    try {
+      const stripe = await stripePromise
+      const { error: paymentError } = await stripe.confirmPayment({
+        elements: elementsRef.current,
+        confirmParams: { return_url: `${window.location.origin}/checkout/${plan}?payment=return` },
+        redirect: 'if_required',
+      })
+      if (paymentError) throw paymentError
+      setFlow('verifying')
+    } catch (paymentError) {
+      sessionStorage.removeItem(checkoutFlowKey)
       setError(friendlyPaymentError(paymentError))
       setSubmitting(false)
-      return
     }
-    window.location.assign('/account?checkout=success')
   }
 
   const retry = () => { requestRef.current = null; setError(''); setAttempt((value) => value + 1) }
@@ -120,6 +184,39 @@ export default function CheckoutPage({ plan }) {
 
   if (!details) return <section className="checkout-state"><h1>Neplatný plán</h1><a href="/clenstvo">Späť na členstvo</a></section>
   if (authLoading || profileLoading || !session) return <section className="checkout-state" aria-live="polite">Pripravujem bezpečnú platbu…</section>
+
+  const confirmedMembership = membershipConfirmed(profile, plan)
+
+  if (flow === 'verifying' || flow === 'pending' || (flow === 'success' && !confirmedMembership)) {
+    return (
+      <section className="checkout-result-shell is-verifying" aria-live="polite">
+        <div className="checkout-result-spinner" aria-hidden="true" />
+        <span>BEZPEČNÉ POTVRDENIE PLATBY</span>
+        <h1>{flow !== 'pending' ? 'Overujeme platbu…' : 'Aktivácia ešte prebieha'}</h1>
+        <p>{flow !== 'pending'
+          ? 'Platba bola prijatá. Aktivujeme tvoje členstvo a čakáme na bezpečné potvrdenie zo Stripe.'
+          : 'Platba bola prijatá, aktivácia členstva ešte prebieha. Nemusíš platiť znova.'}</p>
+        {flow === 'pending' && <a className="checkout-result-primary" href="/account">Skontrolovať môj účet</a>}
+      </section>
+    )
+  }
+
+  if (flow === 'success' && confirmedMembership) {
+    const renewalDate = profile.membership_expires_at ? formatMembershipDate(profile.membership_expires_at) : null
+    const leaveSuccess = () => sessionStorage.removeItem(checkoutFlowKey)
+    return (
+      <section className={`checkout-result-shell is-success is-${plan}`} aria-labelledby="checkout-success-heading">
+        <div className="checkout-result-check" aria-hidden="true">✓</div>
+        <span>PLATBA PREBEHLA ÚSPEŠNE</span>
+        <h1 id="checkout-success-heading">{plan === 'vip' ? 'Vitaj medzi VIP členmi' : 'Vitaj medzi členmi'}<br />Východ Brothers</h1>
+        <p>Tvoje členstvo <strong>{details.name}</strong> je teraz aktívne.</p>
+        <div className="checkout-result-plan"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
+        <ul><li>Platba bola úspešne spracovaná</li><li>Členstvo je aktívne</li><li>Exkluzívny obsah je odomknutý</li><li>Predplatné sa obnovuje automaticky každý mesiac</li></ul>
+        {renewalDate && <p className="checkout-result-renewal"><span>Ďalšie obnovenie</span><strong>{renewalDate}</strong></p>}
+        <div className="checkout-result-actions"><a className="checkout-result-primary" href="/videos" onClick={leaveSuccess}>Pozrieť členské videá</a><a className="checkout-result-secondary" href="/account" onClick={leaveSuccess}>Prejsť na môj účet</a></div>
+      </section>
+    )
+  }
 
   return (
     <section className={`payment-checkout-shell is-${plan}`} aria-labelledby="checkout-heading">
