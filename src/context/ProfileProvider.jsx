@@ -70,6 +70,29 @@ export default function ProfileProvider({ children }) {
     return undefined
   }, [session?.user?.id, loadProfile])
 
+  useEffect(() => {
+    if (!session?.user?.id) return undefined
+
+    let lastRefreshAt = 0
+    const refreshVisibleProfile = () => {
+      if (document.visibilityState === 'hidden' || Date.now() - lastRefreshAt < 1000) return
+      lastRefreshAt = Date.now()
+      loadProfile(session.user.id, { silent: true })
+    }
+    const handlePageShow = (event) => {
+      if (event.persisted) refreshVisibleProfile()
+    }
+
+    window.addEventListener('focus', refreshVisibleProfile)
+    window.addEventListener('pageshow', handlePageShow)
+    document.addEventListener('visibilitychange', refreshVisibleProfile)
+    return () => {
+      window.removeEventListener('focus', refreshVisibleProfile)
+      window.removeEventListener('pageshow', handlePageShow)
+      document.removeEventListener('visibilitychange', refreshVisibleProfile)
+    }
+  }, [session?.user?.id, loadProfile])
+
   const signOut = async () => {
     if (!supabase) return { error: null }
     profileRequestRef.current += 1

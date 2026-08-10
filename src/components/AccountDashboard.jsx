@@ -11,6 +11,10 @@ const accountCards = [
   { icon: '↗', title: 'História členstva', text: 'Prehľad budúcich zmien členstva.' },
 ]
 
+const portalReturnKey = 'vb-billing-portal-return'
+const portalPollDelayMs = 1200
+const portalPollAttempts = 8
+
 export default function AccountDashboard() {
   const [signingOut, setSigningOut] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
@@ -41,6 +45,29 @@ export default function AccountDashboard() {
       window.clearTimeout(hideTimer)
     }
   }, [checkoutState, session, refreshProfile])
+  useEffect(() => {
+    if (!session || sessionStorage.getItem(portalReturnKey) !== '1') return undefined
+    sessionStorage.removeItem(portalReturnKey)
+    const controller = new AbortController()
+
+    const reconcilePortalChange = async () => {
+      for (let attempt = 0; attempt < portalPollAttempts && !controller.signal.aborted; attempt += 1) {
+        await refreshProfile({ silent: true })
+        if (attempt < portalPollAttempts - 1) {
+          await new Promise((resolve) => {
+            const timer = window.setTimeout(resolve, portalPollDelayMs)
+            controller.signal.addEventListener('abort', () => {
+              window.clearTimeout(timer)
+              resolve()
+            }, { once: true })
+          })
+        }
+      }
+    }
+
+    reconcilePortalChange()
+    return () => controller.abort()
+  }, [session, refreshProfile])
   if (signingOut) return <section className="account-state" aria-live="polite">Bezpečne ťa odhlasujem…</section>
   if (authLoading || (!session && !authLoading)) return <section className="account-state" aria-live="polite">Overujem prihlásenie…</section>
   if (profileLoading) return <section className="account-state" aria-live="polite">Načítavam tvoj profil…</section>
@@ -68,7 +95,9 @@ export default function AccountDashboard() {
     setPortalLoading(true)
     setBillingMessage('')
     try {
-      window.location.assign(await createCustomerPortalSession())
+      const portalUrl = await createCustomerPortalSession()
+      sessionStorage.setItem(portalReturnKey, '1')
+      window.location.assign(portalUrl)
     } catch (error) {
       setBillingMessage(error.message || 'Správa predplatného momentálne nie je dostupná.')
       setPortalLoading(false)
