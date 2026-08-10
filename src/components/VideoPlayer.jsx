@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Hls from 'hls.js'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 import { useCloudflarePlaybackUrl } from '../hooks/useCloudflarePlaybackUrl'
 
@@ -22,7 +21,7 @@ function getYoutubeVideoId(youtubeUrl) {
   }
 }
 
-function PlayerState({ heading, description, accessMessage, accessLevel, image, locked = false }) {
+function PlayerState({ heading, description, accessMessage, accessLevel, image, locked = false, ctaLabel = 'Staň sa členom', ctaHref = '/clenstvo' }) {
   return (
     <div className={`video-detail-stage video-player-state access-${accessLevel}`}>
       {image && <img className="video-player-state-image" src={image} alt="" />}
@@ -31,7 +30,7 @@ function PlayerState({ heading, description, accessMessage, accessLevel, image, 
         <strong>{heading}</strong>
         {description && <p>{description}</p>}
         {accessMessage && <small>🔒 {accessMessage}</small>}
-        {locked && <a className="video-membership-cta" href="/clenstvo">Staň sa členom <span aria-hidden="true">→</span></a>}
+        {locked && <a className="video-membership-cta" href={ctaHref}>{ctaLabel} <span aria-hidden="true">→</span></a>}
       </div>
     </div>
   )
@@ -93,6 +92,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
     const video = videoRef.current
     if (!video) return undefined
     let hls
+    let disposed = false
     const persist = (force = false, completed = false) => {
       if (!onWatchProgress || !videoId) return
       const { positionSeconds, durationSeconds } = latestRef.current
@@ -126,24 +126,27 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
     const handleVisibility = () => { if (document.visibilityState === 'hidden') persist(true) }
     const handlePageHide = () => persist(true)
 
-    if (Hls.isSupported()) {
-      hls = new Hls({ enableWorker: true })
-      hlsRef.current = hls
-      hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
-        const uniqueLevels = new Map()
-        data.levels.forEach((level, index) => {
-          if (!level.height) return
-          const existing = uniqueLevels.get(level.height)
-          if (!existing || (level.bitrate || 0) > existing.bitrate) uniqueLevels.set(level.height, { index, height: level.height, bitrate: level.bitrate || 0 })
-        })
-        setQualityLevels([...uniqueLevels.values()].sort((a, b) => b.height - a.height))
-        setAudioTrackCount(data.audioTracks?.length || hls.audioTracks.length || 0)
-      })
-      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => setAudioTrackCount(data.audioTracks.length))
-      hls.loadSource(manifestUrl)
-      hls.attachMedia(video)
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = manifestUrl
+    } else {
+      import('hls.js').then(({ default: Hls }) => {
+        if (disposed || !Hls.isSupported()) return
+        hls = new Hls({ enableWorker: true })
+        hlsRef.current = hls
+        hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+          const uniqueLevels = new Map()
+          data.levels.forEach((level, index) => {
+            if (!level.height) return
+            const existing = uniqueLevels.get(level.height)
+            if (!existing || (level.bitrate || 0) > existing.bitrate) uniqueLevels.set(level.height, { index, height: level.height, bitrate: level.bitrate || 0 })
+          })
+          setQualityLevels([...uniqueLevels.values()].sort((a, b) => b.height - a.height))
+          setAudioTrackCount(data.audioTracks?.length || hls.audioTracks.length || 0)
+        })
+        hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => setAudioTrackCount(data.audioTracks.length))
+        hls.loadSource(manifestUrl)
+        hls.attachMedia(video)
+      }).catch(() => {})
     }
     video.addEventListener('loadedmetadata', handleMetadata)
     video.addEventListener('timeupdate', handleTimeUpdate)
@@ -155,6 +158,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
     window.addEventListener('pagehide', handlePageHide)
 
     return () => {
+      disposed = true
       persist(true)
       video.removeEventListener('loadedmetadata', handleMetadata)
       video.removeEventListener('timeupdate', handleTimeUpdate)
@@ -226,7 +230,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
   return <div className={`video-detail-stage video-player-cloudflare ${controlsVisible ? 'controls-visible' : 'controls-hidden'}`} data-stream-video-id={videoId || undefined} data-audio-tracks={audioTrackCount} onPointerMove={() => revealControls()} onPointerDown={() => revealControls()} onKeyDown={() => revealControls()}><video ref={videoRef} title={`Prehrať video ${title}`} playsInline preload="metadata" onClick={handleTogglePlayback}>Tvoj prehliadač nepodporuje prehrávanie videa.</video><div className={`video-custom-controls${controlsVisible ? ' is-visible' : ''}`}><input className="video-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={handleSeek} onPointerMove={() => revealControls()} aria-label="Pozícia videa" /><div className="video-control-row"><button type="button" onClick={handleTogglePlayback} aria-label={paused ? 'Prehrať video' : 'Pozastaviť video'}>{paused ? '▶' : 'Ⅱ'}</button><span className="video-time">{formatTime(currentTime)} / {formatTime(duration)}</span><div className="video-volume"><button type="button" onClick={handleMute} aria-label={muted || volume === 0 ? 'Zapnúť zvuk' : 'Stlmiť zvuk'}>{muted || volume === 0 ? '🔇' : '🔊'}</button><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={handleVolume} aria-label="Hlasitosť" /></div><div className="video-controls-spacer" />{qualityLevels.length > 0 && <div className="video-settings"><button type="button" className={settingsOpen ? 'is-active' : ''} onClick={handleSettingsToggle} aria-label={`Nastavenia kvality, ${selectedQualityLabel}`} aria-expanded={settingsOpen}>⚙</button>{settingsOpen && <div className="video-quality-menu" role="menu" aria-label="Kvalita videa"><strong>Kvalita</strong><button type="button" role="menuitemradio" aria-checked={selectedQuality === 'auto'} onClick={() => handleQualityChange('auto')}><span>{selectedQuality === 'auto' ? '✓' : ''}</span>Auto</button>{qualityLevels.map((level) => { const value = String(level.index); return <button type="button" role="menuitemradio" aria-checked={selectedQuality === value} onClick={() => handleQualityChange(value)} key={level.height}><span>{selectedQuality === value ? '✓' : ''}</span>{level.height}p</button> })}</div>}</div>}<button type="button" onClick={handleFullscreen} aria-label="Prepnúť video na celú obrazovku">⛶</button></div></div>{resumePosition > 0 && <span className={`video-resume-notice${resumeToastVisible ? ' is-visible' : ''}`}>Pokračujeme od {formatTime(resumePosition)}</span>}</div>
 }
 
-export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '', hasAccess = accessLevel === 'free', accessLoading = false, videoId = '', watchProgress = null, onWatchProgress = null }) {
+export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '', hasAccess = accessLevel === 'free', accessLoading = false, lockedCopy = null, videoId = '', watchProgress = null, onWatchProgress = null }) {
   const youtubeVideoId = provider === 'youtube' && hasAccess ? getYoutubeVideoId(youtubeUrl) : null
   const accessMessage = accessLevel === 'vip'
     ? 'Tento obsah je dostupný iba pre VIP členov'
@@ -237,7 +241,7 @@ export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVide
   const { url: cloudflarePlayerUrl, loading: cloudflareLoading } = useCloudflarePlaybackUrl(streamVideoId, provider === 'cloudflare_stream' && hasAccess && !accessLoading)
 
   if (accessLoading) return <PlayerState heading="Overujeme prístup…" accessLevel={accessLevel} image={image} />
-  if (!hasAccess) return <PlayerState heading={accessLevel === 'vip' ? 'VIP obsah' : 'Premium obsah'} description="Odomkni si celý svet Východ Brothers a sleduj obsah bez obmedzení." accessMessage={accessMessage} accessLevel={accessLevel} image={image} locked />
+  if (!hasAccess) return <PlayerState heading={lockedCopy?.heading || (accessLevel === 'vip' ? 'VIP obsah' : 'Premium obsah')} description={lockedCopy?.description || 'Odomkni si celý svet Východ Brothers a sleduj obsah bez obmedzení.'} accessMessage={accessMessage} accessLevel={accessLevel} image={image} locked ctaLabel={lockedCopy?.ctaLabel} ctaHref={lockedCopy?.ctaHref} />
 
   if (provider === 'stream') {
     if (streamLoading || imageLoading) return <PlayerState heading="Načítavam video…" accessLevel={accessLevel} image={image} />
@@ -246,7 +250,7 @@ export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVide
   }
 
   if (provider === 'cloudflare_stream') {
-    if (cloudflareLoading || imageLoading) return <PlayerState heading="Načítavam video…" accessLevel={accessLevel} image={image} />
+    if (cloudflareLoading || imageLoading) return <PlayerState heading="Overujeme prístup…" accessLevel={accessLevel} image={image} />
     if (!cloudflarePlayerUrl) return <PlayerState heading="Video momentálne nie je dostupné." accessLevel={accessLevel} image={image} />
     return <CloudflareTrackedPlayer key={cloudflarePlayerUrl} playerUrl={cloudflarePlayerUrl} title={title} videoId={videoId} watchProgress={watchProgress} onWatchProgress={onWatchProgress} />
   }

@@ -56,8 +56,8 @@ Deno.serve(async (request) => {
 
   const token = bearerToken(request)
   const userToken = token.split('.').length === 3 ? token : ''
-  const supabase = createUserClient(userToken)
-  const { data: video, error: videoError } = await supabase
+  const catalogClient = createUserClient()
+  const { data: video, error: videoError } = await catalogClient
     .from('videos')
     .select('provider_video_id, access_level, published')
     .eq('provider', 'cloudflare_stream')
@@ -68,12 +68,13 @@ Deno.serve(async (request) => {
 
   if (video.access_level !== 'free') {
     if (!userToken) return json({ error: 'Prihlásenie je povinné.' }, 401)
-    const { data: { user }, error: userError } = await supabase.auth.getUser(userToken)
+    const userClient = createUserClient(userToken)
+    const { data: { user }, error: userError } = await userClient.auth.getUser(userToken)
     if (userError || !user) return json({ error: 'Prihlásenie nie je platné.' }, 401)
 
     const isAdmin = user.app_metadata?.role === 'admin'
     if (!isAdmin) {
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await userClient
         .from('profiles')
         .select('membership, membership_status, membership_expires_at')
         .eq('id', user.id)

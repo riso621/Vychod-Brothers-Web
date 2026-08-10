@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getPublishedVideoBySlug } from '../lib/videos'
 import { useProfile } from '../context/profile-context'
 import VideoPlayer from './VideoPlayer'
-import { canAccessMembership } from '../lib/membership'
+import { canAccessMembership, getEffectiveMembership } from '../lib/membership'
 import { useWatchHistory } from '../context/watch-history-context'
 
 const accessLabels = {
@@ -58,6 +58,12 @@ export default function VideoDetail({ slug }) {
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const hasAccess = canAccessMembership(video.accessLevel, profile, isAdmin)
   const accessLoading = video.accessLevel !== 'free' && (authLoading || profileLoading)
+  const membership = getEffectiveMembership(profile)
+  const lockedCopy = !session
+    ? { heading: 'Najprv sa prihlás', description: 'Po prihlásení overíme, či máš prístup k tomuto videu.', ctaLabel: 'Prihlásiť sa', ctaHref: `/?auth=login&next=${encodeURIComponent(`/videos/${slug}`)}` }
+    : video.accessLevel === 'vip'
+      ? { heading: 'Toto video je dostupné iba pre VIP členov.', description: membership === 'member' ? 'Prejdi na VIP a odomkni celý prémiový katalóg.' : 'Aktivuj VIP a odomkni najexkluzívnejší obsah.', ctaLabel: membership === 'member' ? 'Zmeniť na VIP' : 'Stať sa VIP', ctaHref: '/clenstvo' }
+      : { heading: 'Toto video je dostupné pre členov.', description: 'Aktivuj MEMBER a odomkni členské videá a bonusy.', ctaLabel: 'Stať sa MEMBER', ctaHref: '/clenstvo' }
   const watchProgress = getProgress(video.id)
 
   return (
@@ -73,7 +79,7 @@ export default function VideoDetail({ slug }) {
         <p>{video.shortDescription}</p>
       </header>
 
-      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} videoId={video.id} watchProgress={watchProgress} onWatchProgress={watchHistoryEnabled ? saveProgress : null} />
+      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} lockedCopy={lockedCopy} videoId={video.id} watchProgress={watchProgress} onWatchProgress={watchHistoryEnabled ? saveProgress : null} />
 
       <div className="video-detail-content">
         <div className="video-detail-description">

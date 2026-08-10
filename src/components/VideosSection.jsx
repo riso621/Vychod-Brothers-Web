@@ -7,8 +7,8 @@ import { canAccessMembership } from '../lib/membership'
 
 const accessLabels = {
   free: 'FREE',
-  member: 'Pre členov',
-  vip: 'VIP obsah',
+  member: 'MEMBER',
+  vip: 'VIP OBSAH',
 }
 
 const categoryLabels = {
@@ -17,11 +17,11 @@ const categoryLabels = {
   cloudflare_stream: 'Cloudflare Stream',
 }
 
-function VideoCard({ video, thumbnailUrl, featured = false, progress = null }) {
-  const locked = video.accessLevel !== 'free'
+function VideoCard({ video, thumbnailUrl, featured = false, progress = null, hasAccess = false }) {
+  const locked = !hasAccess
 
   return (
-    <article className={`catalog-video-card${featured ? ' is-featured' : ''}`}>
+    <article className={`catalog-video-card${featured ? ' is-featured' : ''}${locked ? ' is-locked' : ''}`}>
       <div className="catalog-video-image">
         {thumbnailUrl && <img src={thumbnailUrl} alt="" loading={featured ? 'eager' : 'lazy'} decoding="async" fetchPriority={featured ? 'high' : 'auto'} onError={(event) => { event.currentTarget.hidden = true }} />}
         <span className="catalog-video-duration">{video.duration}</span>
@@ -48,9 +48,10 @@ export default function VideosSection() {
   const [error, setError] = useState('')
   const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
   const featuredVideo = publishedVideos.find((video) => video.featured) || null
-  const categories = useMemo(() => [...new Set(publishedVideos.map((video) => video.category))], [publishedVideos])
-  const [category, setCategory] = useState('all')
-  const visibleVideos = category === 'all' ? publishedVideos : publishedVideos.filter((video) => video.category === category)
+  const accessLevels = useMemo(() => ['free', 'member', 'vip'].filter((level) => publishedVideos.some((video) => video.accessLevel === level)), [publishedVideos])
+  const [accessFilter, setAccessFilter] = useState('all')
+  const visibleVideos = accessFilter === 'all' ? publishedVideos : publishedVideos.filter((video) => video.accessLevel === accessFilter)
+  const accessFor = (video) => canAccessMembership(video.accessLevel, profile, isAdmin)
 
   useEffect(() => {
     let active = true
@@ -99,20 +100,20 @@ export default function VideosSection() {
       {!loading && !error && featuredVideo && (
         <div className="videos-featured" aria-label="Odporúčané video">
           <span className="videos-section-label">Odporúčané</span>
-          <VideoCard video={featuredVideo} thumbnailUrl={thumbnailUrls.get(featuredVideo.thumbnail)} progress={progressFor(featuredVideo)} featured />
+          <VideoCard video={featuredVideo} thumbnailUrl={thumbnailUrls.get(featuredVideo.thumbnail)} progress={progressFor(featuredVideo)} hasAccess={accessFor(featuredVideo)} featured />
         </div>
       )}
 
       {!loading && !error && publishedVideos.length > 0 && <><div className="videos-toolbar">
         <h2>Všetky videá</h2>
-        <div className="videos-filters" aria-label="Filtrovať videá podľa kategórie">
-          <button type="button" className={category === 'all' ? 'is-active' : ''} aria-pressed={category === 'all'} onClick={() => setCategory('all')}>Všetky</button>
-          {categories.map((item) => <button type="button" className={category === item ? 'is-active' : ''} aria-pressed={category === item} onClick={() => setCategory(item)} key={item}>{categoryLabels[item] ?? item}</button>)}
+        <div className="videos-filters" aria-label="Filtrovať videá podľa prístupu">
+          <button type="button" className={accessFilter === 'all' ? 'is-active' : ''} aria-pressed={accessFilter === 'all'} onClick={() => setAccessFilter('all')}>Všetky</button>
+          {accessLevels.map((level) => <button type="button" className={accessFilter === level ? 'is-active' : ''} aria-pressed={accessFilter === level} onClick={() => setAccessFilter(level)} key={level}>{accessLabels[level]}</button>)}
         </div>
       </div>
 
       <div className="videos-grid">
-        {visibleVideos.map((video) => <VideoCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} progress={progressFor(video)} key={video.id} />)}
+        {visibleVideos.map((video) => <VideoCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} progress={progressFor(video)} hasAccess={accessFor(video)} key={video.id} />)}
       </div></>}
     </section>
   )
