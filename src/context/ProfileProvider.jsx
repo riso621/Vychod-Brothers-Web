@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { ProfileContext } from './profile-context'
 
-const profileColumns = 'id, username, membership, membership_started_at, membership_expires_at, membership_status, avatar_url, created_at'
+const profileColumns = 'id, username, membership, membership_started_at, membership_expires_at, membership_status, stripe_cancel_at_period_end, avatar_url, created_at'
 
 export default function ProfileProvider({ children }) {
   const [session, setSession] = useState(null)
