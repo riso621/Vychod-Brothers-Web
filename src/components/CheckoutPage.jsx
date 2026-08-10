@@ -4,114 +4,156 @@ import { useProfile } from '../context/profile-context'
 import { createCheckoutSession, createCustomerPortalSession } from '../lib/billing'
 
 const planDetails = {
-  member: { name: 'MEMBER', price: '4,99 €' },
-  vip: { name: 'VIP', price: '9,99 €' },
+  member: { name: 'MEMBER', price: '4,99 €', description: 'Mesačné členstvo Východ Brothers s prístupom k exkluzívnemu obsahu pre členov.' },
+  vip: { name: 'VIP', price: '9,99 €', description: 'Najvyššie členstvo so všetkým MEMBER obsahom a exkluzívnymi VIP premiérami.' },
+}
+
+const appearance = {
+  theme: 'night',
+  variables: {
+    colorPrimary: '#e3dc00', colorBackground: '#111212', colorText: '#f3f1e8',
+    colorTextSecondary: '#aaa99f', colorDanger: '#ff8f86',
+    fontFamily: 'Inter, system-ui, sans-serif', borderRadius: '12px', spacingUnit: '4px',
+  },
+  rules: {
+    '.Input': { border: '1px solid rgba(255,255,255,.14)', boxShadow: 'none', padding: '14px' },
+    '.Input:focus': { borderColor: '#e3dc00', boxShadow: '0 0 0 1px #e3dc00' },
+    '.Tab': { border: '1px solid rgba(255,255,255,.14)', boxShadow: 'none' },
+    '.Tab--selected': { borderColor: '#e3dc00', boxShadow: '0 0 0 1px #e3dc00' },
+    '.Label': { fontWeight: '600' },
+  },
 }
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim() || ''
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null
 
+function friendlyPaymentError(error) {
+  if (error?.type === 'card_error' || error?.type === 'validation_error') {
+    return error.message || 'Platobné údaje nie sú platné. Skontroluj ich a skús to znova.'
+  }
+  return 'Platbu sa nepodarilo dokončiť. Skús to prosím znova.'
+}
+
 export default function CheckoutPage({ plan }) {
   const { session, profile, authLoading, profileLoading } = useProfile()
   const [error, setError] = useState('')
-  const [checkoutMounted, setCheckoutMounted] = useState(false)
-  const [mountAttempt, setMountAttempt] = useState(0)
+  const [ready, setReady] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [attempt, setAttempt] = useState(0)
   const [portalLoading, setPortalLoading] = useState(false)
+  const elementsRef = useRef(null)
   const requestRef = useRef(null)
-  const checkoutContainerRef = useRef(null)
+  const mountRef = useRef(null)
   const details = planDetails[plan]
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
 
   useEffect(() => {
-    if (!authLoading && !session) {
-      window.location.replace(`/?auth=login&next=${encodeURIComponent(`/checkout/${plan}`)}`)
-    }
+    if (!authLoading && !session) window.location.replace(`/?auth=login&next=${encodeURIComponent(`/checkout/${plan}`)}`)
   }, [authLoading, session, plan])
 
   useEffect(() => {
     if (!stripePromise || !session || profileLoading || activeSubscription || !details) return undefined
     let cancelled = false
-    let checkout
+    let paymentElement
 
-    const mountCheckout = async () => {
+    const mountPaymentElement = async () => {
       setError('')
-      setCheckoutMounted(false)
+      setReady(false)
       try {
         const stripe = await stripePromise
         if (!stripe) throw new Error('Stripe.js sa nepodarilo načítať.')
         if (!requestRef.current) requestRef.current = createCheckoutSession(plan)
         const clientSecret = await requestRef.current
-        if (!/^cs_(?:test|live)_.+_secret_/.test(clientSecret)) throw new Error('Stripe vrátil neplatný checkout token.')
-        if (cancelled) return
-        checkout = await stripe.initEmbeddedCheckout({ clientSecret })
-        if (cancelled) {
-          checkout.destroy()
-          return
-        }
-        if (!checkoutContainerRef.current) throw new Error('Platobný formulár nemá dostupný kontajner.')
-        checkout.mount(checkoutContainerRef.current)
-        setCheckoutMounted(true)
+        if (!/^pi_[A-Za-z0-9_]+_secret_/.test(clientSecret)) throw new Error('Stripe vrátil neplatný platobný token.')
+        if (cancelled || !mountRef.current) return
+        const elements = stripe.elements({ clientSecret, appearance, loader: 'auto' })
+        paymentElement = elements.create('payment', { layout: { type: 'tabs', defaultCollapsed: false } })
+        paymentElement.on('ready', () => !cancelled && setReady(true))
+        paymentElement.on('loaderror', () => !cancelled && setError('Platobný formulár sa nepodarilo načítať. Skús to prosím znova.'))
+        paymentElement.mount(mountRef.current)
+        elementsRef.current = elements
       } catch (checkoutError) {
         requestRef.current = null
         if (!cancelled) {
-          console.error('Embedded Checkout mount failed', {
-            name: checkoutError?.name || 'Error',
-            message: checkoutError?.message || 'unknown',
-          })
-          setError('Stripe platobný formulár sa nepodarilo načítať. Skús to prosím znova.')
+          console.error('Payment Element initialization failed', { name: checkoutError?.name || 'Error', message: checkoutError?.message || 'unknown' })
+          setError(checkoutError?.message || 'Stripe platobný formulár sa nepodarilo načítať.')
         }
       }
     }
 
-    mountCheckout()
+    mountPaymentElement()
     return () => {
       cancelled = true
-      if (checkout) checkout.destroy()
+      paymentElement?.destroy()
+      elementsRef.current = null
     }
-  }, [plan, session, profileLoading, activeSubscription, details, mountAttempt])
+  }, [plan, session, profileLoading, activeSubscription, details, attempt])
 
+  const submitPayment = async (event) => {
+    event.preventDefault()
+    if (submitting || !elementsRef.current || !stripePromise) return
+    setSubmitting(true)
+    setError('')
+    const stripe = await stripePromise
+    const { error: paymentError } = await stripe.confirmPayment({
+      elements: elementsRef.current,
+      confirmParams: { return_url: `${window.location.origin}/account?checkout=success` },
+      redirect: 'if_required',
+    })
+    if (paymentError) {
+      setError(friendlyPaymentError(paymentError))
+      setSubmitting(false)
+      return
+    }
+    window.location.assign('/account?checkout=success')
+  }
+
+  const retry = () => { requestRef.current = null; setError(''); setAttempt((value) => value + 1) }
   const openPortal = async () => {
     if (portalLoading) return
     setPortalLoading(true)
     setError('')
-    try {
-      window.location.assign(await createCustomerPortalSession())
-    } catch (portalError) {
-      setError(portalError.message || 'Správa predplatného momentálne nie je dostupná.')
-      setPortalLoading(false)
-    }
+    try { window.location.assign(await createCustomerPortalSession()) }
+    catch (portalError) { setError(portalError.message || 'Správa predplatného momentálne nie je dostupná.'); setPortalLoading(false) }
   }
 
   if (!details) return <section className="checkout-state"><h1>Neplatný plán</h1><a href="/clenstvo">Späť na členstvo</a></section>
   if (authLoading || profileLoading || !session) return <section className="checkout-state" aria-live="polite">Pripravujem bezpečnú platbu…</section>
 
   return (
-    <section className="embedded-checkout-shell" aria-labelledby="checkout-heading">
-      <header className="embedded-checkout-heading">
-        <a href="/clenstvo" aria-label="Späť na členstvo">← Späť</a>
-        <span>VÝCHOD BROTHERS · BEZPEČNÁ PLATBA</span>
-        <h1 id="checkout-heading">Dokonči svoje členstvo</h1>
-        <div className="embedded-checkout-plan"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
-        <ul><li>Mesačné predplatné</li><li>Platbu bezpečne spracuje Stripe</li><li>Zrušenie pred ďalším obdobím</li></ul>
+    <section className={`payment-checkout-shell is-${plan}`} aria-labelledby="checkout-heading">
+      <header className="payment-checkout-intro">
+        <a href="/clenstvo" aria-label="Späť na členstvo">← Späť na členstvo</a>
+        <span>VÝCHOD BROTHERS · {details.name}</span>
+        <h1 id="checkout-heading">Aktivuj svoje členstvo</h1>
+        <p>{details.description}</p>
+        <div className="payment-checkout-price"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
+        <ul><li>Okamžitý prístup po potvrdení platby</li><li>Bezpečné spracovanie cez Stripe</li><li>Zrušenie kedykoľvek v Mojom účte</li></ul>
       </header>
 
-      <div className="embedded-checkout-frame">
+      <div className="payment-checkout-card">
         {activeSubscription ? (
-          <div className="checkout-existing" role="status">
-            <h2>Predplatné už máš aktívne</h2>
-            <p>Aby nevzniklo druhé paralelné predplatné, zmenu plánu dokonči cez bezpečnú správu predplatného.</p>
-            <button type="button" onClick={openPortal} disabled={portalLoading}>{portalLoading ? 'Otváram…' : 'Spravovať predplatné'}</button>
-          </div>
+          <div className="checkout-existing" role="status"><h2>Predplatné už máš aktívne</h2><p>Aby nevzniklo druhé paralelné predplatné, zmenu plánu dokonči cez bezpečnú správu predplatného.</p><button type="button" onClick={openPortal} disabled={portalLoading}>{portalLoading ? 'Otváram…' : 'Spravovať predplatné'}</button></div>
         ) : !stripePromise ? (
           <div className="checkout-existing is-error" role="alert"><h2>Platbu zatiaľ nemožno načítať</h2><p>Chýba verejná Stripe konfigurácia. Skús to prosím neskôr.</p></div>
         ) : (
-          <div className="embedded-checkout-mount-wrap">
-            {!checkoutMounted && !error && <p className="embedded-checkout-loading" aria-live="polite">Pripravujem bezpečný Stripe formulár…</p>}
-            <div ref={checkoutContainerRef} className="embedded-checkout-mount" />
-          </div>
+          <form onSubmit={submitPayment} className="payment-checkout-form">
+            <section className="payment-checkout-section">
+              <span className="payment-checkout-step">01</span><div><h2>Kontaktné údaje</h2><p>Potvrdenie platby pošleme na tvoj účet.</p></div>
+              <strong className="payment-checkout-email">{session.user.email}</strong>
+            </section>
+            <section className="payment-checkout-section is-payment">
+              <span className="payment-checkout-step">02</span><div><h2>Spôsob platby</h2><p>Karta a dostupné peňaženky sa zobrazia bezpečne podľa zariadenia.</p></div>
+              <div className="payment-element-wrap">{!ready && !error && <p className="payment-element-loading" aria-live="polite">Načítavam bezpečné platobné údaje…</p>}<div ref={mountRef} className="payment-element-mount" /></div>
+            </section>
+            <section className="payment-checkout-summary"><div><span>Súhrn</span><strong>{details.name}</strong></div><b>{details.price} <small>/ mesiac</small></b></section>
+            <p className="payment-checkout-renewal">Predplatné sa automaticky obnovuje každý mesiac, kým ho nezrušíš.</p>
+            {error && <div className="payment-checkout-error" role="alert"><p>{error}</p>{!ready && <button type="button" onClick={retry}>Skúsiť znova</button>}</div>}
+            <button className="payment-checkout-submit" type="submit" disabled={!ready || submitting || Boolean(error && !ready)}>{submitting ? 'SPRACÚVAM PLATBU…' : `AKTIVOVAŤ ${details.name} – ${details.price} / MESIAC`}</button>
+            <p className="payment-checkout-security">Platobné údaje spracúva Stripe. Východ Brothers neukladá číslo karty ani CVC.</p>
+          </form>
         )}
-        {error && <div className="embedded-checkout-error" role="alert"><p>{error}</p><button type="button" onClick={() => setMountAttempt((value) => value + 1)}>Skúsiť znova</button></div>}
       </div>
     </section>
   )
