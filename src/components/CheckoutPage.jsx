@@ -206,14 +206,19 @@ export default function CheckoutPage({ plan }) {
     const leaveSuccess = () => sessionStorage.removeItem(checkoutFlowKey)
     return (
       <section className={`checkout-result-shell is-success is-${plan}`} aria-labelledby="checkout-success-heading">
-        <div className="checkout-result-check" aria-hidden="true">✓</div>
-        <span>PLATBA PREBEHLA ÚSPEŠNE</span>
-        <h1 id="checkout-success-heading">{plan === 'vip' ? 'Vitaj medzi VIP členmi' : 'Vitaj medzi členmi'}<br />Východ Brothers</h1>
-        <p>Tvoje členstvo <strong>{details.name}</strong> je teraz aktívne.</p>
-        <div className="checkout-result-plan"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
-        <ul><li>Platba bola úspešne spracovaná</li><li>Členstvo je aktívne</li><li>Exkluzívny obsah je odomknutý</li><li>Predplatné sa obnovuje automaticky každý mesiac</li></ul>
-        {renewalDate && <p className="checkout-result-renewal"><span>Ďalšie obnovenie</span><strong>{renewalDate}</strong></p>}
-        <div className="checkout-result-actions"><a className="checkout-result-primary" href="/videos" onClick={leaveSuccess}>Pozrieť členské videá</a><a className="checkout-result-secondary" href="/account" onClick={leaveSuccess}>Prejsť na môj účet</a></div>
+        <div className="checkout-result-panel">
+          <div className="checkout-result-check" aria-hidden="true">✓</div>
+          <span className="checkout-result-eyebrow">PLATBA PREBEHLA ÚSPEŠNE</span>
+          <h1 id="checkout-success-heading">{plan === 'vip' ? 'Vitaj medzi VIP členmi' : 'Vitaj medzi členmi'}</h1>
+          <strong className="checkout-result-brand">VÝCHOD BROTHERS</strong>
+          <p>Tvoje členstvo <strong>{details.name}</strong> je teraz aktívne.</p>
+          <div className="checkout-result-membership-card">
+            <div className="checkout-result-plan"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
+            <ul><li>Platba bola úspešne spracovaná</li><li>Členstvo je aktívne</li><li>Exkluzívny obsah je odomknutý</li><li>Predplatné sa obnovuje automaticky</li></ul>
+            {renewalDate && <p className="checkout-result-renewal"><span>Ďalšie obnovenie</span><strong>{renewalDate}</strong></p>}
+          </div>
+          <div className="checkout-result-actions"><a className="checkout-result-primary" href="/videos" onClick={leaveSuccess}>Pozrieť členské videá</a><a className="checkout-result-secondary" href="/account" onClick={leaveSuccess}>Prejsť na môj účet</a></div>
+        </div>
       </section>
     )
   }
