@@ -4,7 +4,6 @@ import { useProfile } from '../context/profile-context'
 import { canAccessMembership, membershipPlans } from '../lib/membership'
 import { getSignedStorageUrls } from '../lib/storage'
 import { getPublishedVideos } from '../lib/videos'
-import { createCheckoutSession } from '../lib/billing'
 
 const planMeta = {
   free: { price: '0 €', note: 'navždy', cta: 'Začať sledovať' },
@@ -105,14 +104,7 @@ export default function MembershipSection() {
     setSelectedPlan(plan)
     setCheckoutError('')
     setCheckoutPlan(plan)
-    try {
-      window.location.assign(await createCheckoutSession(plan))
-    } catch (error) {
-      setCheckoutError(error.message || 'Checkout sa nepodarilo spustiť.')
-      setIsOpen(true)
-      setCheckoutPlan('')
-      checkoutLockRef.current = false
-    }
+    window.location.assign(`/checkout/${plan}`)
   }
   const collageVideos = useMemo(() => premiumVideos.slice(0, 4), [premiumVideos])
   const previewVideos = useMemo(() => premiumVideos.slice(0, 6), [premiumVideos])

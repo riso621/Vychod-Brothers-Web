@@ -18,6 +18,7 @@ export function confirmedCheckoutMessage(profile) {
 export function checkoutCleanPath(href) {
   const url = new URL(href)
   url.searchParams.delete('checkout')
+  url.searchParams.delete('session_id')
   return `${url.pathname}${url.search}${url.hash}`
 }
 

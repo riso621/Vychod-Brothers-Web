@@ -19,6 +19,7 @@ const MembershipSection = lazy(() => import('./components/MembershipSection'))
 const AccountDashboard = lazy(() => import('./components/AccountDashboard'))
 const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
 const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
+const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -130,10 +131,16 @@ function AuthFlowPage({ type }) {
   return <main className="account-page"><Header />{type === 'reset' ? <PasswordResetPage /> : <AuthCallbackPage />}<Footer /></main>
 }
 
+function CheckoutRoute({ plan }) {
+  return <main className="checkout-page"><Header /><CheckoutPage plan={plan} /></main>
+}
+
 export default function App() {
   const path = window.location.pathname
   const page = path.startsWith('/videos')
     ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
+    : /^\/checkout\/(member|vip)\/?$/.test(path)
+      ? <CheckoutRoute plan={path.split('/')[2]} />
     : path === '/account' || path === '/account/'
       ? <AccountPage />
       : path === '/clenstvo' || path === '/clenstvo/'

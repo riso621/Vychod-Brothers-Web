@@ -48,6 +48,7 @@ Deno.serve(async (request) => {
   try {
     checkout = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      ui_mode: 'embedded_page',
       ...(profile.stripe_customer_id
         ? { customer: profile.stripe_customer_id }
         : { customer_email: user.email }),
@@ -55,8 +56,7 @@ Deno.serve(async (request) => {
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { supabase_user_id: user.id, plan },
       subscription_data: { metadata: { supabase_user_id: user.id, plan } },
-      success_url: `${siteUrl}/account?checkout=success`,
-      cancel_url: `${siteUrl}/clenstvo?checkout=cancelled`,
+      return_url: `${siteUrl}/account?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     })
   } catch (error) {
     const stripeError = error as { type?: string; code?: string; statusCode?: number }
@@ -79,5 +79,6 @@ Deno.serve(async (request) => {
     stripeMs: Math.round(performance.now() - profileCompletedAt),
     totalMs: Math.round(performance.now() - startedAt),
   })
-  return json({ url: checkout.url })
+  if (!checkout.client_secret) return json({ error: 'Stripe nevrátil bezpečný checkout token.' }, 502)
+  return json({ clientSecret: checkout.client_secret })
 })
