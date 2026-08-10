@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '../context/profile-context'
 import { formatMembershipDate, getEffectiveMembership, getMembershipStatus, membershipLabels, membershipPlans, membershipStatusLabels } from '../lib/membership'
 import { createCustomerPortalSession } from '../lib/billing'
+import { checkoutCleanPath, confirmedCheckoutMessage, pollConfirmedMembership } from '../lib/account-checkout'
 
 const accountCards = [
   { icon: '◆', title: 'Moje členstvo', text: 'Prehľad aktuálneho plánu, stavu a platnosti.' },
@@ -14,15 +15,31 @@ export default function AccountDashboard() {
   const [signingOut, setSigningOut] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [billingMessage, setBillingMessage] = useState('')
+  const [checkoutNotice, setCheckoutNotice] = useState('')
   const { session, profile, authLoading, profileLoading, profileError, refreshProfile, signOut } = useProfile()
-  const checkoutState = new URLSearchParams(window.location.search).get('checkout')
+  const checkoutState = useRef(new URLSearchParams(window.location.search).get('checkout')).current
   useEffect(() => { if (!authLoading && !session && !signingOut) window.location.replace('/?auth=login&next=/account') }, [authLoading, session, signingOut])
   useEffect(() => {
     if (checkoutState !== 'success' || !session) return undefined
-    refreshProfile()
-    const timer = window.setInterval(refreshProfile, 2500)
-    const stop = window.setTimeout(() => window.clearInterval(timer), 20000)
-    return () => { window.clearInterval(timer); window.clearTimeout(stop) }
+    const controller = new AbortController()
+    let hideTimer
+    setCheckoutNotice('Platbu overujeme…')
+
+    pollConfirmedMembership(refreshProfile, { signal: controller.signal }).then((confirmedProfile) => {
+      if (controller.signal.aborted) return
+      if (confirmedProfile) {
+        setCheckoutNotice(confirmedCheckoutMessage(confirmedProfile))
+        window.history.replaceState(window.history.state, '', checkoutCleanPath(window.location.href))
+        hideTimer = window.setTimeout(() => setCheckoutNotice(''), 5000)
+        return
+      }
+      setCheckoutNotice('Platba bola prijatá. Potvrdenie členstva ešte spracúvame. Skús účet o chvíľu obnoviť.')
+    })
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(hideTimer)
+    }
   }, [checkoutState, session, refreshProfile])
   if (signingOut) return <section className="account-state" aria-live="polite">Bezpečne ťa odhlasujem…</section>
   if (authLoading || (!session && !authLoading)) return <section className="account-state" aria-live="polite">Overujem prihlásenie…</section>
@@ -59,7 +76,7 @@ export default function AccountDashboard() {
   return (
     <section className="account-dashboard" aria-labelledby="account-heading">
       <div className="account-heading"><div><span className="account-eyebrow">VÝCHOD BROTHERS / ÚČET</span><h1 id="account-heading">Môj účet</h1><p>Tvoj prístup k videám, benefitom a svetu Východ Brothers.</p></div><button className="account-signout" type="button" onClick={handleSignOut} disabled={signingOut}>{signingOut ? 'Odhlasujem…' : 'Odhlásiť sa'}</button></div>
-      {checkoutState === 'success' && <p className="account-billing-notice" role="status">Platba bola odoslaná. Čakáme na bezpečné potvrdenie zo Stripe; členstvo sa po webhooku automaticky synchronizuje.</p>}
+      {checkoutNotice && <p className="account-billing-notice" role="status" aria-live="polite">{checkoutNotice}</p>}
       {billingMessage && <p className="account-billing-notice is-error" role="alert">{billingMessage}</p>}
       <article className="account-profile">
         <div className="account-avatar" aria-label={`Avatar používateľa ${displayName}`}>{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : <span aria-hidden="true">{initials}</span>}</div>

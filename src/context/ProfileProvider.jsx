@@ -12,18 +12,19 @@ export default function ProfileProvider({ children }) {
   const [profileError, setProfileError] = useState('')
   const profileRequestRef = useRef(0)
 
-  const loadProfile = useCallback(async (userId) => {
-    if (!supabase || !userId) return
+  const loadProfile = useCallback(async (userId, { silent = false } = {}) => {
+    if (!supabase || !userId) return null
     const requestId = ++profileRequestRef.current
-    setProfileLoading(true)
+    if (!silent) setProfileLoading(true)
     setProfileError('')
     const { data, error } = await supabase.from('profiles').select(profileColumns).eq('id', userId).maybeSingle()
-    if (requestId !== profileRequestRef.current) return
+    if (requestId !== profileRequestRef.current) return null
     setProfile(data)
     setProfileError(error
       ? 'Profil sa nepodarilo bezpečne načítať.'
       : data ? '' : 'Profil sa zatiaľ nenašiel. Dokončenie účtu môže chvíľu trvať.')
     setProfileLoading(false)
+    return error ? null : data
   }, [])
 
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function ProfileProvider({ children }) {
     return { error }
   }
 
-  const refreshProfile = useCallback(() => loadProfile(session?.user?.id), [loadProfile, session?.user?.id])
+  const refreshProfile = useCallback((options) => loadProfile(session?.user?.id, options), [loadProfile, session?.user?.id])
 
   const value = useMemo(() => ({
     session,
