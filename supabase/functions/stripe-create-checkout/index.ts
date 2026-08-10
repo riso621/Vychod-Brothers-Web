@@ -48,7 +48,8 @@ Deno.serve(async (request) => {
   try {
     checkout = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      ui_mode: 'embedded_page',
+      // stripe@20.4.0 pins 2026-02-25.clover, where the embedded mode value is `embedded`.
+      ui_mode: 'embedded',
       ...(profile.stripe_customer_id
         ? { customer: profile.stripe_customer_id }
         : { customer_email: user.email }),
@@ -59,12 +60,13 @@ Deno.serve(async (request) => {
       return_url: `${siteUrl}/account?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     })
   } catch (error) {
-    const stripeError = error as { type?: string; code?: string; statusCode?: number }
+    const stripeError = error as { type?: string; code?: string; statusCode?: number; message?: string }
     console.error('stripe-create-checkout Stripe request failed', {
       plan,
       type: stripeError.type || 'unknown',
       code: stripeError.code || 'unknown',
       status: stripeError.statusCode || 500,
+      message: stripeError.message || 'unknown',
     })
     const message = stripeError.code === 'resource_missing'
       ? `Platobný plán ${plan.toUpperCase()} nie je v Stripe Sandboxe dostupný.`
