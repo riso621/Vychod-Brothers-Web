@@ -38,7 +38,14 @@ function AuthModal({ mode, onModeChange, onClose }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [status, setStatus] = useState({ type: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
+  const [confirmationEmail, setConfirmationEmail] = useState('')
+  const [resending, setResending] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const emailRef = useRef(null)
+
+  const nextPath = new URLSearchParams(window.location.search).get('next')
+  const safeNextPath = nextPath?.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
+  const confirmationRedirect = `${window.location.origin}/auth/callback${safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ''}`
 
   useEffect(() => {
     emailRef.current?.focus()
@@ -47,12 +54,40 @@ function AuthModal({ mode, onModeChange, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose, submitting])
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined
+    const timer = window.setTimeout(() => setResendCooldown((value) => Math.max(0, value - 1)), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resendCooldown])
+
   const switchMode = (nextMode) => {
     if (submitting) return
     setStatus({ type: '', message: '' })
     setPassword('')
     setConfirmPassword('')
+    setConfirmationEmail('')
+    setResendCooldown(0)
     onModeChange(nextMode)
+  }
+
+  const resendConfirmation = async () => {
+    if (!supabase || !confirmationEmail || resending || resendCooldown > 0) return
+    setResending(true)
+    setStatus({ type: '', message: '' })
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: confirmationEmail,
+        options: { emailRedirectTo: confirmationRedirect },
+      })
+      if (error) throw error
+      setStatus({ type: 'success', message: 'Potvrdzovací e-mail bol odoslaný znova.' })
+      setResendCooldown(30)
+    } catch (error) {
+      setStatus({ type: 'error', message: authErrorMessage(error, 'register') })
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -86,23 +121,23 @@ function AuthModal({ mode, onModeChange, onClose }) {
         ? await supabase.auth.signUp({
             email: email.trim(),
             password,
-            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+            options: { emailRedirectTo: confirmationRedirect },
           })
         : await supabase.auth.signInWithPassword({ email: email.trim(), password })
 
       if (result.error) throw result.error
 
       if (mode === 'register' && !result.data.session) {
-        setStatus({ type: 'success', message: 'Registrácia bola úspešná. Skontroluj e-mail a potvrď svoj účet.' })
+        setConfirmationEmail(email.trim())
+        setStatus({ type: '', message: '' })
         setPassword('')
         setConfirmPassword('')
         return
       }
 
       setStatus({ type: 'success', message: mode === 'register' ? 'Účet bol vytvorený a si prihlásený.' : 'Prihlásenie bolo úspešné.' })
-      const nextPath = new URLSearchParams(window.location.search).get('next')
       window.setTimeout(() => {
-        if (nextPath?.startsWith('/') && !nextPath.startsWith('//')) window.location.assign(nextPath)
+        if (safeNextPath) window.location.assign(safeNextPath)
         else onClose()
       }, 500)
     } catch (error) {
@@ -112,7 +147,7 @@ function AuthModal({ mode, onModeChange, onClose }) {
     }
   }
 
-  const heading = mode === 'register' ? 'Vytvor si účet' : mode === 'forgot' ? 'Obnov heslo' : 'Vitaj späť'
+  const heading = confirmationEmail ? 'Účet je takmer hotový' : mode === 'register' ? 'Vytvor si účet' : mode === 'forgot' ? 'Obnov heslo' : 'Vitaj späť'
   const intro = mode === 'register'
     ? 'Zaregistruj sa e-mailom a bezpečným heslom.'
     : mode === 'forgot'
@@ -125,7 +160,18 @@ function AuthModal({ mode, onModeChange, onClose }) {
         <button className="auth-close" type="button" onClick={onClose} disabled={submitting} aria-label="Zavrieť prihlasovacie okno">×</button>
         <span className="auth-eyebrow">VÝCHOD BROTHERS</span>
         <h2 id="auth-heading">{heading}</h2>
-        <p>{intro}</p>
+        {!confirmationEmail && <p>{intro}</p>}
+
+        {confirmationEmail ? <div className="auth-confirmation" aria-live="polite">
+          <span className="auth-confirmation-icon" aria-hidden="true">✓</span>
+          <p>Na e-mail <strong>{confirmationEmail}</strong> sme poslali potvrdzovací odkaz.</p>
+          <p>Otvor e-mail a klikni na potvrdenie účtu. Až potom sa budeš môcť prihlásiť.</p>
+          <button className="auth-submit" type="button" onClick={() => switchMode('login')}>Prejsť na prihlásenie</button>
+          <button className="auth-resend" type="button" onClick={resendConfirmation} disabled={resending || resendCooldown > 0}>
+            {resending ? 'Odosielam…' : resendCooldown > 0 ? `Poslať znova o ${resendCooldown} s` : 'Poslať e-mail znova'}
+          </button>
+          <p className={`auth-status${status.type ? ` is-${status.type}` : ''}`} role={status.type === 'error' ? 'alert' : undefined}>{status.message}</p>
+        </div> : <>
 
         {mode !== 'forgot' && <div className="auth-tabs" aria-label="Typ formulára">
           <button type="button" className={mode === 'login' ? 'is-active' : ''} aria-pressed={mode === 'login'} disabled={submitting} onClick={() => switchMode('login')}>Prihlásenie</button>
@@ -148,6 +194,7 @@ function AuthModal({ mode, onModeChange, onClose }) {
           {mode === 'forgot' && <button className="auth-back" type="button" disabled={submitting} onClick={() => switchMode('login')}>← Späť na prihlásenie</button>}
         </form>
         <p className={`auth-status${status.type ? ` is-${status.type}` : ''}`} role={status.type === 'error' ? 'alert' : undefined} aria-live="polite">{status.message}</p>
+        </>}
       </section>
     </div>
   )
