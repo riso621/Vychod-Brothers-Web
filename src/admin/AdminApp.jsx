@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { useProfile } from '../context/profile-context'
 import { supabase } from '../lib/supabase'
 import { adminRequest } from '../lib/admin-control-center'
+import { getMembershipUsers } from '../lib/admin-memberships'
 import './admin.css'
 
 const AdminVideosDashboard = lazy(() => import('../components/AdminVideosDashboard'))
@@ -91,7 +92,7 @@ function money(value,currency='eur'){return new Intl.NumberFormat('sk-SK',{style
 export default function AdminApp() {
   const { session, authLoading, signOut } = useProfile()
   const [path, setPath] = useState(window.location.pathname)
-  const [snapshot, setSnapshot] = useState({ users:[], videos:[], invoices:[], logs:[], content:[], integrations:{} }), [loading, setLoading] = useState(true)
+  const [snapshot, setSnapshot] = useState({ users:[], videos:[], invoices:[], logs:[], content:[], integrations:{} }), [loading, setLoading] = useState(true), [loadErrors,setLoadErrors]=useState([])
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   useEffect(() => { const handler = () => setPath(window.location.pathname); window.addEventListener('popstate', handler); return () => window.removeEventListener('popstate', handler) }, [])
   useEffect(() => {
@@ -104,7 +105,23 @@ export default function AdminApp() {
       setPath('/admin')
     }
   }, [authLoading, isAdmin, path, session])
-  const load = useCallback(async () => { if (!isAdmin) return; setLoading(true); try { setSnapshot(await adminRequest({ action:'snapshot' })) } finally { setLoading(false) } }, [isAdmin])
+  const load = useCallback(async () => {
+    if (!isAdmin) return
+    setLoading(true); setLoadErrors([])
+    const results = await Promise.allSettled([
+      getMembershipUsers(),
+      supabase.from('videos').select('id,title,slug,provider,access_level,published,featured,thumbnail_url,created_at').order('created_at',{ascending:false}),
+      supabase.from('site_content').select('key,value,description,updated_at').order('key'),
+      adminRequest({action:'billing'}), adminRequest({action:'logs'}), adminRequest({action:'integrations'}),
+    ])
+    const errors=[]
+    const value=(index,fallback)=>results[index].status==='fulfilled'?results[index].value:fallback
+    results.forEach((result,index)=>{if(result.status==='rejected')errors.push(['Používatelia','Videá','CMS','Platby','Audit','Integrácie'][index])})
+    const videoResult=value(1,{data:[],error:true}), contentResult=value(2,{data:[],error:true})
+    if(videoResult.error)errors.push('Videá'); if(contentResult.error)errors.push('CMS')
+    setSnapshot({ users:value(0,[]), videos:videoResult.data||[], content:contentResult.data||[], invoices:value(3,{invoices:[]}).invoices||[], logs:value(4,{logs:[]}).logs||[], integrations:value(5,{integrations:{}}).integrations||{} })
+    setLoadErrors([...new Set(errors)]); setLoading(false)
+  }, [isAdmin])
   useEffect(() => { load() }, [load])
   if (authLoading) return <div className="admin-boot">Overujem administrátorské oprávnenie…</div>
   if (!session) return <AdminLogin />
@@ -123,5 +140,5 @@ export default function AdminApp() {
   else if (route === 'content') content = <Content content={siteContent} reload={load}/>
   else if (route === 'settings') content = <Settings content={siteContent} integrations={integrations} reload={load}/>
   else content = <Placeholder route={route}/>
-  return <AdminShell route={route} session={session} signOut={signOut}>{content}</AdminShell>
+  return <AdminShell route={route} session={session} signOut={signOut}>{loadErrors.length>0&&<p className="admin-alert is-error" role="alert">Nepodarilo sa načítať: {loadErrors.join(', ')}. Ostatné dáta zostali dostupné.</p>}{content}</AdminShell>
 }

@@ -29,6 +29,21 @@ Deno.serve(async (request) => {
   let body: any; try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
   const admin = createAdminClient()
 
+  if (body.action === 'billing') {
+    try {
+      const response = await stripe.invoices.list({ limit: 100 })
+      return json({ invoices: response.data.map((i:any) => ({ id:i.id,customer:typeof i.customer==='string'?i.customer:i.customer?.id,status:i.status,paid:i.paid,amount_paid:i.amount_paid,amount_due:i.amount_due,currency:i.currency,created:i.created,type:invoiceType(i) })) })
+    } catch (error) {
+      console.error('Admin billing query failed', error instanceof Error ? error.message : 'unknown')
+      return json({ error:'Stripe faktúry sa nepodarilo načítať.' },502)
+    }
+  }
+  if (body.action === 'logs') {
+    const { data,error } = await admin.from('admin_audit_logs').select('*').order('created_at',{ascending:false}).limit(200)
+    return error ? json({error:'Audit log sa nepodarilo načítať.'},500) : json({logs:data||[]})
+  }
+  if (body.action === 'integrations') return json({ integrations:{ supabase:true,stripe:Boolean(Deno.env.get('STRIPE_SECRET_KEY')),cloudflare:Boolean(Deno.env.get('CLOUDFLARE_ACCOUNT_ID')&&Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')) } })
+
   if (body.action === 'snapshot' || body.action === 'user-detail') {
     const { data: profiles, error } = await admin.from('profiles').select(profileColumns).order('created_at', { ascending: false })
     if (error) return json({ error: 'Profily sa nepodarilo načítať.' }, 500)

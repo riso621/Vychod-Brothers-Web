@@ -23,7 +23,7 @@ Deno.serve(async (request) => {
     await userClient.from('profiles').update({ membership_status: 'expired' })
       .eq('membership_status', 'active').not('membership_expires_at', 'is', null).lte('membership_expires_at', now)
     const { data: profiles, error: profilesError } = await userClient.from('profiles')
-      .select('id, username, avatar_url, membership, membership_started_at, membership_expires_at, membership_status, stripe_subscription_id, stripe_price_id, stripe_subscription_status, stripe_cancel_at_period_end, created_at').order('created_at', { ascending: false })
+      .select('id, username, avatar_url, membership, membership_started_at, membership_expires_at, membership_status, stripe_customer_id, stripe_subscription_id, stripe_price_id, stripe_subscription_status, stripe_cancel_at_period_end, created_at').order('created_at', { ascending: false })
     if (profilesError) {
       console.error('Membership profiles query failed', profilesError.message)
       return json({ error: 'Členské profily sa nepodarilo načítať.' }, 500)
