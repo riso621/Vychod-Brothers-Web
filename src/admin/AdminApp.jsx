@@ -12,8 +12,10 @@ const AdminVideosDashboard = lazy(() => import('../components/AdminVideosDashboa
 const AdminMembershipsDashboard = lazy(() => import('../components/AdminMembershipsDashboard'))
 const AdminInvoices = lazy(() => import('./AdminInvoices'))
 const AdminCollaborations = lazy(() => import('./AdminCollaborations'))
+const AdminAnalytics = lazy(() => import('./AdminAnalytics'))
 
 const navItems = [
+  ['analytics', 'Analytika', '◒'],
   ['collaborations', 'Spolupráce', '✦'],
   ['invoices', 'Faktúry', '▤'],
   ['dashboard', 'Prehľad', '▦'], ['videos', 'Videá', '▶'], ['users', 'Používatelia', '◉'],
@@ -59,6 +61,7 @@ function AdminShell({ route, children, session, signOut }) {
 
 function Metric({ label, value, detail }) { return <article className="admin-metric"><span>{label}</span><strong>{value}</strong><small>{detail}</small></article> }
 function CollaborationDashboardWidget(){const [count,setCount]=useState(null);useEffect(()=>{let active=true;cachedAdminLoad('collaboration-summary',()=>collaborationAdminRequest({action:'summary'})).then((data)=>{if(active)setCount(data.newCount)}).catch(()=>{});return()=>{active=false}},[]);return <button className="admin-collaboration-widget" onClick={()=>navigate('/admin/collaborations')}><span>NOVÉ SPOLUPRÁCE</span><strong>{count??'—'}</strong><small>Otvoriť CRM →</small></button>}
+function AnalyticsDashboardWidget(){const [data,setData]=useState(readAdminCache('admin-analytics:7d'));useEffect(()=>{let active=true;cachedAdminLoad('admin-analytics:7d',()=>import('../lib/analytics').then(({getAdminAnalytics})=>getAdminAnalytics('7d'))).then((result)=>active&&setData(result)).catch(()=>{});return()=>{active=false}},[]);const today=data?.summary?.today?.visitors,yesterday=data?.summary?.yesterday?.visitors,change=yesterday>0?Math.round(((today-yesterday)/yesterday)*100):null;return <button className="admin-analytics-widget" onClick={()=>navigate('/admin/analytics')}><div><span><i/>PRÁVE ONLINE</span><strong>{data?.online??'—'}</strong></div><div><span>DNES</span><strong>{today??'—'} návštevníkov</strong><small>{change===null?'Dáta od začiatku merania':`${change>=0?'+':''}${change} % oproti včerajšku`}</small></div><div className="admin-widget-trend">{(data?.chart||[]).slice(-7).map((point,index)=>{const max=Math.max(1,...data.chart.slice(-7).map((p)=>Number(p.pageviews)));return <i style={{height:`${Math.max(8,Number(point.pageviews)/max*100)}%`}} key={index}/>})}</div><em>Zobraziť analytiku →</em></button>}
 
 function Dashboard({ users, videos, invoices, loading }) {
   const stats = useMemo(() => ({ total: users.length, member: users.filter((u) => u.membership === 'member' && u.membership_status === 'active').length, vip: users.filter((u) => u.membership === 'vip' && u.membership_status === 'active').length, published: videos.filter((v) => v.published).length }), [users, videos])
@@ -143,7 +146,7 @@ export default function AdminApp() {
   let route = pathParts[0] || 'dashboard'; if (!labels[route]) route = 'dashboard'
   const { users, videos, invoices, logs, content:siteContent, integrations } = snapshot
   let content
-  if (route === 'dashboard') content = <><Dashboard users={users} videos={videos} invoices={invoices} loading={loading}/><CollaborationDashboardWidget/></>
+  if (route === 'dashboard') content = <><Dashboard users={users} videos={videos} invoices={invoices} loading={loading}/><div className="admin-dashboard-widgets"><AnalyticsDashboardWidget/><CollaborationDashboardWidget/></div></>
   else if (route === 'videos') content = <Suspense fallback={<AdminLoading/>}><AdminVideosDashboard /></Suspense>
   else if (route === 'memberships') content = <Suspense fallback={<AdminLoading/>}><AdminMembershipsDashboard /></Suspense>
   else if (route === 'users' && pathParts[1]) content = <UserDetail key={pathParts[1]} userId={pathParts[1]}/>
@@ -151,6 +154,7 @@ export default function AdminApp() {
   else if (route === 'payments') content = <Payments users={users} invoices={invoices} loading={loading}/>
   else if (route === 'invoices') content = <Suspense fallback={<AdminLoading/>}><AdminInvoices /></Suspense>
   else if (route === 'collaborations') content = <Suspense fallback={<AdminLoading/>}><AdminCollaborations id={pathParts[1]||''}/></Suspense>
+  else if (route === 'analytics') content = <Suspense fallback={<AdminLoading/>}><AdminAnalytics/></Suspense>
   else if (route === 'logs') content = <Logs logs={logs}/>
   else if (route === 'content') content = <Content content={siteContent} reload={load}/>
   else if (route === 'settings') content = <Settings content={siteContent} integrations={integrations} reload={load}/>

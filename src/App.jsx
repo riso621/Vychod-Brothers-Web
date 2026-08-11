@@ -23,6 +23,7 @@ const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
 const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
 const CollaborationSection = lazy(() => import('./components/CollaborationSection'))
+const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -152,5 +153,5 @@ export default function App() {
           : path === '/auth/callback' || path === '/auth/callback/'
             ? <AuthFlowPage type="callback" />
         : <HomePage />
-  return <Suspense fallback={null}><ProfileProvider><WatchHistoryProvider>{page}</WatchHistoryProvider></ProfileProvider></Suspense>
+  return <Suspense fallback={null}><ProfileProvider><WatchHistoryProvider><AnalyticsTracker />{page}</WatchHistoryProvider></ProfileProvider></Suspense>
 }
