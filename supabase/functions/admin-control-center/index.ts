@@ -26,13 +26,15 @@ const invoiceMonthCache = new Map<string, { expiresAt:number, invoices:any[] }>(
 const INVOICE_CACHE_MS = 60_000
 
 function safeInvoice(invoice:any) {
-  const line = invoice.lines?.data?.find((item:any) => item.price?.id || item.pricing?.price_details?.price)
+  const pricedLines=(invoice.lines?.data||[]).filter((item:any)=>item.price?.id||item.pricing?.price_details?.price)
+  const line=[...pricedLines].sort((a:any,b:any)=>(b.amount||0)-(a.amount||0)).find((item:any)=>planForPrice(item.price?.id||item.pricing?.price_details?.price||''))
   const priceId = line?.price?.id || line?.pricing?.price_details?.price || ''
   const period = line?.period || {}
+  const paid=invoice.status==='paid'
   return {
     id:invoice.id, number:invoice.number, customer:typeof invoice.customer==='string'?invoice.customer:invoice.customer?.id,
-    customerEmail:invoice.customer_email || invoice.customer_name || null, status:invoice.status, paid:invoice.paid,
-    amountPaid:invoice.amount_paid, amountDue:invoice.amount_due, currency:invoice.currency, created:invoice.created,
+    customerEmail:invoice.customer_email || invoice.customer_name || null, status:invoice.status, paid,
+    amountPaid:invoice.amount_paid, amountDue:invoice.amount_due, total:invoice.total, currency:invoice.currency, created:invoice.created,
     type:invoiceType(invoice), plan:planForPrice(priceId), periodStart:period.start || invoice.period_start || null,
     periodEnd:period.end || invoice.period_end || null, invoicePdf:invoice.invoice_pdf || null,
     hostedInvoiceUrl:invoice.hosted_invoice_url || null,
@@ -58,10 +60,11 @@ async function invoicesForMonth(year:number, month:number) {
 function invoiceSummary(invoices:any[]) {
   const currencies=[...new Set(invoices.map((i)=>i.currency).filter(Boolean))]
   const currency=currencies.length<=1?(currencies[0]||'eur'):null
-  const paid=invoices.filter((i)=>i.paid)
+  const paid=invoices.filter((i)=>i.status==='paid')
+  const unpaid=invoices.filter((i)=>['open','uncollectible'].includes(i.status))
   return { count:invoices.length, currency,
     paidTotal:currency?paid.reduce((sum,i)=>sum+i.amountPaid,0):null,
-    unpaidTotal:currency?invoices.filter((i)=>!i.paid).reduce((sum,i)=>sum+i.amountDue,0):null,
+    unpaidTotal:currency?unpaid.reduce((sum,i)=>sum+i.amountDue,0):null,
     memberRevenue:currency?paid.filter((i)=>i.plan==='member').reduce((sum,i)=>sum+i.amountPaid,0):null,
     vipRevenue:currency?paid.filter((i)=>i.plan==='vip').reduce((sum,i)=>sum+i.amountPaid,0):null }
 }
@@ -76,7 +79,7 @@ Deno.serve(async (request) => {
   if (body.action === 'billing') {
     try {
       const now=new Date(), invoices=await invoicesForMonth(now.getUTCFullYear(),now.getUTCMonth()+1)
-      return json({ invoices:invoices.slice(0,50).map((i)=>({id:i.id,customer:i.customer,status:i.status,paid:i.paid,amount_paid:i.amountPaid,amount_due:i.amountDue,currency:i.currency,created:i.created,type:i.type})),summary:invoiceSummary(invoices) })
+      return json({ invoices:invoices.slice(0,50).map((i)=>({id:i.id,customer:i.customer,status:i.status,paid:i.status==='paid',amount_paid:i.amountPaid,amount_due:i.amountDue,total:i.total,currency:i.currency,created:i.created,type:i.type,plan:i.plan})),summary:invoiceSummary(invoices) })
     } catch (error) {
       console.error('Admin billing query failed', error instanceof Error ? error.message : 'unknown')
       return json({ error:'Stripe faktúry sa nepodarilo načítať.' },502)
