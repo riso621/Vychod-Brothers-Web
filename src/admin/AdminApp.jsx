@@ -5,6 +5,7 @@ import { adminRequest } from '../lib/admin-control-center'
 import { getMembershipUsers } from '../lib/admin-memberships'
 import { cachedAdminLoad, readAdminCache } from '../lib/admin-cache'
 import AdminUserDetail from './AdminUserDetail'
+import AdminNotifications from './AdminNotifications'
 import { collaborationAdminRequest } from '../lib/collaborations'
 import './admin.css'
 
@@ -56,7 +57,7 @@ function AdminLogin({ denied = false }) {
 function AdminShell({ route, children, session, signOut }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const go = (key) => { navigate(key === 'dashboard' ? '/admin' : `/admin/${key}`); setMenuOpen(false) }
-  return <div className="admin-app"><aside className={menuOpen ? 'admin-sidebar is-open' : 'admin-sidebar'}><header><a href="/admin" aria-label="Admin domov">VB</a><div><strong>VÝCHOD</strong><small>ADMIN SYSTEM</small></div></header><nav aria-label="Admin navigácia">{navItems.map(([key, label, icon]) => <button className={route === key ? 'is-active' : ''} onClick={() => go(key)} key={key}><i>{icon}</i>{label}</button>)}</nav><footer><a href="/">↗ Otvoriť web</a><button onClick={async () => { await signOut(); navigate('/admin/login') }}>Odhlásiť</button></footer></aside><div className="admin-workspace"><header className="admin-topbar"><button className="admin-menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="Otvoriť admin menu">☰</button><div><span>ADMIN PANEL</span><strong>{labels[route] || 'Prehľad'}</strong></div><div className="admin-identity"><span>{session.user.email?.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.email}</strong><small>Administrátor</small></div></div></header><main className="admin-main">{children}</main></div>{menuOpen && <button className="admin-sidebar-scrim" aria-label="Zavrieť menu" onClick={() => setMenuOpen(false)} />}</div>
+  return <div className="admin-app"><aside className={menuOpen ? 'admin-sidebar is-open' : 'admin-sidebar'}><header><a href="/admin" aria-label="Admin domov">VB</a><div><strong>VÝCHOD</strong><small>ADMIN SYSTEM</small></div></header><nav aria-label="Admin navigácia">{navItems.map(([key, label, icon]) => <button className={route === key ? 'is-active' : ''} onClick={() => go(key)} key={key}><i>{icon}</i>{label}</button>)}</nav><footer><a href="/">↗ Otvoriť web</a><button onClick={async () => { await signOut(); navigate('/admin/login') }}>Odhlásiť</button></footer></aside><div className="admin-workspace"><header className="admin-topbar"><button className="admin-menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="Otvoriť admin menu">☰</button><div><span>ADMIN PANEL</span><strong>{labels[route] || 'Prehľad'}</strong></div><AdminNotifications/><div className="admin-identity"><span>{session.user.email?.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.email}</strong><small>Administrátor</small></div></div></header><main className="admin-main">{children}</main></div>{menuOpen && <button className="admin-sidebar-scrim" aria-label="Zavrieť menu" onClick={() => setMenuOpen(false)} />}</div>
 }
 
 function Metric({ label, value, detail }) { return <article className="admin-metric"><span>{label}</span><strong>{value}</strong><small>{detail}</small></article> }

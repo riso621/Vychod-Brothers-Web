@@ -2,6 +2,7 @@ import Stripe from 'npm:stripe@20.4.0'
 import { json } from '../_shared/http.ts'
 import { createAdminClient } from '../_shared/supabase.ts'
 import { planForPrice, stripe, stripeConfig } from '../_shared/stripe.ts'
+import { notifyAdmin } from '../_shared/notifications.ts'
 
 const handledEvents = new Set([
   'checkout.session.completed',
@@ -27,6 +28,53 @@ function subscriptionFromInvoice(invoice: Stripe.Invoice) {
 function periodEnd(subscription: Stripe.Subscription) {
   const legacy = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end
   return legacy || subscription.items.data[0]?.current_period_end || null
+}
+
+function money(amount: number, currency: string) {
+  try { return new Intl.NumberFormat('sk-SK', { style: 'currency', currency: currency.toUpperCase() }).format(amount / 100) }
+  catch { return `${(amount / 100).toFixed(2)} ${currency.toUpperCase()}` }
+}
+
+async function createEventNotifications(admin: ReturnType<typeof createAdminClient>, event: Stripe.Event, subscription: Stripe.Subscription, userId: string, plan: string) {
+  const { data: { user } } = await admin.auth.admin.getUserById(userId)
+  const email = user?.email || 'používateľ'
+  const targetUrl = `/admin/users/${userId}`
+  const jobs: Promise<void>[] = []
+  const add = (suffix: string, input: Parameters<typeof notifyAdmin>[1], dedupeKey = `stripe:${event.id}:${suffix}`) => jobs.push(notifyAdmin(admin, { ...input, dedupeKey }))
+
+  if (event.type === 'invoice.paid' || event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const paid = event.type === 'invoice.paid'
+    const amount = paid ? invoice.amount_paid : invoice.amount_due
+    add(paid ? 'invoice-paid' : 'invoice-failed', {
+      type: paid ? 'stripe.payment_paid' : 'stripe.payment_failed', title: paid ? 'Nová platba' : 'Neúspešná platba',
+      message: paid ? `Prijatá platba ${money(amount, invoice.currency)} od ${email}.` : `Platba ${money(amount, invoice.currency)} od ${email} zlyhala.`,
+      entityType: 'invoice', entityId: invoice.id, targetUrl: '/admin/invoices', metadata: { invoiceId: invoice.id, userId, plan }, dedupeKey: '',
+    }, `stripe:invoice:${invoice.id}:${paid ? 'paid' : 'failed'}`)
+  }
+  if ((event.type === 'customer.subscription.created' || event.type === 'checkout.session.completed') && ['active', 'trialing'].includes(subscription.status)) {
+    add('membership-created', { type: 'membership.activated', title: `Nový ${plan.toUpperCase()}`, message: `${email} aktivoval členstvo ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' }, `membership:activated:${subscription.id}:${plan}`)
+  }
+  if (event.type === 'customer.subscription.pending_update_applied') {
+    add('membership-upgraded', { type: 'membership.upgraded', title: `Prechod na ${plan.toUpperCase()}`, message: `${email} prešiel na ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' }, `membership:plan:${subscription.id}:${subscription.items.data[0]?.price.id || plan}:${periodEnd(subscription) || 'current'}`)
+  }
+  if (event.type === 'customer.subscription.updated') {
+    const previous = event.data.previous_attributes as Record<string, unknown> | undefined
+    const previousPriceId = ((previous?.items as { data?: Array<{ price?: { id?: string } }> } | undefined)?.data?.[0]?.price?.id) || ''
+    const currentPriceId = subscription.items.data[0]?.price.id || ''
+    if (previousPriceId && currentPriceId && previousPriceId !== currentPriceId && ['active', 'trialing'].includes(subscription.status)) {
+      add('membership-plan-changed', { type: 'membership.upgraded', title: `Prechod na ${plan.toUpperCase()}`, message: `${email} prešiel na ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' }, `membership:plan:${subscription.id}:${currentPriceId}:${periodEnd(subscription) || 'current'}`)
+    }
+    if (previous && Object.prototype.hasOwnProperty.call(previous, 'cancel_at_period_end')) {
+      if (subscription.cancel_at_period_end) add('cancel-scheduled', { type: 'membership.cancel_scheduled', title: 'Zrušenie predplatného', message: `${email} naplánoval zrušenie členstva ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' })
+      else add('reactivated', { type: 'membership.reactivated', title: 'Obnovené predplatné', message: `${email} obnovil automatické predplatné ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' })
+    }
+  }
+  if (event.type === 'customer.subscription.deleted') {
+    add('cancelled', { type: 'membership.cancelled', title: 'Ukončené predplatné', message: `Predplatné ${plan.toUpperCase()} používateľa ${email} bolo ukončené.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' })
+  }
+  const results = await Promise.allSettled(jobs)
+  results.forEach((result) => { if (result.status === 'rejected') console.error('Admin notification failed', result.reason instanceof Error ? result.reason.message : 'unknown') })
 }
 
 async function subscriptionForEvent(event: Stripe.Event) {
@@ -111,5 +159,6 @@ Deno.serve(async (request) => {
     p_cancel_at_period_end: cancellationScheduled,
   })
   if (error) return json({ error: 'Synchronizácia členstva zlyhala.' }, 500)
+  if (data === true) await createEventNotifications(admin, event, subscription, userId, paidPlan)
   return json({ received: true, handled: true, applied: data })
 })

@@ -20,7 +20,8 @@ Deno.serve(async(request)=>{
   const admin=createAdminClient(),now=new Date().toISOString()
   const presence=admin.from('analytics_presence').upsert({visitor_hash:visitorHash,path,last_seen:now},{onConflict:'visitor_hash'})
   if(type==='pageview'){
-    const [{error:eventError},{error:presenceError}]=await Promise.all([admin.from('analytics_events').insert({visitor_hash:visitorHash,session_hash:sessionHash,path,source:source(clean(body.referrer,500)),device:device(ua)}),presence])
+    const [{error:eventError},{error:presenceError},{error:dailyError}]=await Promise.all([admin.from('analytics_events').insert({visitor_hash:visitorHash,session_hash:sessionHash,path,source:source(clean(body.referrer,500)),device:device(ua)}),presence,admin.rpc('analytics_register_daily_visitor',{p_visitor_hash:visitorHash})])
+    if(dailyError)console.error('Daily analytics registration failed',dailyError.message)
     if(eventError||presenceError)return json({error:'Analytický event sa nepodarilo uložiť.'},500)
   }else if((await presence).error)return json({error:'Presence sa nepodarilo aktualizovať.'},500)
   return json({ok:true})

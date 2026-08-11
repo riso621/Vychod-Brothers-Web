@@ -1,5 +1,6 @@
 import { corsHeaders, json } from '../_shared/http.ts'
 import { createAdminClient } from '../_shared/supabase.ts'
+import { notifyAdmin } from '../_shared/notifications.ts'
 
 const inbox='vychodbrothers.spoluprace@gmail.com'
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -28,5 +29,15 @@ Deno.serve(async(request)=>{
     try{const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resendKey}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[inbox],reply_to:payload.email,subject:`Nová spolupráca: ${payload.subject}`,html:`<h2>Nová ponuka na spoluprácu</h2><p><strong>${escapeHtml(payload.name)}</strong>${payload.company?` · ${escapeHtml(payload.company)}`:''}</p><p>${escapeHtml(payload.email)}</p><p><strong>Rozpočet:</strong> ${escapeHtml(payload.budget||'Neuvedený')}</p><p>${escapeHtml(payload.message).replace(/\n/g,'<br>')}</p><p><a href="${escapeHtml((Deno.env.get('SITE_URL')||'').replace(/\/$/,'')+`/admin/collaborations/${created.id}`)}">Otvoriť v adminovi</a></p>`})});const result=await response.json();if(!response.ok)console.error('Collaboration notification failed',response.status);else{notificationSent=true;providerMessageId=result.id||null}}catch(error){console.error('Collaboration notification failed',error instanceof Error?error.message:'unknown')}
   }
   await admin.from('collaboration_messages').update({delivery_status:notificationSent?'sent':'failed',provider_message_id:providerMessageId}).eq('id',message.id)
+  try {
+    await notifyAdmin(admin,{
+      type:'collaboration.new',title:'Nová spolupráca',
+      message:`${payload.company||payload.name} poslali novú ponuku${payload.budget?` · ${payload.budget}`:''}.`,
+      entityType:'collaboration',entityId:created.id,targetUrl:`/admin/collaborations/${created.id}`,
+      metadata:{company:payload.company,budget:payload.budget},dedupeKey:`collaboration:new:${created.id}`,
+    })
+  } catch(error) {
+    console.error('Admin notification failed',error instanceof Error?error.message:'unknown')
+  }
   return json({ok:true,id:created.id,notificationSent})
 })
