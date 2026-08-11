@@ -16,7 +16,7 @@ Deno.serve(async (request) => {
 
   let body: { action?: string; prorationDate?: number }
   try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
-  const action = body.action === 'confirm' ? 'confirm' : 'preview'
+  const action = body.action === 'confirm' ? 'confirm' : body.action === 'status' ? 'status' : 'preview'
   const { memberPrice, vipPrice } = stripeConfig()
   if (!memberPrice || !vipPrice || !Deno.env.get('STRIPE_SECRET_KEY')) {
     return json({ error: 'Upgrade momentálne nie je nakonfigurovaný.' }, 503)
@@ -32,12 +32,33 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id)
+    const subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id, {
+      expand: ['latest_invoice.confirmation_secret'],
+    })
     if (!activeStatuses.has(subscription.status)) return json({ error: 'Predplatné nie je možné upgradovať.' }, 409)
-    if (subscription.pending_update) return json({ error: 'Predchádzajúca zmena predplatného sa ešte spracúva.' }, 409)
     if (subscription.items.data.length !== 1) return json({ error: 'Predplatné má neočakávanú konfiguráciu.' }, 409)
     const item = subscription.items.data[0]
+    const invoice = typeof subscription.latest_invoice === 'string' ? null : subscription.latest_invoice
+    const clientSecret = invoice?.confirmation_secret?.client_secret || ''
+    const paymentIntentId = clientSecret.startsWith('pi_') ? clientSecret.split('_secret_')[0] : ''
+    const paymentIntent = paymentIntentId ? await stripe.paymentIntents.retrieve(paymentIntentId) : null
+    const paymentStatus = paymentIntent?.status || ''
+
+    if (subscription.pending_update) {
+      if (paymentStatus === 'canceled') {
+        return json({ error: 'Prorata platba bola zrušená. MEMBER zostáva aktívny.' }, 402)
+      }
+      const requiresPayment = ['requires_action', 'requires_confirmation', 'requires_payment_method'].includes(paymentStatus)
+      return json({
+        status: requiresPayment ? 'requires_payment' : 'processing',
+        clientSecret: requiresPayment ? clientSecret : '',
+        paymentStatus,
+      })
+    }
+    if (item.price.id === vipPrice) return json({ status: 'updated', paymentStatus })
     if (item.price.id !== memberPrice) return json({ error: 'Upgrade je dostupný iba z MEMBER na VIP.' }, 409)
+
+    if (action === 'status') return json({ status: 'ready' })
 
     if (action === 'preview') {
       const prorationDate = Math.floor(Date.now() / 1000)
@@ -70,11 +91,22 @@ Deno.serve(async (request) => {
       proration_behavior: 'always_invoice',
       proration_date: prorationDate,
       metadata: { ...subscription.metadata, supabase_user_id: user.id, plan: 'vip' },
+      expand: ['latest_invoice.confirmation_secret'],
     }, { idempotencyKey: `vb-upgrade-vip-${subscription.id}-${prorationDate}` })
 
+    const updatedInvoice = typeof updated.latest_invoice === 'string' ? null : updated.latest_invoice
+    const updatedClientSecret = updatedInvoice?.confirmation_secret?.client_secret || ''
+    const updatedPaymentIntentId = updatedClientSecret.startsWith('pi_') ? updatedClientSecret.split('_secret_')[0] : ''
+    const updatedPaymentIntent = updatedPaymentIntentId
+      ? await stripe.paymentIntents.retrieve(updatedPaymentIntentId)
+      : null
+    const updatedPaymentStatus = updatedPaymentIntent?.status || ''
+    const requiresPayment = ['requires_action', 'requires_confirmation', 'requires_payment_method'].includes(updatedPaymentStatus)
+
     return json({
-      status: updated.pending_update ? 'pending_payment' : 'updated',
-      subscriptionId: updated.id,
+      status: updated.pending_update ? (requiresPayment ? 'requires_payment' : 'processing') : 'updated',
+      clientSecret: requiresPayment ? updatedClientSecret : '',
+      paymentStatus: updatedPaymentStatus,
     })
   } catch (error) {
     const stripeError = error as { code?: string; message?: string }

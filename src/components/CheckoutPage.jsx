@@ -69,11 +69,16 @@ export default function CheckoutPage({ plan }) {
   const [upgradePreview, setUpgradePreview] = useState(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [upgradeAttempt, setUpgradeAttempt] = useState(0)
+  const [upgradeClientSecret, setUpgradeClientSecret] = useState('')
+  const [upgradePaymentStatus, setUpgradePaymentStatus] = useState('')
+  const [upgradePaymentReady, setUpgradePaymentReady] = useState(false)
   const [flow, setFlow] = useState(() => readCheckoutFlow(plan))
   const elementsRef = useRef(null)
   const requestRef = useRef(null)
   const mountRef = useRef(null)
   const upgradePreviewRequestedRef = useRef(false)
+  const upgradeElementsRef = useRef(null)
+  const upgradeMountRef = useRef(null)
   const details = planDetails[plan]
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
@@ -195,7 +200,22 @@ export default function CheckoutPage({ plan }) {
     setUpgradeLoading(true)
     setError('')
     getVipUpgradePreview()
-      .then((preview) => active && setUpgradePreview(preview))
+      .then((preview) => {
+        if (!active) return
+        if (preview.status === 'requires_payment' && preview.clientSecret) {
+          sessionStorage.removeItem(checkoutFlowKey)
+          setFlow('payment')
+          setUpgradeClientSecret(preview.clientSecret)
+          setUpgradePaymentStatus(preview.paymentStatus || 'requires_action')
+          return
+        }
+        if (preview.status === 'processing' || preview.status === 'updated') {
+          storeCheckoutFlow('vip')
+          setFlow('verifying')
+          return
+        }
+        setUpgradePreview(preview)
+      })
       .catch((previewError) => {
         if (active) {
           upgradePreviewRequestedRef.current = false
@@ -206,14 +226,48 @@ export default function CheckoutPage({ plan }) {
     return () => { active = false }
   }, [isVipUpgrade, upgradeAttempt])
 
+  useEffect(() => {
+    if (!upgradeClientSecret || !stripePromise) return undefined
+    if (upgradePaymentStatus !== 'requires_payment_method') {
+      setUpgradePaymentReady(true)
+      return undefined
+    }
+    if (!upgradeMountRef.current) return undefined
+    let cancelled = false
+    let paymentElement
+    const mountUpgradePayment = async () => {
+      setUpgradePaymentReady(false)
+      const stripe = await stripePromise
+      if (!stripe || cancelled || !upgradeMountRef.current) return
+      const elements = stripe.elements({ clientSecret: upgradeClientSecret, appearance, loader: 'auto' })
+      paymentElement = elements.create('payment', { layout: { type: 'tabs', defaultCollapsed: false } })
+      paymentElement.on('ready', () => !cancelled && setUpgradePaymentReady(true))
+      paymentElement.on('loaderror', () => !cancelled && setError('Platobný formulár upgradu sa nepodarilo načítať.'))
+      paymentElement.mount(upgradeMountRef.current)
+      upgradeElementsRef.current = elements
+    }
+    mountUpgradePayment()
+    return () => {
+      cancelled = true
+      paymentElement?.destroy()
+      upgradeElementsRef.current = null
+    }
+  }, [upgradeClientSecret, upgradePaymentStatus])
+
   const submitUpgrade = async () => {
     if (upgradeLoading || !upgradePreview?.prorationDate) return
     setUpgradeLoading(true)
     setError('')
     try {
-      await confirmVipUpgrade(upgradePreview.prorationDate)
-      storeCheckoutFlow('vip')
-      setFlow('verifying')
+      const result = await confirmVipUpgrade(upgradePreview.prorationDate)
+      if (result.status === 'requires_payment' && result.clientSecret) {
+        setUpgradeClientSecret(result.clientSecret)
+        setUpgradePaymentStatus(result.paymentStatus || 'requires_action')
+        setUpgradePreview(null)
+      } else {
+        storeCheckoutFlow('vip')
+        setFlow('verifying')
+      }
     } catch (upgradeError) {
       setError(upgradeError.message || 'Prechod na VIP sa nepodarilo dokončiť.')
       setUpgradePreview(null)
@@ -223,6 +277,26 @@ export default function CheckoutPage({ plan }) {
   const retryUpgradePreview = () => {
     upgradePreviewRequestedRef.current = false
     setUpgradeAttempt((value) => value + 1)
+  }
+  const submitUpgradePayment = async () => {
+    if (!upgradePaymentReady || !stripePromise || upgradeLoading) return
+    setUpgradeLoading(true)
+    setError('')
+    try {
+      const stripe = await stripePromise
+      const confirmation = {
+        clientSecret: upgradeClientSecret,
+        confirmParams: { return_url: `${window.location.origin}/checkout/vip?payment=return` },
+        redirect: 'if_required',
+      }
+      if (upgradeElementsRef.current) confirmation.elements = upgradeElementsRef.current
+      const { error: paymentError } = await stripe.confirmPayment(confirmation)
+      if (paymentError) throw paymentError
+      storeCheckoutFlow('vip')
+      setFlow('verifying')
+    } catch (paymentError) {
+      setError(friendlyPaymentError(paymentError))
+    } finally { setUpgradeLoading(false) }
   }
 
   if (!details) return <section className="checkout-state"><h1>Neplatný plán</h1><a href="/clenstvo">Späť na členstvo</a></section>
@@ -240,8 +314,8 @@ export default function CheckoutPage({ plan }) {
         <span>BEZPEČNÉ POTVRDENIE PLATBY</span>
         <h1>{flow !== 'pending' ? 'Overujeme platbu…' : 'Aktivácia ešte prebieha'}</h1>
         <p>{flow !== 'pending'
-          ? 'Platba bola prijatá. Aktivujeme tvoje členstvo a čakáme na bezpečné potvrdenie zo Stripe.'
-          : 'Platba bola prijatá, aktivácia členstva ešte prebieha. Nemusíš platiť znova.'}</p>
+          ? (plan === 'vip' ? 'Spracovávame prechod na VIP a čakáme na autoritatívne potvrdenie zo Stripe.' : 'Platba bola prijatá. Aktivujeme tvoje členstvo a čakáme na bezpečné potvrdenie zo Stripe.')
+          : (plan === 'vip' ? 'Stripe prechod na VIP ešte dokončuje. Skontroluj stav účtu alebo sa vráť o chvíľu.' : 'Platba bola prijatá, aktivácia členstva ešte prebieha. Nemusíš platiť znova.')}</p>
         {flow === 'pending' && <a className="checkout-result-primary" href="/account">Skontrolovať môj účet</a>}
       </section>
     )
@@ -285,10 +359,10 @@ export default function CheckoutPage({ plan }) {
           <div className="checkout-upgrade" role="status">
             <span>BEZPEČNÝ UPGRADE</span><h2>Prejsť na VIP</h2>
             <div className="checkout-upgrade-plans"><p><small>Aktuálny plán</small><strong>MEMBER</strong><b>4,99 € / mesiac</b></p><i aria-hidden="true">→</i><p><small>Nový plán</small><strong>VIP</strong><b>9,99 € / mesiac</b></p></div>
-            {upgradeLoading && !upgradePreview ? <p>Počítame presnú cenu prechodu…</p> : <p>Stripe zohľadní už zaplatenú časť MEMBER obdobia. Pri potvrdení sa pokúsi ihneď uhradiť pomerný rozdiel <strong>{formattedUpgradeAmount}</strong>. VIP sa aktivuje až po potvrdení platby webhookom.</p>}
+            {upgradeClientSecret ? <><p>{upgradePaymentStatus === 'requires_payment_method' ? 'Prorata platba potrebuje platnú platobnú metódu.' : 'Stripe vyžaduje dodatočné bezpečnostné potvrdenie platby.'} VIP zostane zamknuté, kým platba nebude úspešná.</p>{upgradePaymentStatus === 'requires_payment_method' && <div className="checkout-upgrade-payment"><div ref={upgradeMountRef} /></div>}</> : upgradeLoading && !upgradePreview ? <p>Kontrolujeme stav a počítame presnú cenu prechodu…</p> : <p>Stripe zohľadní už zaplatenú časť MEMBER obdobia. Pri potvrdení sa pokúsi ihneď uhradiť pomerný rozdiel <strong>{formattedUpgradeAmount}</strong>. VIP sa aktivuje až po potvrdení platby webhookom.</p>}
             {error && <p className="payment-checkout-error" role="alert">{error}</p>}
             {error && !upgradePreview && !upgradeLoading && <button className="checkout-upgrade-retry" type="button" onClick={retryUpgradePreview}>OBNOVIŤ NÁHĽAD</button>}
-            <button type="button" onClick={submitUpgrade} disabled={upgradeLoading || !upgradePreview}>{upgradeLoading ? 'SPRACÚVAM…' : 'POTVRDIŤ PRECHOD NA VIP'}</button>
+            {upgradeClientSecret ? <button type="button" onClick={submitUpgradePayment} disabled={upgradeLoading || !upgradePaymentReady}>{upgradeLoading ? 'SPRACÚVAM PLATBU…' : 'DOKONČIŤ VIP PLATBU'}</button> : <button type="button" onClick={submitUpgrade} disabled={upgradeLoading || !upgradePreview}>{upgradeLoading ? 'SPRACÚVAM…' : 'POTVRDIŤ PRECHOD NA VIP'}</button>}
           </div>
         ) : activeSubscription ? (
           <div className="checkout-existing" role="status"><h2>{currentMembership === 'vip' ? 'VIP už máš aktívne.' : 'MEMBER už máš aktívne.'}</h2><p>Svoje predplatné, platobnú metódu a faktúry môžeš bezpečne spravovať v zákazníckom portáli.</p><div className="checkout-existing-actions"><a href="/account">Môj účet</a><button type="button" onClick={openPortal} disabled={portalLoading}>{portalLoading ? 'Otváram…' : 'Spravovať predplatné'}</button></div></div>
