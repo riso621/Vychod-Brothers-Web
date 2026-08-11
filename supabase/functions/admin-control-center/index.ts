@@ -50,7 +50,11 @@ Deno.serve(async (request) => {
     try { const response = await stripe.invoices.list({ limit:100 }); invoices = response.data.map((i:any) => ({ id:i.id,customer:typeof i.customer === 'string' ? i.customer : i.customer?.id,status:i.status,paid:i.paid,amount_paid:i.amount_paid,amount_due:i.amount_due,currency:i.currency,created:i.created,type:invoiceType(i),subscription_status:null })) } catch (error) { console.error('Admin Stripe invoice list failed', error instanceof Error ? error.message : 'unknown') }
     const { data: logs } = await admin.from('admin_audit_logs').select('*').order('created_at',{ascending:false}).limit(100)
     const { data: content } = await admin.from('site_content').select('key,value,description,updated_at').order('key')
-    return json({ users, videos:videos || [], invoices, logs:logs || [], content:content || [] })
+    return json({ users, videos:videos || [], invoices, logs:logs || [], content:content || [], integrations: {
+      supabase: true,
+      stripe: Boolean(Deno.env.get('STRIPE_SECRET_KEY')),
+      cloudflare: Boolean(Deno.env.get('CLOUDFLARE_ACCOUNT_ID') && Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')),
+    } })
   }
 
   if (body.action === 'save-content') {

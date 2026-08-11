@@ -79,6 +79,7 @@ function UserDetail({ userId }) { const [data,setData]=useState(null),[error,set
 function Logs({ logs }) { const [q,setQ]=useState(''); const rows=logs.filter((l)=>`${l.action_type} ${l.entity_type} ${l.admin_email} ${l.description}`.toLowerCase().includes(q.toLowerCase())); return <section><PageHeading eyebrow="ADMIN / AUDIT" title="Audit log" text="Nemenná história administrátorských write operácií."/><div className="admin-toolbar"><input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Hľadať v audite"/><span>{rows.length} udalostí</span></div>{rows.length?<div className="admin-table-wrap"><table><thead><tr><th>Čas</th><th>Admin</th><th>Akcia</th><th>Entita</th><th>Popis</th></tr></thead><tbody>{rows.map((l)=><tr key={l.id}><td>{formatDate(l.created_at)}</td><td>{l.admin_email||l.admin_user_id}</td><td>{l.action_type}</td><td>{l.entity_type}</td><td>{l.description}</td></tr>)}</tbody></table></div>:<Empty text="Audit zatiaľ neobsahuje udalosti."/>}</section> }
 
 function Content({ content, reload }) { const [values,setValues]=useState(Object.fromEntries(content.map((c)=>[c.key,typeof c.value==='string'?c.value:JSON.stringify(c.value)]))),[message,setMessage]=useState(''); const save=async(key)=>{try{await adminRequest({action:'save-content',key,value:values[key]});setMessage('Obsah bol uložený.');reload()}catch(e){setMessage(e.message)}}; return <section><PageHeading eyebrow="ADMIN / CMS" title="Obsah webu" text="Bezpečný základ pre verejné texty so serverovou validáciou a fallbackom."/><div className="admin-content-list">{content.map((c)=><article className="admin-panel" key={c.key}><label>{c.description||c.key}<small>{c.key}</small><textarea value={values[c.key]??''} onChange={(e)=>setValues({...values,[c.key]:e.target.value})}/></label><button onClick={()=>save(c.key)}>Uložiť</button></article>)}</div>{message&&<p className="admin-videos-success">{message}</p>}</section> }
+function Settings({ content, integrations, reload }) { return <section><PageHeading eyebrow="ADMIN / SETTINGS" title="Nastavenia" text="Verejné nastavenia a bezpečný stav serverových integrácií."/><article className="admin-panel"><h2>Integrácie</h2><div className="admin-status-list">{Object.entries(integrations||{}).map(([key,active])=><p key={key}><i className={active?'ok':''}/>{key[0].toUpperCase()+key.slice(1)}<strong>{active?'Aktívne':'Nenastavené'}</strong></p>)}</div></article><div className="admin-detail-section"><Content content={content.filter((c)=>['brand.name','contact.email','support.email'].includes(c.key))} reload={reload}/></div></section> }
 
 function Placeholder({ route }) { const copy = { merch:'Merch modul zatiaľ nie je nakonfigurovaný.', content:'CMS pre obsah webu zatiaľ nie je pripojený.', settings:'Konfiguračné tajomstvá zostávajú bezpečne iba na serveri.', logs:'Audit log tabuľka zatiaľ nebola vytvorená.' }; return <section><PageHeading eyebrow="ADMIN MODULE" title={labels[route]} text={copy[route]}/><div className="admin-placeholder"><span>PRIPRAVENÉ NA ĎALŠIU ETAPU</span><h2>Modul nie je aktívny</h2><p>Neboli vytvorené falošné dáta ani klientsky prístup k citlivým systémom.</p></div></section> }
 function PageHeading({ eyebrow, title, text }) { return <div className="admin-page-heading"><div><span>{eyebrow}</span><h1>{title}</h1><p>{text}</p></div></div> }
@@ -90,7 +91,7 @@ function money(value,currency='eur'){return new Intl.NumberFormat('sk-SK',{style
 export default function AdminApp() {
   const { session, authLoading, signOut } = useProfile()
   const [path, setPath] = useState(window.location.pathname)
-  const [snapshot, setSnapshot] = useState({ users:[], videos:[], invoices:[], logs:[], content:[] }), [loading, setLoading] = useState(true)
+  const [snapshot, setSnapshot] = useState({ users:[], videos:[], invoices:[], logs:[], content:[], integrations:{} }), [loading, setLoading] = useState(true)
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   useEffect(() => { const handler = () => setPath(window.location.pathname); window.addEventListener('popstate', handler); return () => window.removeEventListener('popstate', handler) }, [])
   useEffect(() => {
@@ -110,7 +111,7 @@ export default function AdminApp() {
   if (!isAdmin) return <AdminLogin denied />
   const pathParts = path.replace(/^\/admin\/?/, '').split('/').filter(Boolean)
   let route = pathParts[0] || 'dashboard'; if (!labels[route]) route = 'dashboard'
-  const { users, videos, invoices, logs, content:siteContent } = snapshot
+  const { users, videos, invoices, logs, content:siteContent, integrations } = snapshot
   let content
   if (route === 'dashboard') content = <Dashboard users={users} videos={videos} invoices={invoices} loading={loading}/>
   else if (route === 'videos') content = <Suspense fallback={<AdminLoading/>}><AdminVideosDashboard /></Suspense>
@@ -119,7 +120,8 @@ export default function AdminApp() {
   else if (route === 'users') content = <Users users={users} loading={loading}/>
   else if (route === 'payments') content = <Payments users={users} invoices={invoices} loading={loading}/>
   else if (route === 'logs') content = <Logs logs={logs}/>
-  else if (route === 'content' || route === 'settings') content = <Content content={siteContent} reload={load}/>
+  else if (route === 'content') content = <Content content={siteContent} reload={load}/>
+  else if (route === 'settings') content = <Settings content={siteContent} integrations={integrations} reload={load}/>
   else content = <Placeholder route={route}/>
   return <AdminShell route={route} session={session} signOut={signOut}>{content}</AdminShell>
 }
