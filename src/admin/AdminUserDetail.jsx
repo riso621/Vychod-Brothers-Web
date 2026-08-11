@@ -1,0 +1,26 @@
+import { useEffect, useState } from 'react'
+import { cachedAdminLoad, readAdminCache } from '../lib/admin-cache'
+import { adminRequest } from '../lib/admin-control-center'
+
+function navigate(path){window.history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'))}
+function date(value,{unix=false}={}){if(!value)return 'Nedostupné';const parsed=new Date(unix?value*1000:value);return Number.isNaN(parsed.getTime())?'Nedostupné':new Intl.DateTimeFormat('sk-SK',{dateStyle:'medium'}).format(parsed)}
+function money(value,currency){if(value==null||!currency)return 'Nedostupné';return new Intl.NumberFormat('sk-SK',{style:'currency',currency:currency.toUpperCase()}).format(value/100)}
+function value(input){return input===null||input===undefined||input===''?'Nedostupné':input}
+function DetailList({items}){return <dl className="admin-detail-list">{items.map(([label,content])=><div key={label}><dt>{label}</dt><dd>{value(content)}</dd></div>)}</dl>}
+
+export default function AdminUserDetail({userId}){
+  const cacheKey=`admin-user:${userId}`,cached=readAdminCache(cacheKey)
+  const [hadCached]=useState(Boolean(cached)),[data,setData]=useState(cached),[loading,setLoading]=useState(!cached),[error,setError]=useState('')
+  useEffect(()=>{let active=true;cachedAdminLoad(cacheKey,()=>adminRequest({action:'user-detail',userId}),{force:hadCached}).then((result)=>{if(active){setData(result);setError('')}}).catch((e)=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[cacheKey,userId,hadCached])
+  if(loading&&!data)return <div className="admin-loading" aria-live="polite"><i/>Načítavam detail používateľa…</div>
+  if(error&&!data)return <div className="admin-empty">{error}</div>
+  const user=data?.user,subscription=data?.subscription
+  if(!user)return <div className="admin-empty">Používateľ nie je dostupný.</div>
+  const managed=Boolean(user.stripe_subscription_id)
+  return <section><button className="admin-back" onClick={()=>navigate('/admin/users')}>← Používatelia</button><div className="admin-page-heading"><div><span>ADMIN / USER DETAIL</span><h1>{user.username||user.email||'Používateľ'}</h1><p>{user.email||user.id}</p></div></div>{error&&<p className="admin-alert is-error">{error}</p>}
+    <div className="admin-detail-grid"><article className="admin-panel"><h2>Profil</h2><DetailList items={[["E-mail",user.email],["User ID",user.id],["Registrácia",date(user.created_at)],["Posledné prihlásenie",date(user.last_sign_in_at)],["E-mail overený",user.email_confirmed_at?'Áno':'Nie']]}/></article>
+      <article className="admin-panel"><h2>Členstvo</h2><DetailList items={[["Plán",user.membership?.toUpperCase()],["Membership status",user.membership_status],["Správa členstva",managed?'Stripe':'Manuálne'],["Stripe customer ID",user.stripe_customer_id],["Stripe subscription ID",user.stripe_subscription_id],["Subscription status",subscription?.status||user.stripe_subscription_status],["Cena plánu",money(subscription?.unitAmount,subscription?.currency)],["Automatické obnovenie",(subscription?.cancelAtPeriodEnd??user.stripe_cancel_at_period_end)?'Zrušené':'Aktívne'],["Platnosť / current period end",date(subscription?.currentPeriodEnd,{unix:true})!=='Nedostupné'?date(subscription.currentPeriodEnd,{unix:true}):date(user.membership_expires_at)],["Začiatok členstva",date(user.membership_started_at)],["Plánované zrušenie",subscription?.cancelAt?date(subscription.cancelAt,{unix:true}):(user.stripe_cancel_at_period_end?date(user.membership_expires_at):'Nie')]]}/></article></div>
+    <article className="admin-panel admin-detail-section"><h2>Faktúry</h2>{data.invoices?.length?<div className="admin-table-wrap admin-detail-table"><table><thead><tr><th>Faktúra</th><th>Dátum</th><th>Plán</th><th>Suma</th><th>Stav</th><th>Typ</th><th>Doklady</th></tr></thead><tbody>{data.invoices.map((invoice)=><tr key={invoice.id}><td><strong>{invoice.number||'Bez čísla'}</strong><small>{invoice.id}</small></td><td>{date(invoice.created,{unix:true})}</td><td>{invoice.plan?.toUpperCase()||'Nedostupné'}</td><td>{money(invoice.amountPaid,invoice.currency)}</td><td>{invoice.status||'Nedostupné'}</td><td>{invoice.type||'Nedostupné'}</td><td><div className="admin-invoice-links">{invoice.invoicePdf&&<a href={invoice.invoicePdf} target="_blank" rel="noreferrer">Stiahnuť PDF</a>}{invoice.hostedInvoiceUrl&&<a href={invoice.hostedInvoiceUrl} target="_blank" rel="noreferrer">Otvoriť v Stripe</a>}</div></td></tr>)}</tbody></table></div>:<div className="admin-empty">Používateľ nemá Stripe faktúry.</div>}</article>
+    <article className="admin-panel admin-detail-section"><h2>Watch history</h2>{data.watchHistory?.length?<div className="admin-table-wrap admin-detail-table"><table><thead><tr><th>Video</th><th>Prístup</th><th>Progress</th><th>Posledné pozretie</th></tr></thead><tbody>{data.watchHistory.map((item)=><tr key={item.video_id}><td><strong>{item.title||'Nedostupné'}</strong></td><td>{item.access_level?.toUpperCase()||'Nedostupné'}</td><td>{item.progress_percent!=null?`${Math.round(Number(item.progress_percent))} %`:'Nedostupné'}</td><td>{date(item.last_watched_at)}</td></tr>)}</tbody></table></div>:<div className="admin-empty">Používateľ zatiaľ nemá históriu pozerania.</div>}</article>
+  </section>
+}

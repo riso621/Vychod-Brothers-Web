@@ -115,12 +115,18 @@ Deno.serve(async (request) => {
     if (body.action === 'user-detail') {
       const user = users.find((u) => u.id === body.userId); if (!user) return json({ error:'Používateľ sa nenašiel.' }, 404)
       const { data: history } = await admin.from('watch_history').select('video_id,position_seconds,duration_seconds,progress_percent,completed,last_watched_at').eq('user_id', user.id).order('last_watched_at',{ascending:false}).limit(20)
-      let invoices:any[] = []
+      const videoIds=[...new Set((history||[]).map((item:any)=>item.video_id))]
+      const { data:historyVideos }=videoIds.length?await admin.from('videos').select('id,title,access_level').in('id',videoIds):{data:[]}
+      const videoMap=new Map((historyVideos||[]).map((video:any)=>[video.id,video]))
+      const watchHistory=(history||[]).map((item:any)=>({...item,title:videoMap.get(item.video_id)?.title||null,access_level:videoMap.get(item.video_id)?.access_level||null}))
+      let invoices:any[] = [], subscription:any = null
+      const stripeTasks:Promise<any>[]=[]
       if (user.stripe_customer_id) {
-        const response = await stripe.invoices.list({ customer:user.stripe_customer_id, limit:20, expand:['data.payment_intent'] })
-        invoices = response.data.map((i:any) => ({ id:i.id,status:i.status,paid:i.paid,amount_paid:i.amount_paid,amount_due:i.amount_due,currency:i.currency,created:i.created,type:invoiceType(i) }))
+        stripeTasks.push(stripe.invoices.list({ customer:user.stripe_customer_id, limit:50 }).then((response)=>{invoices=response.data.map(safeInvoice)}))
       }
-      return json({ user, watchHistory:history || [], invoices })
+      if(user.stripe_subscription_id)stripeTasks.push(stripe.subscriptions.retrieve(user.stripe_subscription_id).then((value:any)=>{const item=value.items?.data?.[0],price=item?.price;subscription={id:value.id,status:value.status,priceId:price?.id||null,unitAmount:price?.unit_amount??null,currency:price?.currency||null,currentPeriodEnd:item?.current_period_end||null,cancelAtPeriodEnd:Boolean(value.cancel_at_period_end),cancelAt:value.cancel_at||null}}))
+      try{await Promise.all(stripeTasks)}catch(error){console.error('Admin user Stripe detail failed',error instanceof Error?error.message:'unknown')}
+      return json({ user, watchHistory, invoices, subscription })
     }
     const { data: videos } = await admin.from('videos').select('id,title,slug,provider,access_level,published,featured,thumbnail_url,created_at').order('created_at',{ascending:false})
     let invoices:any[] = []
