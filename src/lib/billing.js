@@ -22,3 +22,27 @@ export function createCheckoutSession(plan) {
 export function createCustomerPortalSession() {
   return invokeBillingFunction('stripe-customer-portal', {})
 }
+
+export async function confirmVipUpgrade(prorationDate) {
+  if (!supabase) throw new Error('Platby zatiaľ nie sú dostupné.')
+  const { data, error } = await supabase.functions.invoke('stripe-upgrade-subscription', {
+    body: { action: 'confirm', prorationDate },
+  })
+  if (error) {
+    let message = data?.error || error.message
+    try { message = (await error.context?.json())?.error || message } catch { /* response nemusí byť JSON */ }
+    throw new Error(message || 'Prechod na VIP sa nepodarilo dokončiť.')
+  }
+  return data
+}
+
+export async function getVipUpgradePreview() {
+  if (!supabase) throw new Error('Platby zatiaľ nie sú dostupné.')
+  const { data, error } = await supabase.functions.invoke('stripe-upgrade-subscription', { body: { action: 'preview' } })
+  if (error) {
+    let message = data?.error || error.message
+    try { message = (await error.context?.json())?.error || message } catch { /* response nemusí byť JSON */ }
+    throw new Error(message || 'Náhľad upgradu sa nepodarilo načítať.')
+  }
+  return data
+}

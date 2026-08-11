@@ -3,6 +3,8 @@ import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, use
 import { activeSocialProfiles, media, navItems, socialProfiles, stats } from './data'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
+import { useProfile } from './context/profile-context'
+import { getEffectiveMembership } from './lib/membership'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -32,6 +34,8 @@ function Logo() {
 
 function Header() {
   const [open, setOpen] = useState(false)
+  const { profile, session } = useProfile()
+  const membership = session?.user?.app_metadata?.role === 'admin' ? 'vip' : getEffectiveMembership(profile)
   const isVideosPage = window.location.pathname.startsWith('/videos')
   const isMembershipPage = window.location.pathname.startsWith('/clenstvo')
   const isHomePage = window.location.pathname === '/'
@@ -44,7 +48,7 @@ function Header() {
       <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
         {navItems.map((item, index) => <a className={isVideosPage && index === 1 || isMembershipPage && index === 3 || isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
-      <a className="join-brush" href="/clenstvo">STAŤ SA ČLENOM</a>
+      <a className="join-brush" href={membership === 'vip' ? '/videos' : '/clenstvo'}>{membership === 'vip' ? 'VIP VIDEÁ' : membership === 'member' ? 'PREJSŤ NA VIP' : 'STAŤ SA ČLENOM'}</a>
       <Suspense fallback={null}><AuthControl /></Suspense>
       <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
     </header>

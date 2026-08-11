@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useProfile } from '../context/profile-context'
-import { canAccessMembership, membershipPlans } from '../lib/membership'
+import { canAccessMembership, getEffectiveMembership, membershipPlans } from '../lib/membership'
 import { getSignedStorageUrls } from '../lib/storage'
 import { getPublishedVideos } from '../lib/videos'
 
@@ -28,11 +28,12 @@ const unlocks = [
 ]
 
 const faqs = [
-  ['Kedy sa členstvo spustí?', 'Účty a prístupové úrovne sú už pripravené. Platby spustíme v ďalšej fáze a dáme o tom vedieť celej komunite.'],
+  ['Kedy získam prístup po zaplatení?', 'Prístup sa aktivuje automaticky po úspešnom potvrdení platby. Zvyčajne to trvá len niekoľko sekúnd.'],
   ['Aký je rozdiel medzi MEMBER a VIP?', 'MEMBER odomyká členské videá, zákulisie a skoršie premiéry. VIP pridáva naše najexkluzívnejšie minifilmy, všetky bonusy a VIP výhody.'],
-  ['Môžem členstvo kedykoľvek zrušiť?', 'Áno. Členstvo bude bez dlhodobého záväzku a po zrušení zostane aktívne do konca zaplateného obdobia.'],
-  ['Funguje členstvo aj na mobile?', 'Áno. Členský obsah bude dostupný na mobile, tablete aj desktope cez rovnaký účet.'],
-  ['Budú pribúdať nové videá?', 'Áno. Členská knižnica bude rásť o bonusové videá, zákulisie, premiéry aj nové exkluzívne série.'],
+  ['Môžem členstvo kedykoľvek zrušiť?', 'Áno. Predplatné zrušíš kedykoľvek v Mojom účte. Prístup zostane aktívny až do konca už zaplateného obdobia.'],
+  ['Obnovuje sa členstvo automaticky?', 'Áno. MEMBER aj VIP sa obnovujú každý mesiac, kým predplatné nezrušíš.'],
+  ['Funguje členstvo aj na mobile?', 'Áno. Členský obsah je dostupný na mobile, tablete aj desktope cez rovnaký účet.'],
+  ['Budú pribúdať nové videá?', 'Áno. Členská knižnica pravidelne rastie o bonusové videá, zákulisie, premiéry aj nové exkluzívne série.'],
 ]
 
 function Icon({ name }) {
@@ -66,6 +67,7 @@ export default function MembershipSection() {
   const checkoutLockRef = useRef(false)
   const { profile, session } = useProfile()
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
+  const currentMembership = isAdmin ? 'vip' : getEffectiveMembership(profile)
 
   useEffect(() => {
     let active = true
@@ -106,6 +108,16 @@ export default function MembershipSection() {
     setCheckoutPlan(plan)
     window.location.assign(`/checkout/${plan}`)
   }
+  const planAction = (planId) => {
+    if (planId === 'free') return { label: 'Začať sledovať', href: '/videos' }
+    if (currentMembership === 'vip') return planId === 'vip'
+      ? { label: 'Tvoj aktuálny plán', disabled: true }
+      : { label: 'VIP zahŕňa MEMBER', disabled: true }
+    if (currentMembership === 'member') return planId === 'member'
+      ? { label: 'Tvoj aktuálny plán', disabled: true }
+      : { label: 'Prejsť na VIP', plan: 'vip' }
+    return { label: planMeta[planId].cta, plan: planId }
+  }
   const collageVideos = useMemo(() => premiumVideos.slice(0, 4), [premiumVideos])
   const previewVideos = useMemo(() => premiumVideos.slice(0, 6), [premiumVideos])
   const fallbackImages = ['/images/team/vychod-brothers-team-day.webp', '/images/team/vychod-brothers-team-evening.webp']
@@ -123,8 +135,8 @@ export default function MembershipSection() {
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08 }}>STAŇ SA ČLENOM<br/><em>VÝCHOD BROTHERS</em></motion.h1>
           <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .18 }}>Exkluzívne videá, bonusový obsah, premiéry, zákulisie a množstvo ďalšieho obsahu, ktorý na YouTube nikdy neuvidíš.</motion.p>
           <motion.div className="membership-hero-actions" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .28 }}>
-            <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('member')}>{checkoutPlan === 'member' ? 'Otváram Checkout…' : 'Stať sa MEMBER'} <span>→</span></button>
-            <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('vip')}>{checkoutPlan === 'vip' ? 'Otváram Checkout…' : 'Stať sa VIP'} <span>→</span></button>
+            <button type="button" disabled={Boolean(checkoutPlan) || currentMembership !== 'free'} onClick={() => showModal('member')}>{currentMembership === 'free' ? (checkoutPlan === 'member' ? 'Otváram Checkout…' : 'Stať sa MEMBER') : currentMembership === 'member' ? 'Máš MEMBER' : 'MEMBER odomknuté'} <span>→</span></button>
+            <button type="button" disabled={Boolean(checkoutPlan) || currentMembership === 'vip'} onClick={() => showModal('vip')}>{currentMembership === 'member' ? 'Prejsť na VIP' : currentMembership === 'vip' ? 'Máš VIP' : checkoutPlan === 'vip' ? 'Otváram Checkout…' : 'Stať sa VIP'} <span>→</span></button>
           </motion.div>
           <motion.small initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .55 }}>BEZ ZÁVÄZKOV · ZRUŠÍŠ KEDYKOĽVEK</motion.small>
         </div>
@@ -171,13 +183,14 @@ export default function MembershipSection() {
 
       <section className="membership-plans-v4" id="plany">
         <Reveal className="membership-section-heading is-centered"><span>VYBER SI SVOJ PRÍSTUP</span><h2>JEDEN SVET.<br/><em>TRI ÚROVNE.</em></h2><p>Začni zadarmo alebo odomkni celý filmový svet Východ Brothers.</p></Reveal>
-        <div className="membership-plan-grid">{membershipPlans.map((plan) => <motion.article className={`membership-plan-card is-${plan.id}${plan.id === 'vip' ? ' is-recommended' : ''}`} whileHover={{ y: -8 }} key={plan.id}>
+        <div className="membership-plan-grid">{membershipPlans.map((plan) => { const action = planAction(plan.id); const isCurrent = plan.id === currentMembership; return <motion.article className={`membership-plan-card is-${plan.id}${plan.id === 'vip' ? ' is-recommended' : ''}${isCurrent ? ' is-current' : ''}`} whileHover={{ y: -8 }} key={plan.id}>
           {plan.id === 'vip' && <span className="membership-plan-recommended">ODPORÚČANÝ PLÁN</span>}
+          {isCurrent && <span className="membership-plan-current">TVOJ AKTUÁLNY PLÁN</span>}
           <header><span>PLÁN {plan.name}</span><h3>{plan.name}</h3><p>{plan.description}</p></header>
           <div className="membership-plan-price"><strong>{planMeta[plan.id].price}</strong><span>{planMeta[plan.id].note}</span></div>
           <ul>{plan.perks.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
-          {plan.id === 'free' ? <a href="/videos">{planMeta[plan.id].cta}<span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal(plan.id)}>{checkoutPlan === plan.id ? 'Otváram Checkout…' : planMeta[plan.id].cta}<span>→</span></button>}
-        </motion.article>)}</div>
+          {action.href ? <a href={action.href}>{action.label}<span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan) || action.disabled} onClick={() => action.plan && showModal(action.plan)}>{checkoutPlan === action.plan ? 'Otváram Checkout…' : action.label}<span>→</span></button>}
+        </motion.article> })}</div>
       </section>
 
       <section className="membership-unlocks">
@@ -190,7 +203,7 @@ export default function MembershipSection() {
 
       <section className="membership-how">
         <Reveal className="membership-section-heading is-centered"><span>JEDNODUCHÉ OD PRVEJ SEKUNDY</span><h2>TRI KROKY.<br/><em>A IDEŠ.</em></h2></Reveal>
-        <div className="membership-how-steps">{[['01', 'Vyber členstvo', 'Zvoľ si MEMBER alebo kompletný VIP prístup.'], ['02', 'Zaplať', 'Bezpečná platba bude dostupná po spustení členstva.'], ['03', 'Pozeraj okamžite', 'Po aktivácii sa celý obsah odomkne v tvojom účte.']].map(([number, title, text], index) => <Reveal className="membership-how-step" delay={index * .1} key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div>{index < 2 && <i aria-hidden="true">→</i>}</Reveal>)}</div>
+        <div className="membership-how-steps">{[['01', 'Vyber členstvo', 'Zvoľ si MEMBER alebo kompletný VIP prístup.'], ['02', 'Zaplať', 'Dokonči bezpečnú mesačnú platbu cez Stripe.'], ['03', 'Pozeraj okamžite', 'Po potvrdení platby sa obsah automaticky odomkne v tvojom účte.']].map(([number, title, text], index) => <Reveal className="membership-how-step" delay={index * .1} key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div>{index < 2 && <i aria-hidden="true">→</i>}</Reveal>)}</div>
       </section>
 
       <section className="membership-faq">
@@ -200,7 +213,7 @@ export default function MembershipSection() {
 
       <section className="membership-final-cta">
         <div className="membership-final-orbit" aria-hidden="true">VB</div>
-        <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></h2><p>Odomkni celý svet Východ Brothers a buď pri každej premiére od prvej sekundy.</p><button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('vip')}>{checkoutPlan === 'vip' ? 'Otváram Checkout…' : 'Chcem byť členom'} <b>→</b></button></Reveal>
+        <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{currentMembership === 'vip' ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : currentMembership === 'member' ? <>ODOMKNI CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{currentMembership === 'vip' ? 'Všetok MEMBER aj VIP obsah je pripravený v tvojom katalógu.' : 'Odomkni celý svet Východ Brothers a buď pri každej premiére od prvej sekundy.'}</p>{currentMembership === 'vip' ? <a className="membership-final-link" href="/videos">Pozrieť VIP videá <b>→</b></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={() => showModal('vip')}>{checkoutPlan === 'vip' ? 'Otváram Checkout…' : currentMembership === 'member' ? 'Prejsť na VIP' : 'Chcem byť členom'} <b>→</b></button>}</Reveal>
       </section>
 
       <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Checkout sa nepodarilo spustiť</h2><p role="alert">{checkoutError || 'Platobná služba momentálne nie je dostupná.'}</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>
