@@ -3,12 +3,15 @@ import { useProfile } from '../context/profile-context'
 import { supabase } from '../lib/supabase'
 import { adminRequest } from '../lib/admin-control-center'
 import { getMembershipUsers } from '../lib/admin-memberships'
+import { cachedAdminLoad, readAdminCache } from '../lib/admin-cache'
 import './admin.css'
 
 const AdminVideosDashboard = lazy(() => import('../components/AdminVideosDashboard'))
 const AdminMembershipsDashboard = lazy(() => import('../components/AdminMembershipsDashboard'))
+const AdminInvoices = lazy(() => import('./AdminInvoices'))
 
 const navItems = [
+  ['invoices', 'Faktúry', '▤'],
   ['dashboard', 'Prehľad', '▦'], ['videos', 'Videá', '▶'], ['users', 'Používatelia', '◉'],
   ['memberships', 'Členstvá', '◆'], ['payments', 'Platby', '€'], ['merch', 'Merch', '▣'],
   ['content', 'Obsah webu', '◫'], ['settings', 'Nastavenia', '⚙'], ['logs', 'Logy', '≡'],
@@ -92,9 +95,11 @@ function money(value,currency='eur'){return new Intl.NumberFormat('sk-SK',{style
 export default function AdminApp() {
   const { session, authLoading, signOut } = useProfile()
   const [path, setPath] = useState(window.location.pathname)
-  const [snapshot, setSnapshot] = useState({ users:[], videos:[], invoices:[], logs:[], content:[], integrations:{} }), [loading, setLoading] = useState(true), [loadErrors,setLoadErrors]=useState([])
+  const cachedCore = readAdminCache('admin-core')
+  const [snapshot, setSnapshot] = useState(cachedCore?.snapshot || { users:[], videos:[], invoices:[], logs:[], content:[], integrations:{} }), [loading, setLoading] = useState(!cachedCore), [loadErrors,setLoadErrors]=useState(cachedCore?.errors || [])
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   useEffect(() => { const handler = () => setPath(window.location.pathname); window.addEventListener('popstate', handler); return () => window.removeEventListener('popstate', handler) }, [])
+  useEffect(() => { const handler = (event) => { const link=event.target.closest?.('a[href^="/admin"]'); if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey)return; event.preventDefault();navigate(link.getAttribute('href')) }; document.addEventListener('click',handler); return()=>document.removeEventListener('click',handler) },[])
   useEffect(() => {
     if (authLoading) return
     if (!session && path !== '/admin/login') {
@@ -109,10 +114,10 @@ export default function AdminApp() {
     if (!isAdmin) return
     setLoading(true); setLoadErrors([])
     const results = await Promise.allSettled([
-      getMembershipUsers(),
-      supabase.from('videos').select('id,title,slug,provider,access_level,published,featured,thumbnail_url,created_at').order('created_at',{ascending:false}),
-      supabase.from('site_content').select('key,value,description,updated_at').order('key'),
-      adminRequest({action:'billing'}), adminRequest({action:'logs'}), adminRequest({action:'integrations'}),
+      cachedAdminLoad('admin-users',()=>getMembershipUsers()),
+      cachedAdminLoad('admin-videos',()=>supabase.from('videos').select('id,title,slug,provider,access_level,published,featured,thumbnail_url,created_at').order('created_at',{ascending:false}).limit(200)),
+      cachedAdminLoad('admin-content',()=>supabase.from('site_content').select('key,value,description,updated_at').order('key')),
+      cachedAdminLoad('admin-billing',()=>adminRequest({action:'billing'})), cachedAdminLoad('admin-logs',()=>adminRequest({action:'logs'})), cachedAdminLoad('admin-integrations',()=>adminRequest({action:'integrations'})),
     ])
     const errors=[]
     const value=(index,fallback)=>results[index].status==='fulfilled'?results[index].value:fallback
@@ -120,6 +125,9 @@ export default function AdminApp() {
     const videoResult=value(1,{data:[],error:true}), contentResult=value(2,{data:[],error:true})
     if(videoResult.error)errors.push('Videá'); if(contentResult.error)errors.push('CMS')
     setSnapshot({ users:value(0,[]), videos:videoResult.data||[], content:contentResult.data||[], invoices:value(3,{invoices:[]}).invoices||[], logs:value(4,{logs:[]}).logs||[], integrations:value(5,{integrations:{}}).integrations||{} })
+    const nextSnapshot={ users:value(0,[]), videos:videoResult.data||[], content:contentResult.data||[], invoices:value(3,{invoices:[]}).invoices||[], logs:value(4,{logs:[]}).logs||[], integrations:value(5,{integrations:{}}).integrations||{} }
+    setSnapshot(nextSnapshot)
+    cachedAdminLoad('admin-core',()=>Promise.resolve({snapshot:nextSnapshot,errors:[...new Set(errors)]}),{force:true})
     setLoadErrors([...new Set(errors)]); setLoading(false)
   }, [isAdmin])
   useEffect(() => { load() }, [load])
@@ -136,6 +144,7 @@ export default function AdminApp() {
   else if (route === 'users' && pathParts[1]) content = <UserDetail userId={pathParts[1]}/>
   else if (route === 'users') content = <Users users={users} loading={loading}/>
   else if (route === 'payments') content = <Payments users={users} invoices={invoices} loading={loading}/>
+  else if (route === 'invoices') content = <Suspense fallback={<AdminLoading/>}><AdminInvoices /></Suspense>
   else if (route === 'logs') content = <Logs logs={logs}/>
   else if (route === 'content') content = <Content content={siteContent} reload={load}/>
   else if (route === 'settings') content = <Settings content={siteContent} integrations={integrations} reload={load}/>

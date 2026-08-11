@@ -1,6 +1,6 @@
 import { bearerToken, corsHeaders, json } from '../_shared/http.ts'
 import { createAdminClient, createUserClient } from '../_shared/supabase.ts'
-import { stripe } from '../_shared/stripe.ts'
+import { planForPrice, stripe } from '../_shared/stripe.ts'
 
 async function requireAdmin(request: Request) {
   const token = bearerToken(request)
@@ -22,6 +22,50 @@ function invoiceType(invoice: any) {
   return 'renewal'
 }
 
+const invoiceMonthCache = new Map<string, { expiresAt:number, invoices:any[] }>()
+const INVOICE_CACHE_MS = 60_000
+
+function safeInvoice(invoice:any) {
+  const line = invoice.lines?.data?.find((item:any) => item.price?.id || item.pricing?.price_details?.price)
+  const priceId = line?.price?.id || line?.pricing?.price_details?.price || ''
+  const period = line?.period || {}
+  return {
+    id:invoice.id, number:invoice.number, customer:typeof invoice.customer==='string'?invoice.customer:invoice.customer?.id,
+    customerEmail:invoice.customer_email || invoice.customer_name || null, status:invoice.status, paid:invoice.paid,
+    amountPaid:invoice.amount_paid, amountDue:invoice.amount_due, currency:invoice.currency, created:invoice.created,
+    type:invoiceType(invoice), plan:planForPrice(priceId), periodStart:period.start || invoice.period_start || null,
+    periodEnd:period.end || invoice.period_end || null, invoicePdf:invoice.invoice_pdf || null,
+    hostedInvoiceUrl:invoice.hosted_invoice_url || null,
+  }
+}
+
+async function invoicesForMonth(year:number, month:number) {
+  const key=`${year}-${month}`; const cached=invoiceMonthCache.get(key)
+  if(cached && cached.expiresAt>Date.now()) return cached.invoices
+  const start=Math.floor(Date.UTC(year,month-1,1)/1000), end=Math.floor(Date.UTC(year,month,1)/1000)
+  const invoices:any[]=[]; let startingAfter:string|undefined
+  for(let page=0;page<10;page+=1){
+    const response=await stripe.invoices.list({created:{gte:start,lt:end},limit:100,starting_after:startingAfter})
+    invoices.push(...response.data.map(safeInvoice))
+    if(!response.has_more||!response.data.length)break
+    startingAfter=response.data.at(-1)?.id
+  }
+  invoiceMonthCache.set(key,{expiresAt:Date.now()+INVOICE_CACHE_MS,invoices})
+  if(invoiceMonthCache.size>12) invoiceMonthCache.delete(invoiceMonthCache.keys().next().value)
+  return invoices
+}
+
+function invoiceSummary(invoices:any[]) {
+  const currencies=[...new Set(invoices.map((i)=>i.currency).filter(Boolean))]
+  const currency=currencies.length<=1?(currencies[0]||'eur'):null
+  const paid=invoices.filter((i)=>i.paid)
+  return { count:invoices.length, currency,
+    paidTotal:currency?paid.reduce((sum,i)=>sum+i.amountPaid,0):null,
+    unpaidTotal:currency?invoices.filter((i)=>!i.paid).reduce((sum,i)=>sum+i.amountDue,0):null,
+    memberRevenue:currency?paid.filter((i)=>i.plan==='member').reduce((sum,i)=>sum+i.amountPaid,0):null,
+    vipRevenue:currency?paid.filter((i)=>i.plan==='vip').reduce((sum,i)=>sum+i.amountPaid,0):null }
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405)
@@ -31,11 +75,26 @@ Deno.serve(async (request) => {
 
   if (body.action === 'billing') {
     try {
-      const response = await stripe.invoices.list({ limit: 100 })
-      return json({ invoices: response.data.map((i:any) => ({ id:i.id,customer:typeof i.customer==='string'?i.customer:i.customer?.id,status:i.status,paid:i.paid,amount_paid:i.amount_paid,amount_due:i.amount_due,currency:i.currency,created:i.created,type:invoiceType(i) })) })
+      const now=new Date(), invoices=await invoicesForMonth(now.getUTCFullYear(),now.getUTCMonth()+1)
+      return json({ invoices:invoices.slice(0,50).map((i)=>({id:i.id,customer:i.customer,status:i.status,paid:i.paid,amount_paid:i.amountPaid,amount_due:i.amountDue,currency:i.currency,created:i.created,type:i.type})),summary:invoiceSummary(invoices) })
     } catch (error) {
       console.error('Admin billing query failed', error instanceof Error ? error.message : 'unknown')
       return json({ error:'Stripe faktúry sa nepodarilo načítať.' },502)
+    }
+  }
+  if (body.action === 'invoices') {
+    const year=Number(body.year),month=Number(body.month),limit=Math.min(50,Math.max(1,Number(body.limit)||25))
+    const offset=/^\d+$/.test(String(body.cursor||'0'))?Number(body.cursor||0):0
+    if(!Number.isInteger(year)||year<2020||year>new Date().getUTCFullYear()+1||!Number.isInteger(month)||month<1||month>12)return json({error:'Neplatné obdobie.'},400)
+    try {
+      const monthly=await invoicesForMonth(year,month), summary=invoiceSummary(monthly)
+      const search=String(body.search||'').trim().toLowerCase(),plan=String(body.plan||'all'),status=String(body.status||'all')
+      const filtered=monthly.filter((i)=> (plan==='all'||i.plan===plan)&&(status==='all'||i.status===status)&&(!search||`${i.number||''} ${i.customerEmail||''} ${i.id}`.toLowerCase().includes(search)))
+      const page=filtered.slice(offset,offset+limit)
+      return json({invoices:page,summary,total:filtered.length,nextCursor:offset+limit<filtered.length?String(offset+limit):null})
+    } catch(error) {
+      console.error('Admin invoice archive failed',error instanceof Error?error.message:'unknown')
+      return json({error:'Stripe faktúry sa nepodarilo načítať.'},502)
     }
   }
   if (body.action === 'logs') {
