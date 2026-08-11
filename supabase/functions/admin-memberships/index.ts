@@ -1,5 +1,5 @@
 import { bearerToken, corsHeaders, json } from '../_shared/http.ts'
-import { createUserClient } from '../_shared/supabase.ts'
+import { createAdminClient, createUserClient } from '../_shared/supabase.ts'
 
 const levels = ['free', 'member', 'vip']
 const statuses = ['active', 'expired', 'cancelled']
@@ -18,16 +18,23 @@ Deno.serve(async (request) => {
   let body: { action?: string; userId?: string; membership?: string; status?: string; expiresAt?: string | null }
   try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
   if (body.action === 'list') {
+    const adminClient = createAdminClient()
     const now = new Date().toISOString()
     await userClient.from('profiles').update({ membership_status: 'expired' })
       .eq('membership_status', 'active').not('membership_expires_at', 'is', null).lte('membership_expires_at', now)
     const { data: profiles, error: profilesError } = await userClient.from('profiles')
-      .select('id, username, avatar_url, membership, membership_started_at, membership_expires_at, membership_status, created_at').order('created_at')
+      .select('id, username, avatar_url, membership, membership_started_at, membership_expires_at, membership_status, stripe_subscription_id, stripe_price_id, stripe_subscription_status, stripe_cancel_at_period_end, created_at').order('created_at', { ascending: false })
     if (profilesError) {
       console.error('Membership profiles query failed', profilesError.message)
       return json({ error: 'Členské profily sa nepodarilo načítať.' }, 500)
     }
-    return json({ users: profiles || [] })
+    const { data: authData, error: authListError } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    if (authListError) console.error('Admin auth users query failed', authListError.message)
+    const authUsers = new Map((authData?.users || []).map((authUser) => [authUser.id, authUser]))
+    return json({ users: (profiles || []).map((profile) => {
+      const authUser = authUsers.get(profile.id)
+      return { ...profile, email: authUser?.email || null, email_confirmed_at: authUser?.email_confirmed_at || null, last_sign_in_at: authUser?.last_sign_in_at || null }
+    }) })
   }
 
   if (body.action !== 'update') return json({ error: 'Neplatná operácia.' }, 400)

@@ -12,8 +12,7 @@ const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
 const WatchHistoryProvider = lazy(() => import('./context/WatchHistoryProvider'))
-const AdminVideosDashboard = lazy(() => import('./components/AdminVideosDashboard'))
-const AdminMembershipsDashboard = lazy(() => import('./components/AdminMembershipsDashboard'))
+const AdminApp = lazy(() => import('./admin/AdminApp'))
 const VideosSection = lazy(() => import('./components/VideosSection'))
 const VideoDetail = lazy(() => import('./components/VideoDetail'))
 const HomepageContent = lazy(() => import('./components/HomepageContent'))
@@ -123,14 +122,6 @@ function MembershipPage() {
   return <main className="membership-page"><Header /><MembershipSection standalone /><Footer /></main>
 }
 
-function AdminVideosPage() {
-  return <main className="admin-videos-page"><Header /><AdminVideosDashboard /><Footer /></main>
-}
-
-function AdminMembershipsPage() {
-  return <main className="admin-videos-page"><Header /><AdminMembershipsDashboard /><Footer /></main>
-}
-
 function AuthFlowPage({ type }) {
   return <main className="account-page"><Header />{type === 'reset' ? <PasswordResetPage /> : <AuthCallbackPage />}<Footer /></main>
 }
@@ -141,6 +132,10 @@ function CheckoutRoute({ plan }) {
 
 export default function App() {
   const path = window.location.pathname
+  const isAdminRoute = path === '/admin' || path.startsWith('/admin/')
+  if (isAdminRoute) {
+    return <Suspense fallback={<div className="admin-boot">Načítavam administráciu…</div>}><ProfileProvider><AdminApp /></ProfileProvider></Suspense>
+  }
   const page = path.startsWith('/videos')
     ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
     : /^\/checkout\/(member|vip)\/?$/.test(path)
@@ -153,8 +148,6 @@ export default function App() {
           ? <AuthFlowPage type="reset" />
           : path === '/auth/callback' || path === '/auth/callback/'
             ? <AuthFlowPage type="callback" />
-        : path === '/admin/memberships' || path === '/admin/memberships/'
-          ? <AdminMembershipsPage />
-          : path === '/admin/videos' || path === '/admin/videos/' ? <AdminVideosPage /> : <HomePage />
+        : <HomePage />
   return <Suspense fallback={null}><ProfileProvider><WatchHistoryProvider>{page}</WatchHistoryProvider></ProfileProvider></Suspense>
 }

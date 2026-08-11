@@ -201,7 +201,16 @@ export default function AdminVideosDashboard() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingVideo, setEditingVideo] = useState(null)
   const [deletingVideo, setDeletingVideo] = useState(null)
+  const [query, setQuery] = useState('')
+  const [accessFilter, setAccessFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
+  const visibleVideos = videos.filter((video) => {
+    const matchesQuery = `${video.title} ${video.slug}`.toLowerCase().includes(query.toLowerCase())
+    const matchesAccess = accessFilter === 'all' || video.access_level === accessFilter
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'published' ? video.published : !video.published)
+    return matchesQuery && matchesAccess && matchesStatus
+  })
 
   const loadVideos = useCallback(async () => {
     setLoading(true)
@@ -256,16 +265,22 @@ export default function AdminVideosDashboard() {
   return (
     <section className="admin-videos" aria-labelledby="admin-videos-heading">
       <header className="admin-videos-heading">
-        <div><span>ADMIN / VIDEO KATALÓG</span><h1 id="admin-videos-heading">Videá</h1><p>Prehľad videí dostupných cez aktuálne databázové oprávnenia.</p></div>
-        <div className="admin-heading-actions"><a href="/admin/memberships">Členstvá</a><button type="button" onClick={() => { setEditingVideo(null); setModalOpen(true); setSuccess('') }} disabled={!isSupabaseConfigured}><span aria-hidden="true">+</span> Pridať video</button></div>
+        <div><span>ADMIN / VIDEO KATALÓG</span><h1 id="admin-videos-heading">Videá</h1><p>Správa videí, publikovania, prístupu a providerov.</p></div>
+        <div className="admin-heading-actions"><button type="button" onClick={() => { setEditingVideo(null); setModalOpen(true); setSuccess('') }} disabled={!isSupabaseConfigured}><span aria-hidden="true">+</span> Pridať video</button></div>
       </header>
+
+      <div className="admin-toolbar admin-video-toolbar">
+        <input type="search" placeholder="Hľadať video alebo slug" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <select value={accessFilter} onChange={(event) => setAccessFilter(event.target.value)} aria-label="Filtrovať prístup"><option value="all">Všetky prístupy</option><option value="free">FREE</option><option value="member">MEMBER</option><option value="vip">VIP</option></select>
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filtrovať stav"><option value="all">Všetky stavy</option><option value="published">Publikované</option><option value="draft">Koncepty</option></select>
+      </div>
 
       <div className="admin-video-list" aria-live="polite" aria-busy={loading}>
         {success && <p className="admin-videos-success" role="status">{success}</p>}
         {loading && <p className="admin-videos-status">Načítavam videá…</p>}
         {!loading && error && <p className="admin-videos-status is-error" role="alert">{error}</p>}
         {!loading && !error && videos.length === 0 && <p className="admin-videos-status">Zatiaľ tu nie sú žiadne publikované videá.</p>}
-        {videos.map((video) => (
+        {visibleVideos.map((video) => (
           <article className="admin-video-row" key={video.id}>
             <div className="admin-video-thumbnail"><StorageImage path={video.thumbnail_url} /><span aria-hidden="true">VB</span></div>
             <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
