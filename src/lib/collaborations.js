@@ -1,0 +1,2 @@
+import { supabase } from './supabase'
+export async function collaborationAdminRequest(body){const {data,error}=await supabase.functions.invoke('collaboration-admin',{body});let message=data?.error;if(!message&&error?.context instanceof Response){try{message=(await error.context.clone().json())?.error}catch{/* noop */}}if(error||message)throw new Error(message||error?.message||'Operácia zlyhala.');return data}

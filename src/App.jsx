@@ -22,6 +22,7 @@ const AccountDashboard = lazy(() => import('./components/AccountDashboard'))
 const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
 const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
+const CollaborationSection = lazy(() => import('./components/CollaborationSection'))
 
 const reveal = {
   hidden: { opacity: 0, y: 26 },
@@ -109,7 +110,7 @@ function HomePage() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><HomepageContent /><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><HomepageContent /><Suspense fallback={null}><CollaborationSection /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {

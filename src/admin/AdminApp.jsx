@@ -5,13 +5,16 @@ import { adminRequest } from '../lib/admin-control-center'
 import { getMembershipUsers } from '../lib/admin-memberships'
 import { cachedAdminLoad, readAdminCache } from '../lib/admin-cache'
 import AdminUserDetail from './AdminUserDetail'
+import { collaborationAdminRequest } from '../lib/collaborations'
 import './admin.css'
 
 const AdminVideosDashboard = lazy(() => import('../components/AdminVideosDashboard'))
 const AdminMembershipsDashboard = lazy(() => import('../components/AdminMembershipsDashboard'))
 const AdminInvoices = lazy(() => import('./AdminInvoices'))
+const AdminCollaborations = lazy(() => import('./AdminCollaborations'))
 
 const navItems = [
+  ['collaborations', 'Spolupráce', '✦'],
   ['invoices', 'Faktúry', '▤'],
   ['dashboard', 'Prehľad', '▦'], ['videos', 'Videá', '▶'], ['users', 'Používatelia', '◉'],
   ['memberships', 'Členstvá', '◆'], ['payments', 'Platby', '€'], ['merch', 'Merch', '▣'],
@@ -55,6 +58,7 @@ function AdminShell({ route, children, session, signOut }) {
 }
 
 function Metric({ label, value, detail }) { return <article className="admin-metric"><span>{label}</span><strong>{value}</strong><small>{detail}</small></article> }
+function CollaborationDashboardWidget(){const [count,setCount]=useState(null);useEffect(()=>{let active=true;cachedAdminLoad('collaboration-summary',()=>collaborationAdminRequest({action:'summary'})).then((data)=>{if(active)setCount(data.newCount)}).catch(()=>{});return()=>{active=false}},[]);return <button className="admin-collaboration-widget" onClick={()=>navigate('/admin/collaborations')}><span>NOVÉ SPOLUPRÁCE</span><strong>{count??'—'}</strong><small>Otvoriť CRM →</small></button>}
 
 function Dashboard({ users, videos, invoices, loading }) {
   const stats = useMemo(() => ({ total: users.length, member: users.filter((u) => u.membership === 'member' && u.membership_status === 'active').length, vip: users.filter((u) => u.membership === 'vip' && u.membership_status === 'active').length, published: videos.filter((v) => v.published).length }), [users, videos])
@@ -139,13 +143,14 @@ export default function AdminApp() {
   let route = pathParts[0] || 'dashboard'; if (!labels[route]) route = 'dashboard'
   const { users, videos, invoices, logs, content:siteContent, integrations } = snapshot
   let content
-  if (route === 'dashboard') content = <Dashboard users={users} videos={videos} invoices={invoices} loading={loading}/>
+  if (route === 'dashboard') content = <><Dashboard users={users} videos={videos} invoices={invoices} loading={loading}/><CollaborationDashboardWidget/></>
   else if (route === 'videos') content = <Suspense fallback={<AdminLoading/>}><AdminVideosDashboard /></Suspense>
   else if (route === 'memberships') content = <Suspense fallback={<AdminLoading/>}><AdminMembershipsDashboard /></Suspense>
   else if (route === 'users' && pathParts[1]) content = <UserDetail key={pathParts[1]} userId={pathParts[1]}/>
   else if (route === 'users') content = <Users users={users} loading={loading}/>
   else if (route === 'payments') content = <Payments users={users} invoices={invoices} loading={loading}/>
   else if (route === 'invoices') content = <Suspense fallback={<AdminLoading/>}><AdminInvoices /></Suspense>
+  else if (route === 'collaborations') content = <Suspense fallback={<AdminLoading/>}><AdminCollaborations id={pathParts[1]||''}/></Suspense>
   else if (route === 'logs') content = <Logs logs={logs}/>
   else if (route === 'content') content = <Content content={siteContent} reload={load}/>
   else if (route === 'settings') content = <Settings content={siteContent} integrations={integrations} reload={load}/>
