@@ -14,7 +14,7 @@ Deno.serve(async(request)=>{
   if(body.action==='summary'){const {count,error}=await admin.from('collaboration_requests').select('id',{count:'exact',head:true}).eq('status','new');return error?json({error:'Súhrn sa nepodarilo načítať.'},500):json({newCount:count||0})}
   if(body.action==='list'){
     const limit=Math.min(100,Math.max(1,Number(body.limit)||50)),offset=Math.max(0,Number(body.offset)||0),status=clean(body.status,20),search=clean(body.search,120)
-    let query=admin.from('collaboration_requests').select('id,name,company,email,subject,status,created_at,updated_at',{count:'exact'}).order('created_at',{ascending:false}).range(offset,offset+limit-1)
+    let query=admin.from('collaboration_requests').select('id,name,company,email,subject,budget,status,created_at,updated_at',{count:'exact'}).order('created_at',{ascending:false}).range(offset,offset+limit-1)
     if(status&&status!=='all'&&statuses.has(status))query=query.eq('status',status)
     if(search)query=query.or(`name.ilike.%${search.replace(/[%_,()]/g,'')}%,company.ilike.%${search.replace(/[%_,()]/g,'')}%,email.ilike.%${search.replace(/[%_,()]/g,'')}%`)
     const {data,error,count}=await query;return error?json({error:'Spolupráce sa nepodarilo načítať.'},500):json({requests:data||[],total:count||0})
