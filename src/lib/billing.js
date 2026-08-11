@@ -23,6 +23,19 @@ export function createCustomerPortalSession() {
   return invokeBillingFunction('stripe-customer-portal', {})
 }
 
+export async function syncCustomerPortalSubscription() {
+  if (!supabase) throw new Error('Platby zatiaľ nie sú dostupné.')
+  const { data, error } = await supabase.functions.invoke('stripe-customer-portal', {
+    body: { action: 'sync' },
+  })
+  if (error) {
+    let message = data?.error || error.message
+    try { message = (await error.context?.json())?.error || message } catch { /* Response body nemusí byť JSON. */ }
+    throw new Error(message || 'Stav predplatného sa nepodarilo synchronizovať.')
+  }
+  return data
+}
+
 export async function confirmVipUpgrade(prorationDate) {
   if (!supabase) throw new Error('Platby zatiaľ nie sú dostupné.')
   const { data, error } = await supabase.functions.invoke('stripe-upgrade-subscription', {

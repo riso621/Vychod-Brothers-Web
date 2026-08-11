@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '../context/profile-context'
 import { formatMembershipDate, getEffectiveMembership, getMembershipStatus, membershipLabels, membershipPlans, membershipPrices, membershipStatusLabels } from '../lib/membership'
-import { createCustomerPortalSession } from '../lib/billing'
+import { createCustomerPortalSession, syncCustomerPortalSubscription } from '../lib/billing'
 import { checkoutCleanPath, confirmedCheckoutMessage, pollConfirmedMembership } from '../lib/account-checkout'
 import { readPortalMarker, reconcilePortalProfile, writePortalMarker } from '../lib/account-portal'
 
@@ -19,6 +19,7 @@ export default function AccountDashboard() {
   const [portalLoading, setPortalLoading] = useState(false)
   const [billingMessage, setBillingMessage] = useState('')
   const [checkoutNotice, setCheckoutNotice] = useState('')
+  const subscriptionSyncRef = useRef('')
   const { session, profile, authLoading, profileLoading, profileError, refreshProfile, signOut } = useProfile()
   const checkoutState = useRef(new URLSearchParams(window.location.search).get('checkout')).current
   const portalReturn = useRef(new URLSearchParams(window.location.search).get('billing') === 'portal').current
@@ -45,6 +46,17 @@ export default function AccountDashboard() {
       window.clearTimeout(hideTimer)
     }
   }, [checkoutState, session, refreshProfile])
+  useEffect(() => {
+    if (!session?.user?.id || !profile?.stripe_subscription_id) return undefined
+    const syncKey = `${session.user.id}:${profile.stripe_subscription_id}`
+    if (subscriptionSyncRef.current === syncKey) return undefined
+    subscriptionSyncRef.current = syncKey
+    let active = true
+    syncCustomerPortalSubscription()
+      .then(() => active && refreshProfile({ silent: true }))
+      .catch(() => undefined)
+    return () => { active = false }
+  }, [session?.user?.id, profile?.stripe_subscription_id, refreshProfile])
   useEffect(() => {
     if (!session || (!portalReturn && !sessionStorage.getItem(portalReturnKey))) return undefined
     const marker = readPortalMarker(sessionStorage, session.user.id)
