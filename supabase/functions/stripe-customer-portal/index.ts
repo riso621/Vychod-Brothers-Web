@@ -47,7 +47,7 @@ Deno.serve(async (request) => {
       membershipStatus = 'cancelled'
     }
 
-    const { error: updateError } = await admin.from('profiles').update({
+    const { data: persistedProfile, error: updateError } = await admin.from('profiles').update({
       stripe_price_id: priceId,
       stripe_subscription_status: subscription.status,
       stripe_cancel_at_period_end: subscription.cancel_at_period_end,
@@ -56,14 +56,21 @@ Deno.serve(async (request) => {
       membership_status: membershipStatus,
       membership_expires_at: end ? new Date(end * 1000).toISOString() : null,
     }).eq('id', user.id).eq('stripe_customer_id', customerId)
-    if (updateError) return json({ error: 'Stav predplatného sa nepodarilo uložiť.' }, 500)
+      .select('membership, membership_status, stripe_price_id, stripe_subscription_status, stripe_cancel_at_period_end, membership_expires_at')
+      .single()
+    if (updateError || !persistedProfile) return json({ error: 'Stav predplatného sa nepodarilo uložiť.' }, 500)
     return json({
       synced: true,
-      membership,
-      membershipStatus,
-      subscriptionStatus: subscription.status,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      periodEnd: end ? new Date(end * 1000).toISOString() : null,
+      stripe: {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
+        canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
+        currentPeriodEnd: end ? new Date(end * 1000).toISOString() : null,
+        priceId,
+      },
+      profile: persistedProfile,
     })
   }
 
