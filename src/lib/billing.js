@@ -57,10 +57,3 @@ export async function getVipUpgradeStatus() {
   }
   return data
 }
-
-export async function getVipUpgradeDiagnostic() {
-  if (!supabase) throw new Error('Platby zatiaľ nie sú dostupné.')
-  const { data, error } = await supabase.functions.invoke('stripe-upgrade-subscription', { body: { action: 'diagnose' } })
-  if (error) throw new Error(data?.error || error.message || 'Diagnostiku sa nepodarilo načítať.')
-  return data
-}
