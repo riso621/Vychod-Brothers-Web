@@ -13,6 +13,12 @@ export const membershipStatusLabels = {
   cancelled: 'Zrušené',
 }
 
+export const membershipPrices = {
+  free: '0 €',
+  member: '4,99 € / mesiac',
+  vip: '9,99 € / mesiac',
+}
+
 export const membershipPlans = [
   {
     id: 'free', name: 'FREE', icon: '▶', description: 'Verejné videá a svet Východ Brothers bez obmedzení.', popular: false,

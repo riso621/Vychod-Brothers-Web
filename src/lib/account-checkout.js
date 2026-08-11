@@ -19,6 +19,7 @@ export function checkoutCleanPath(href) {
   const url = new URL(href)
   url.searchParams.delete('checkout')
   url.searchParams.delete('session_id')
+  url.searchParams.delete('billing')
   return `${url.pathname}${url.search}${url.hash}`
 }
 
