@@ -58,12 +58,16 @@ Deno.serve(async (request) => {
         clientSecret: requiresPayment ? clientSecret : '',
         paymentStatus,
         invoiceStatus: invoice?.status || null,
+        hasPendingUpdate: true,
       })
     }
-    if (item.price.id === vipPrice) return json({ status: 'updated', paymentStatus, invoiceStatus: invoice?.status || null })
+    if (item.price.id === vipPrice) return json({
+      status: 'updated', paymentStatus, invoiceStatus: invoice?.status || null,
+      hasPendingUpdate: false, currentPlan: 'vip',
+    })
     if (item.price.id !== memberPrice) return json({ error: 'Upgrade je dostupný iba z MEMBER na VIP.' }, 409)
 
-    if (action === 'status') return json({ status: 'ready' })
+    if (action === 'status') return json({ status: 'ready', hasPendingUpdate: false, currentPlan: 'member' })
 
     if (action === 'preview') {
       const prorationDate = Math.floor(Date.now() / 1000)

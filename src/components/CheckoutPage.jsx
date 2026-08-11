@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { useProfile } from '../context/profile-context'
 import { confirmVipUpgrade, createCheckoutSession, createCustomerPortalSession, getVipUpgradePreview, getVipUpgradeStatus } from '../lib/billing'
+import { classifyVipUpgradeState, clearCheckoutMarker, readCheckoutMarker, writeCheckoutMarker } from '../lib/checkout-flow'
 import { formatMembershipDate, getEffectiveMembership } from '../lib/membership'
 
 const planDetails = {
@@ -27,23 +28,13 @@ const appearance = {
 
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim() || ''
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null
-const checkoutFlowKey = 'vb-checkout-payment-flow'
 const pollingDelayMs = 1250
 const pollingAttempts = 16
 
-function readCheckoutFlow(plan) {
+function initialCheckoutFlow() {
+  const hasMarker = Boolean(sessionStorage.getItem('vb-checkout-payment-flow'))
   const isStripeReturn = new URLSearchParams(window.location.search).get('payment') === 'return'
-  try {
-    const stored = JSON.parse(sessionStorage.getItem(checkoutFlowKey) || 'null')
-    if (stored?.plan === plan && Date.now() - stored.createdAt < 30 * 60 * 1000) {
-      return stored.status === 'success' ? 'success' : 'verifying'
-    }
-  } catch { sessionStorage.removeItem(checkoutFlowKey) }
-  return isStripeReturn ? 'verifying' : 'payment'
-}
-
-function storeCheckoutFlow(plan, status = 'verifying') {
-  sessionStorage.setItem(checkoutFlowKey, JSON.stringify({ plan, status, createdAt: Date.now() }))
+  return hasMarker || isStripeReturn ? 'restoring' : 'payment'
 }
 
 function membershipConfirmed(profile, plan) {
@@ -73,22 +64,84 @@ export default function CheckoutPage({ plan }) {
   const [upgradePaymentStatus, setUpgradePaymentStatus] = useState('')
   const [upgradePaymentReady, setUpgradePaymentReady] = useState(false)
   const [upgradeBackendStatus, setUpgradeBackendStatus] = useState('')
-  const [flow, setFlow] = useState(() => readCheckoutFlow(plan))
+  const [flow, setFlow] = useState(initialCheckoutFlow)
   const elementsRef = useRef(null)
   const requestRef = useRef(null)
   const mountRef = useRef(null)
   const upgradePreviewRequestedRef = useRef(false)
   const upgradeElementsRef = useRef(null)
   const upgradeMountRef = useRef(null)
+  const upgradeSubmitRef = useRef(false)
   const details = planDetails[plan]
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
   const currentMembership = getEffectiveMembership(profile)
   const isVipUpgrade = plan === 'vip' && currentMembership === 'member' && activeSubscription
+  const markerKind = isVipUpgrade ? 'vip-upgrade' : 'subscription-payment'
+
+  const clearFlowMarker = useCallback(() => clearCheckoutMarker(sessionStorage), [])
+  const storeFlowMarker = useCallback((status = 'verifying') => {
+    if (!session?.user?.id) return
+    writeCheckoutMarker(sessionStorage, { plan, userId: session.user.id, kind: markerKind, status })
+  }, [markerKind, plan, session?.user?.id])
 
   useEffect(() => {
     if (!authLoading && !session) window.location.replace(`/?auth=login&next=${encodeURIComponent(`/checkout/${plan}`)}`)
   }, [authLoading, session, plan])
+
+  useEffect(() => {
+    if (flow !== 'restoring' || !session || profileLoading) return undefined
+    let active = true
+    const restoreServerState = async () => {
+      const marker = readCheckoutMarker(sessionStorage, plan, session.user.id)
+      const isStripeReturn = new URLSearchParams(window.location.search).get('payment') === 'return'
+      if (!marker && !isStripeReturn) {
+        if (active) setFlow('payment')
+        return
+      }
+      if (membershipConfirmed(profile, plan)) {
+        storeFlowMarker('success')
+        if (active) setFlow('success')
+        return
+      }
+      if (plan !== 'vip') {
+        if (active) setFlow('verifying')
+        return
+      }
+      try {
+        const status = await getVipUpgradeStatus()
+        if (!active) return
+        setUpgradeBackendStatus(status.status || '')
+        const restoredState = classifyVipUpgradeState({
+          vipActive: membershipConfirmed(profile, plan),
+          status: status.status,
+          hasClientSecret: Boolean(status.clientSecret),
+        })
+        if (restoredState === 'payment') {
+          clearFlowMarker()
+          setUpgradeClientSecret(status.clientSecret)
+          setUpgradePaymentStatus(status.paymentStatus || 'requires_action')
+          setFlow('payment')
+        } else if (restoredState === 'verifying') {
+          storeFlowMarker()
+          setFlow('verifying')
+        } else if (restoredState === 'success') {
+          storeFlowMarker('success')
+          setFlow('success')
+        } else {
+          clearFlowMarker()
+          setFlow('payment')
+        }
+      } catch (restoreError) {
+        if (!active) return
+        clearFlowMarker()
+        setError(restoreError.message || 'Stav prechodu na VIP sa nepodarilo overiť.')
+        setFlow('retry')
+      }
+    }
+    restoreServerState()
+    return () => { active = false }
+  }, [flow, session, profileLoading, profile, plan, clearFlowMarker, storeFlowMarker])
 
   useEffect(() => {
     if (flow !== 'payment' || !stripePromise || !session || profileLoading || activeSubscription || !details) return undefined
@@ -141,16 +194,21 @@ export default function CheckoutPage({ plan }) {
         if (controller.signal.aborted) return
         if (latestUpgrade?.status) setUpgradeBackendStatus(latestUpgrade.status)
         if (latestUpgrade?.status === 'requires_payment' && latestUpgrade.clientSecret) {
-          sessionStorage.removeItem(checkoutFlowKey)
+          clearFlowMarker()
           setUpgradeClientSecret(latestUpgrade.clientSecret)
           setUpgradePaymentStatus(latestUpgrade.paymentStatus || 'requires_action')
           setFlow('payment')
           return
         }
         if (membershipConfirmed(latestProfile, plan)) {
-          storeCheckoutFlow(plan, 'success')
+          storeFlowMarker('success')
           window.history.replaceState(window.history.state, '', `/checkout/${plan}`)
           setFlow('success')
+          return
+        }
+        if (plan === 'vip' && latestUpgrade?.status === 'ready') {
+          clearFlowMarker()
+          setFlow('retry')
           return
         }
         if (attemptIndex < pollingAttempts - 1) {
@@ -163,12 +221,30 @@ export default function CheckoutPage({ plan }) {
           })
         }
       }
-      if (!controller.signal.aborted) setFlow('pending')
+      if (!controller.signal.aborted) {
+        if (plan === 'vip') {
+          const finalStatus = await getVipUpgradeStatus().catch(() => null)
+          if (controller.signal.aborted) return
+          if (!finalStatus || finalStatus.status === 'ready') {
+            clearFlowMarker()
+            setFlow('retry')
+            return
+          }
+          if (finalStatus.status === 'requires_payment' && finalStatus.clientSecret) {
+            clearFlowMarker()
+            setUpgradeClientSecret(finalStatus.clientSecret)
+            setUpgradePaymentStatus(finalStatus.paymentStatus || 'requires_action')
+            setFlow('payment')
+            return
+          }
+        }
+        setFlow('pending')
+      }
     }
 
     verifyMembership()
     return () => controller.abort()
-  }, [flow, session, details, plan, refreshProfile])
+  }, [flow, session, details, plan, refreshProfile, clearFlowMarker, storeFlowMarker])
 
   useEffect(() => {
     if (flow === 'success' && !profileLoading && !membershipConfirmed(profile, plan)) setFlow('verifying')
@@ -179,7 +255,7 @@ export default function CheckoutPage({ plan }) {
     if (submitting || !elementsRef.current || !stripePromise) return
     setSubmitting(true)
     setError('')
-    storeCheckoutFlow(plan)
+    storeFlowMarker()
     try {
       const stripe = await stripePromise
       const { error: paymentError } = await stripe.confirmPayment({
@@ -190,7 +266,7 @@ export default function CheckoutPage({ plan }) {
       if (paymentError) throw paymentError
       setFlow('verifying')
     } catch (paymentError) {
-      sessionStorage.removeItem(checkoutFlowKey)
+      clearFlowMarker()
       setError(friendlyPaymentError(paymentError))
       setSubmitting(false)
     }
@@ -206,7 +282,7 @@ export default function CheckoutPage({ plan }) {
   }
 
   useEffect(() => {
-    if (!isVipUpgrade || upgradePreviewRequestedRef.current) return undefined
+    if (!isVipUpgrade || flow !== 'payment' || upgradePreviewRequestedRef.current) return undefined
     upgradePreviewRequestedRef.current = true
     let active = true
     setUpgradeLoading(true)
@@ -215,7 +291,7 @@ export default function CheckoutPage({ plan }) {
       .then((preview) => {
         if (!active) return
         if (preview.status === 'requires_payment' && preview.clientSecret) {
-          sessionStorage.removeItem(checkoutFlowKey)
+          clearFlowMarker()
           setFlow('payment')
           setUpgradeClientSecret(preview.clientSecret)
           setUpgradePaymentStatus(preview.paymentStatus || 'requires_action')
@@ -223,7 +299,7 @@ export default function CheckoutPage({ plan }) {
         }
         if (['processing', 'waiting_for_subscription', 'updated'].includes(preview.status)) {
           setUpgradeBackendStatus(preview.status)
-          storeCheckoutFlow('vip')
+          storeFlowMarker()
           setFlow('verifying')
           return
         }
@@ -237,7 +313,7 @@ export default function CheckoutPage({ plan }) {
       })
       .finally(() => active && setUpgradeLoading(false))
     return () => { active = false }
-  }, [isVipUpgrade, upgradeAttempt])
+  }, [isVipUpgrade, upgradeAttempt, flow, clearFlowMarker, storeFlowMarker])
 
   useEffect(() => {
     if (!upgradeClientSecret || !stripePromise) return undefined
@@ -268,7 +344,8 @@ export default function CheckoutPage({ plan }) {
   }, [upgradeClientSecret, upgradePaymentStatus])
 
   const submitUpgrade = async () => {
-    if (upgradeLoading || !upgradePreview?.prorationDate) return
+    if (upgradeSubmitRef.current || upgradeLoading || !upgradePreview?.prorationDate) return
+    upgradeSubmitRef.current = true
     setUpgradeLoading(true)
     setError('')
     try {
@@ -278,15 +355,18 @@ export default function CheckoutPage({ plan }) {
         setUpgradePaymentStatus(result.paymentStatus || 'requires_action')
         setUpgradePreview(null)
       } else {
+        if (!['processing', 'waiting_for_subscription', 'updated'].includes(result.status)) {
+          throw new Error('Stripe nepotvrdil začatie prechodu na VIP.')
+        }
         setUpgradeBackendStatus(result.status || '')
-        storeCheckoutFlow('vip')
+        storeFlowMarker()
         setFlow('verifying')
       }
     } catch (upgradeError) {
       setError(upgradeError.message || 'Prechod na VIP sa nepodarilo dokončiť.')
       setUpgradePreview(null)
       upgradePreviewRequestedRef.current = false
-    } finally { setUpgradeLoading(false) }
+    } finally { upgradeSubmitRef.current = false; setUpgradeLoading(false) }
   }
   const retryUpgradePreview = () => {
     upgradePreviewRequestedRef.current = false
@@ -306,7 +386,7 @@ export default function CheckoutPage({ plan }) {
       if (upgradeElementsRef.current) confirmation.elements = upgradeElementsRef.current
       const { error: paymentError } = await stripe.confirmPayment(confirmation)
       if (paymentError) throw paymentError
-      storeCheckoutFlow('vip')
+      storeFlowMarker()
       setFlow('verifying')
     } catch (paymentError) {
       setError(friendlyPaymentError(paymentError))
@@ -314,12 +394,33 @@ export default function CheckoutPage({ plan }) {
   }
 
   if (!details) return <section className="checkout-state"><h1>Neplatný plán</h1><a href="/clenstvo">Späť na členstvo</a></section>
-  if (authLoading || profileLoading || !session) return <section className="checkout-state" aria-live="polite">Pripravujem bezpečnú platbu…</section>
+  if (authLoading || profileLoading || !session || flow === 'restoring') return <section className="checkout-state" aria-live="polite">Overujem bezpečný stav platby…</section>
 
   const confirmedMembership = membershipConfirmed(profile, plan)
   const formattedUpgradeAmount = upgradePreview
     ? new Intl.NumberFormat('sk-SK', { style: 'currency', currency: upgradePreview.currency || 'eur' }).format((upgradePreview.amountDue || 0) / 100)
     : ''
+
+  if (flow === 'retry') {
+    const retryVipUpgrade = () => {
+      clearFlowMarker()
+      setError('')
+      setUpgradeBackendStatus('')
+      setUpgradePreview(null)
+      upgradePreviewRequestedRef.current = false
+      setFlow('payment')
+      setUpgradeAttempt((value) => value + 1)
+    }
+    return (
+      <section className="checkout-result-shell is-verifying" aria-live="polite">
+        <span>PRECHOD NEBOL DOKONČENÝ</span>
+        <h1>Prechod na VIP nebol dokončený.</h1>
+        <p>Stripe neeviduje rozpracovanú VIP platbu ani pending upgrade. Nový pokus sa spustí iba po tvojom potvrdení.</p>
+        {error && <p className="payment-checkout-error" role="alert">{error}</p>}
+        <button className="checkout-result-primary" type="button" onClick={retryVipUpgrade}>SKÚSIŤ PRECHOD NA VIP ZNOVA</button>
+      </section>
+    )
+  }
 
   if (flow === 'verifying' || flow === 'pending' || (flow === 'success' && !confirmedMembership)) {
     return (
@@ -339,7 +440,7 @@ export default function CheckoutPage({ plan }) {
 
   if (flow === 'success' && confirmedMembership) {
     const renewalDate = profile.membership_expires_at ? formatMembershipDate(profile.membership_expires_at) : null
-    const leaveSuccess = () => sessionStorage.removeItem(checkoutFlowKey)
+    const leaveSuccess = clearFlowMarker
     return (
       <section className={`checkout-result-shell is-success is-${plan}`} aria-labelledby="checkout-success-heading">
         <div className="checkout-result-panel">
