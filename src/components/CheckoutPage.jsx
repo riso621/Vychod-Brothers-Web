@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { useProfile } from '../context/profile-context'
-import { confirmVipUpgrade, createCheckoutSession, createCustomerPortalSession, getVipUpgradePreview, getVipUpgradeStatus } from '../lib/billing'
+import { confirmVipUpgrade, createCheckoutSession, createCustomerPortalSession, getVipUpgradeDiagnostic, getVipUpgradePreview, getVipUpgradeStatus } from '../lib/billing'
 import { formatMembershipDate, getEffectiveMembership } from '../lib/membership'
 
 const planDetails = {
@@ -73,6 +73,7 @@ export default function CheckoutPage({ plan }) {
   const [upgradePaymentStatus, setUpgradePaymentStatus] = useState('')
   const [upgradePaymentReady, setUpgradePaymentReady] = useState(false)
   const [upgradeBackendStatus, setUpgradeBackendStatus] = useState('')
+  const [diagnostic, setDiagnostic] = useState(null)
   const [flow, setFlow] = useState(() => readCheckoutFlow(plan))
   const elementsRef = useRef(null)
   const requestRef = useRef(null)
@@ -85,6 +86,12 @@ export default function CheckoutPage({ plan }) {
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
   const currentMembership = getEffectiveMembership(profile)
   const isVipUpgrade = plan === 'vip' && currentMembership === 'member' && activeSubscription
+  const diagnosticMode = plan === 'vip' && new URLSearchParams(window.location.search).get('diagnose') === '1'
+
+  useEffect(() => {
+    if (!diagnosticMode || !session) return
+    getVipUpgradeDiagnostic().then(setDiagnostic).catch((diagnosticError) => setDiagnostic({ error: diagnosticError.message }))
+  }, [diagnosticMode, session])
 
   useEffect(() => {
     if (!authLoading && !session) window.location.replace(`/?auth=login&next=${encodeURIComponent(`/checkout/${plan}`)}`)
@@ -315,6 +322,7 @@ export default function CheckoutPage({ plan }) {
 
   if (!details) return <section className="checkout-state"><h1>Neplatný plán</h1><a href="/clenstvo">Späť na členstvo</a></section>
   if (authLoading || profileLoading || !session) return <section className="checkout-state" aria-live="polite">Pripravujem bezpečnú platbu…</section>
+  if (diagnosticMode) return <pre data-testid="upgrade-diagnostic">{diagnostic ? JSON.stringify(diagnostic, null, 2) : 'Načítavam diagnostiku…'}</pre>
 
   const confirmedMembership = membershipConfirmed(profile, plan)
   const formattedUpgradeAmount = upgradePreview
