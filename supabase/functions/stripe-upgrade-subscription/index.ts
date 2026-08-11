@@ -16,7 +16,7 @@ Deno.serve(async (request) => {
 
   let body: { action?: string; prorationDate?: number }
   try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
-  const action = ['confirm', 'status'].includes(body.action || '') ? body.action! : 'preview'
+  const action = ['confirm', 'status', 'diagnose'].includes(body.action || '') ? body.action! : 'preview'
   const { memberPrice, vipPrice } = stripeConfig()
   if (!memberPrice || !vipPrice || !Deno.env.get('STRIPE_SECRET_KEY')) {
     return json({ error: 'Upgrade momentálne nie je nakonfigurovaný.' }, 503)
@@ -24,7 +24,7 @@ Deno.serve(async (request) => {
 
   const admin = createAdminClient()
   const { data: profile, error: profileError } = await admin.from('profiles')
-    .select('stripe_subscription_id, stripe_subscription_status')
+    .select('membership, membership_status, membership_expires_at, stripe_subscription_id, stripe_subscription_status, stripe_price_id, stripe_cancel_at_period_end')
     .eq('id', user.id).maybeSingle()
   if (profileError || !profile) return json({ error: 'Profil sa nepodarilo načítať.' }, 500)
   if (!profile.stripe_subscription_id || !activeStatuses.has(profile.stripe_subscription_status || '')) {
@@ -43,6 +43,62 @@ Deno.serve(async (request) => {
     const paymentIntentId = clientSecret.startsWith('pi_') ? clientSecret.split('_secret_')[0] : ''
     const paymentIntent = paymentIntentId ? await stripe.paymentIntents.retrieve(paymentIntentId) : null
     const paymentStatus = paymentIntent?.status || ''
+
+    if (action === 'diagnose') {
+      const recentEvents = await stripe.events.list({ limit: 100 })
+      const relatedEvents = recentEvents.data.filter((event) => {
+        const serialized = JSON.stringify(event.data.object)
+        return serialized.includes(subscription.id)
+          || Boolean(invoice?.id && serialized.includes(invoice.id))
+          || Boolean(paymentIntentId && serialized.includes(paymentIntentId))
+      })
+      const eventIds = relatedEvents.map((event) => event.id)
+      const { data: recordedEvents } = eventIds.length
+        ? await admin.from('stripe_webhook_events').select('event_id').in('event_id', eventIds)
+        : { data: [] }
+      const recorded = new Set((recordedEvents || []).map((event) => event.event_id))
+      const webhookEndpoints = await stripe.webhookEndpoints.list({ limit: 100 })
+      const webhook = webhookEndpoints.data.find((endpoint) => endpoint.url.includes('stripe-webhook'))
+      const enabledEvents = webhook?.enabled_events || []
+      return json({
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          currentPriceId: item.price.id,
+          currentPlan: item.price.id === vipPrice ? 'vip' : item.price.id === memberPrice ? 'member' : 'unknown',
+          pendingUpdate: subscription.pending_update ? {
+            expiresAt: subscription.pending_update.expires_at,
+          } : null,
+          currentPeriodEnd: item.current_period_end || null,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        },
+        invoice: invoice ? {
+          id: invoice.id,
+          status: invoice.status,
+          amountDue: invoice.amount_due,
+          amountPaid: invoice.amount_paid,
+          paid: invoice.status === 'paid',
+          billingReason: invoice.billing_reason,
+        } : null,
+        paymentIntent: paymentIntent ? {
+          id: paymentIntent.id,
+          status: paymentIntent.status,
+          lastPaymentError: paymentIntent.last_payment_error ? {
+            code: paymentIntent.last_payment_error.code || null,
+            declineCode: paymentIntent.last_payment_error.decline_code || null,
+            message: paymentIntent.last_payment_error.message || null,
+          } : null,
+        } : null,
+        profile,
+        events: relatedEvents
+          .map((event) => ({ id: event.id, type: event.type, created: event.created, webhookRecorded: recorded.has(event.id) }))
+          .sort((a, b) => a.created - b.created),
+        webhookDestination: webhook ? {
+          status: webhook.status,
+          enabledEvents,
+        } : null,
+      })
+    }
 
     if (subscription.pending_update) {
       if (paymentStatus === 'canceled') {
