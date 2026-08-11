@@ -4,6 +4,7 @@ import { useProfile } from '../context/profile-context'
 import VideoPlayer from './VideoPlayer'
 import { canAccessMembership, getEffectiveMembership } from '../lib/membership'
 import { useWatchHistory } from '../context/watch-history-context'
+import VideoInteractions from './VideoInteractions'
 
 const accessLabels = {
   free: 'FREE',
@@ -94,6 +95,7 @@ export default function VideoDetail({ slug }) {
           <div><dt>Prístup</dt><dd>{accessLabels[video.accessLevel]}</dd></div>
         </dl>
       </div>
+      {!accessLoading && hasAccess && <VideoInteractions videoId={video.id} />}
     </article>
   )
 }

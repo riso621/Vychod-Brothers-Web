@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { adminNotificationsRequest } from '../lib/admin-notifications'
 import { supabase } from '../lib/supabase'
 
-const iconFor = (type) => type.startsWith('stripe.') ? '€' : type.startsWith('membership.') ? '◆' : type.startsWith('collaboration.') ? '✦' : type.startsWith('analytics.') ? '↗' : '●'
+const iconFor = (type) => type.startsWith('stripe.') ? '€' : type.startsWith('membership.') ? '◆' : type === 'video.comment' ? '▤' : type.startsWith('video.') ? '♥' : type.startsWith('collaboration.') ? '✦' : type.startsWith('analytics.') ? '↗' : '●'
 
 function relativeTime(value) {
   const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000))

@@ -6,6 +6,7 @@ import { createStoragePath, uploadThumbnailFile } from '../lib/storage'
 import { createCloudflareUpload, deleteVideoFromProvider, uploadCloudflareVideo } from '../lib/cloudflare-stream'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 import { adminRequest } from '../lib/admin-control-center'
+import AdminVideoComments from '../admin/AdminVideoComments'
 
 const accessLabels = { free: 'FREE', member: 'MEMBER', vip: 'VIP' }
 const providerLabels = { youtube: 'YouTube', stream: 'Legacy Stream', cloudflare_stream: 'Cloudflare Stream' }
@@ -203,6 +204,8 @@ export default function AdminVideosDashboard() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [providerFilter, setProviderFilter] = useState('all')
   const [sortOrder, setSortOrder] = useState('newest')
+  const [interactionStats, setInteractionStats] = useState({})
+  const [selectedVideoId, setSelectedVideoId] = useState(() => window.location.pathname.match(/^\/admin\/videos\/([0-9a-f-]{36})\/comments$/i)?.[1] || '')
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const visibleVideos = videos.filter((video) => {
     const matchesQuery = `${video.title} ${video.slug}`.toLowerCase().includes(query.toLowerCase())
@@ -214,14 +217,17 @@ export default function AdminVideosDashboard() {
 
   const loadVideos = useCallback(async () => {
     setLoading(true)
-    const { data, error: queryError } = await supabase
+    const [{ data, error: queryError },statsResult] = await Promise.all([supabase
       .from('videos')
       .select('id, title, slug, description, thumbnail_url, provider, provider_video_id, access_level, published, featured, created_at')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }),adminRequest({action:'video-interaction-stats'}).catch(()=>({stats:[]}))])
     setVideos(data || [])
+    setInteractionStats(Object.fromEntries((statsResult.stats||[]).map((item)=>[item.video_id,{likes:Number(item.like_count||0),comments:Number(item.comment_count||0)}])))
     setError(queryError ? 'Videá sa nepodarilo načítať.' : '')
     setLoading(false)
   }, [])
+
+  useEffect(()=>{const sync=()=>setSelectedVideoId(window.location.pathname.match(/^\/admin\/videos\/([0-9a-f-]{36})\/comments$/i)?.[1]||'');window.addEventListener('popstate',sync);return()=>window.removeEventListener('popstate',sync)},[])
 
   useEffect(() => {
     if (authLoading) return undefined
@@ -266,6 +272,9 @@ export default function AdminVideosDashboard() {
     return <section className="admin-videos"><div className="admin-videos-status is-error" role="alert"><div><strong>Nemáte oprávnenie</strong><p>Táto stránka je dostupná iba administrátorom.</p></div></div></section>
   }
 
+  const selectedVideo=videos.find((video)=>video.id===selectedVideoId)
+  if(selectedVideo)return <AdminVideoComments video={selectedVideo} onBack={()=>{window.history.pushState({},'', '/admin/videos');window.dispatchEvent(new PopStateEvent('popstate'));setSelectedVideoId('')}} onChanged={async()=>{const result=await adminRequest({action:'video-interaction-stats'});setInteractionStats(Object.fromEntries((result.stats||[]).map((item)=>[item.video_id,{likes:Number(item.like_count||0),comments:Number(item.comment_count||0)}])))}}/>
+
   return (
     <section className="admin-videos" aria-labelledby="admin-videos-heading">
       <header className="admin-videos-heading">
@@ -289,8 +298,8 @@ export default function AdminVideosDashboard() {
         {visibleVideos.map((video) => (
           <article className="admin-video-row" key={video.id}>
             <div className="admin-video-thumbnail"><StorageImage path={video.thumbnail_url} /><span aria-hidden="true">VB</span></div>
-            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><a href={`/videos/${video.slug}`} target="_blank" rel="noreferrer">Náhľad</a><button type="button" onClick={() => toggle(video,'published')}>{video.published?'Skryť':'Publikovať'}</button><button type="button" onClick={() => toggle(video,'featured')}>{video.featured?'Zrušiť featured':'Featured'}</button><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
-            <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div></dl>
+            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><a href={`/videos/${video.slug}`} target="_blank" rel="noreferrer">Náhľad</a><button type="button" onClick={() => {window.history.pushState({},'',`/admin/videos/${video.id}/comments`);window.dispatchEvent(new PopStateEvent('popstate'));setSelectedVideoId(video.id)}}>Komentáre</button><button type="button" onClick={() => toggle(video,'published')}>{video.published?'Skryť':'Publikovať'}</button><button type="button" onClick={() => toggle(video,'featured')}>{video.featured?'Zrušiť featured':'Featured'}</button><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
+            <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div><div><dt>❤️ Srdiečka</dt><dd>{interactionStats[video.id]?.likes??0}</dd></div><div><dt>💬 Komentáre</dt><dd>{interactionStats[video.id]?.comments??0}</dd></div></dl>
           </article>
         ))}
       </div>

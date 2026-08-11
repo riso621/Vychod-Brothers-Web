@@ -106,6 +106,39 @@ Deno.serve(async (request) => {
   }
   if (body.action === 'integrations') return json({ integrations:{ supabase:true,stripe:Boolean(Deno.env.get('STRIPE_SECRET_KEY')),cloudflare:Boolean(Deno.env.get('CLOUDFLARE_ACCOUNT_ID')&&Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')) } })
 
+  if(body.action==='video-interaction-stats'){
+    const {data,error}=await admin.from('video_interaction_stats').select('video_id,like_count,comment_count')
+    return error?json({error:'Štatistiky interakcií sa nepodarilo načítať.'},500):json({stats:data||[]})
+  }
+
+  if(body.action==='video-comments'){
+    const videoId=String(body.videoId||''),status=String(body.status||'all'),search=String(body.search||'').trim(),limit=Math.min(50,Math.max(1,Number(body.limit)||25)),offset=Math.max(0,Number(body.offset)||0)
+    if(videoId&&!/^[0-9a-f-]{36}$/i.test(videoId))return json({error:'Neplatné video.'},400)
+    if(!['all','visible','hidden','deleted'].includes(status))return json({error:'Neplatný filter.'},400)
+    let query=admin.from('video_comments').select('id,video_id,user_id,body,status,created_at,updated_at,deleted_at,moderated_at,moderated_by',{count:'exact'}).order('created_at',{ascending:false}).range(offset,offset+limit-1)
+    if(videoId)query=query.eq('video_id',videoId)
+    if(status!=='all')query=query.eq('status',status)
+    if(search)query=query.ilike('body',`%${search.replace(/[%_]/g,'')}%`)
+    const {data:comments,count,error}=await query
+    if(error)return json({error:'Komentáre sa nepodarilo načítať.'},500)
+    const userIds=[...new Set((comments||[]).map((item:any)=>item.user_id))],videoIds=[...new Set((comments||[]).map((item:any)=>item.video_id))]
+    const [{data:profiles},{data:videos}]=await Promise.all([userIds.length?admin.from('profiles').select('id,username').in('id',userIds):Promise.resolve({data:[]}),videoIds.length?admin.from('videos').select('id,title,slug').in('id',videoIds):Promise.resolve({data:[]})])
+    const profileMap=new Map((profiles||[]).map((item:any)=>[item.id,item])),videoMap=new Map((videos||[]).map((item:any)=>[item.id,item]))
+    return json({comments:(comments||[]).map((item:any)=>({...item,username:profileMap.get(item.user_id)?.username||'Člen komunity',videoTitle:videoMap.get(item.video_id)?.title||'Nedostupné',videoSlug:videoMap.get(item.video_id)?.slug||null})),total:count||0})
+  }
+
+  if(body.action==='moderate-video-comment'){
+    const commentId=String(body.commentId||''),operation=String(body.operation||'')
+    if(!/^[0-9a-f-]{36}$/i.test(commentId)||!['hide','restore','delete'].includes(operation))return json({error:'Neplatná moderácia.'},400)
+    const {data:before}=await admin.from('video_comments').select('id,video_id,user_id,body,status,deleted_at').eq('id',commentId).maybeSingle()
+    if(!before)return json({error:'Komentár sa nenašiel.'},404)
+    const nextStatus=operation==='restore'?'visible':operation==='hide'?'hidden':'deleted',now=new Date().toISOString()
+    const {error}=await admin.from('video_comments').update({status:nextStatus,deleted_at:nextStatus==='deleted'?now:null,moderated_at:now,moderated_by:auth.user!.id}).eq('id',commentId)
+    if(error)return json({error:'Komentár sa nepodarilo moderovať.'},500)
+    await admin.from('admin_audit_logs').insert({admin_user_id:auth.user!.id,admin_email:auth.user!.email,action_type:`video.comment.${operation}`,entity_type:'video_comment',entity_id:commentId,description:`Komentár ${operation} pri videu ${before.video_id}`,before_data:{status:before.status,deleted_at:before.deleted_at},after_data:{status:nextStatus,video_id:before.video_id,user_id:before.user_id}})
+    return json({ok:true,status:nextStatus})
+  }
+
   if (body.action === 'snapshot' || body.action === 'user-detail') {
     const { data: profiles, error } = await admin.from('profiles').select(profileColumns).order('created_at', { ascending: false })
     if (error) return json({ error: 'Profily sa nepodarilo načítať.' }, 500)
