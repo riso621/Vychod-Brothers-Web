@@ -20,10 +20,13 @@ Deno.serve(async(request)=>{
   if((count||0)>=3)return json({error:'Príliš veľa pokusov. Skúste to neskôr.'},429)
   const {data:created,error}=await admin.from('collaboration_requests').insert({...payload,source_hash:hash}).select('id,created_at').single()
   if(error)return json({error:'Ponuku sa nepodarilo odoslať. Skúste to neskôr.'},500)
-  await admin.from('collaboration_messages').insert({collaboration_id:created.id,direction:'incoming',sender_email:payload.email,recipient_email:inbox,subject:payload.subject,body:payload.message,delivery_status:'stored'})
+  const {data:message,error:messageError}=await admin.from('collaboration_messages').insert({collaboration_id:created.id,direction:'incoming',sender_email:payload.email,recipient_email:inbox,subject:payload.subject,body:payload.message,delivery_status:'stored'}).select('id').single()
+  if(messageError)return json({error:'Ponuka bola prijatá, ale históriu sa nepodarilo uložiť.'},500)
   const resendKey=Deno.env.get('RESEND_API_KEY')||'',from=Deno.env.get('RESEND_FROM_EMAIL')||''
+  let notificationSent=false,providerMessageId:string|null=null
   if(resendKey&&from){
-    try{const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resendKey}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[inbox],reply_to:payload.email,subject:`Nová spolupráca: ${payload.subject}`,html:`<h2>Nová ponuka na spoluprácu</h2><p><strong>${escapeHtml(payload.name)}</strong>${payload.company?` · ${escapeHtml(payload.company)}`:''}</p><p>${escapeHtml(payload.email)}</p><p>${escapeHtml(payload.message).replace(/\n/g,'<br>')}</p><p><a href="${escapeHtml((Deno.env.get('SITE_URL')||'').replace(/\/$/,'')+`/admin/collaborations/${created.id}`)}">Otvoriť v adminovi</a></p>`})});if(!response.ok)console.error('Collaboration notification failed',response.status)}catch(error){console.error('Collaboration notification failed',error instanceof Error?error.message:'unknown')}
+    try{const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${resendKey}`,'Content-Type':'application/json'},body:JSON.stringify({from,to:[inbox],reply_to:payload.email,subject:`Nová spolupráca: ${payload.subject}`,html:`<h2>Nová ponuka na spoluprácu</h2><p><strong>${escapeHtml(payload.name)}</strong>${payload.company?` · ${escapeHtml(payload.company)}`:''}</p><p>${escapeHtml(payload.email)}</p><p>${escapeHtml(payload.message).replace(/\n/g,'<br>')}</p><p><a href="${escapeHtml((Deno.env.get('SITE_URL')||'').replace(/\/$/,'')+`/admin/collaborations/${created.id}`)}">Otvoriť v adminovi</a></p>`})});const result=await response.json();if(!response.ok)console.error('Collaboration notification failed',response.status);else{notificationSent=true;providerMessageId=result.id||null}}catch(error){console.error('Collaboration notification failed',error instanceof Error?error.message:'unknown')}
   }
-  return json({ok:true,id:created.id})
+  await admin.from('collaboration_messages').update({delivery_status:notificationSent?'sent':'failed',provider_message_id:providerMessageId}).eq('id',message.id)
+  return json({ok:true,id:created.id,notificationSent})
 })
