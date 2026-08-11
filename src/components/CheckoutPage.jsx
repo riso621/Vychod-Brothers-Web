@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { useProfile } from '../context/profile-context'
-import { confirmVipUpgrade, createCheckoutSession, createCustomerPortalSession, getVipUpgradePreview } from '../lib/billing'
+import { confirmVipUpgrade, createCheckoutSession, createCustomerPortalSession, getVipUpgradePreview, getVipUpgradeStatus } from '../lib/billing'
 import { formatMembershipDate, getEffectiveMembership } from '../lib/membership'
 
 const planDetails = {
@@ -72,6 +72,7 @@ export default function CheckoutPage({ plan }) {
   const [upgradeClientSecret, setUpgradeClientSecret] = useState('')
   const [upgradePaymentStatus, setUpgradePaymentStatus] = useState('')
   const [upgradePaymentReady, setUpgradePaymentReady] = useState(false)
+  const [upgradeBackendStatus, setUpgradeBackendStatus] = useState('')
   const [flow, setFlow] = useState(() => readCheckoutFlow(plan))
   const elementsRef = useRef(null)
   const requestRef = useRef(null)
@@ -133,8 +134,19 @@ export default function CheckoutPage({ plan }) {
 
     const verifyMembership = async () => {
       for (let attemptIndex = 0; attemptIndex < pollingAttempts && !controller.signal.aborted; attemptIndex += 1) {
-        const latestProfile = await refreshProfile({ silent: true })
+        const [latestProfile, latestUpgrade] = await Promise.all([
+          refreshProfile({ silent: true }),
+          plan === 'vip' ? getVipUpgradeStatus().catch(() => null) : Promise.resolve(null),
+        ])
         if (controller.signal.aborted) return
+        if (latestUpgrade?.status) setUpgradeBackendStatus(latestUpgrade.status)
+        if (latestUpgrade?.status === 'requires_payment' && latestUpgrade.clientSecret) {
+          sessionStorage.removeItem(checkoutFlowKey)
+          setUpgradeClientSecret(latestUpgrade.clientSecret)
+          setUpgradePaymentStatus(latestUpgrade.paymentStatus || 'requires_action')
+          setFlow('payment')
+          return
+        }
         if (membershipConfirmed(latestProfile, plan)) {
           storeCheckoutFlow(plan, 'success')
           window.history.replaceState(window.history.state, '', `/checkout/${plan}`)
@@ -209,7 +221,8 @@ export default function CheckoutPage({ plan }) {
           setUpgradePaymentStatus(preview.paymentStatus || 'requires_action')
           return
         }
-        if (preview.status === 'processing' || preview.status === 'updated') {
+        if (['processing', 'waiting_for_subscription', 'updated'].includes(preview.status)) {
+          setUpgradeBackendStatus(preview.status)
           storeCheckoutFlow('vip')
           setFlow('verifying')
           return
@@ -265,6 +278,7 @@ export default function CheckoutPage({ plan }) {
         setUpgradePaymentStatus(result.paymentStatus || 'requires_action')
         setUpgradePreview(null)
       } else {
+        setUpgradeBackendStatus(result.status || '')
         storeCheckoutFlow('vip')
         setFlow('verifying')
       }
@@ -313,9 +327,11 @@ export default function CheckoutPage({ plan }) {
         <div className="checkout-result-spinner" aria-hidden="true" />
         <span>BEZPEČNÉ POTVRDENIE PLATBY</span>
         <h1>{flow !== 'pending' ? 'Overujeme platbu…' : 'Aktivácia ešte prebieha'}</h1>
-        <p>{flow !== 'pending'
-          ? (plan === 'vip' ? 'Spracovávame prechod na VIP a čakáme na autoritatívne potvrdenie zo Stripe.' : 'Platba bola prijatá. Aktivujeme tvoje členstvo a čakáme na bezpečné potvrdenie zo Stripe.')
-          : (plan === 'vip' ? 'Stripe prechod na VIP ešte dokončuje. Skontroluj stav účtu alebo sa vráť o chvíľu.' : 'Platba bola prijatá, aktivácia členstva ešte prebieha. Nemusíš platiť znova.')}</p>
+        <p>{plan === 'vip' && upgradeBackendStatus === 'waiting_for_subscription'
+          ? 'Platba je potvrdená. Dokončujeme aktiváciu VIP.'
+          : flow !== 'pending'
+            ? (plan === 'vip' ? 'Spracovávame prechod na VIP a čakáme na autoritatívne potvrdenie zo Stripe.' : 'Platba bola prijatá. Aktivujeme tvoje členstvo a čakáme na bezpečné potvrdenie zo Stripe.')
+            : (plan === 'vip' ? 'Prechod na VIP ešte čaká na potvrdenie zo Stripe. Skontroluj stav účtu alebo sa vráť o chvíľu.' : 'Platba bola prijatá, aktivácia členstva ešte prebieha. Nemusíš platiť znova.')}</p>
         {flow === 'pending' && <a className="checkout-result-primary" href="/account">Skontrolovať môj účet</a>}
       </section>
     )

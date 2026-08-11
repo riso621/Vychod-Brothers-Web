@@ -16,7 +16,7 @@ Deno.serve(async (request) => {
 
   let body: { action?: string; prorationDate?: number }
   try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
-  const action = body.action === 'confirm' ? 'confirm' : body.action === 'status' ? 'status' : 'preview'
+  const action = ['confirm', 'status'].includes(body.action || '') ? body.action! : 'preview'
   const { memberPrice, vipPrice } = stripeConfig()
   if (!memberPrice || !vipPrice || !Deno.env.get('STRIPE_SECRET_KEY')) {
     return json({ error: 'Upgrade momentálne nie je nakonfigurovaný.' }, 503)
@@ -50,12 +50,17 @@ Deno.serve(async (request) => {
       }
       const requiresPayment = ['requires_action', 'requires_confirmation', 'requires_payment_method'].includes(paymentStatus)
       return json({
-        status: requiresPayment ? 'requires_payment' : 'processing',
+        status: requiresPayment
+          ? 'requires_payment'
+          : paymentStatus === 'succeeded' || invoice?.status === 'paid'
+            ? 'waiting_for_subscription'
+            : 'processing',
         clientSecret: requiresPayment ? clientSecret : '',
         paymentStatus,
+        invoiceStatus: invoice?.status || null,
       })
     }
-    if (item.price.id === vipPrice) return json({ status: 'updated', paymentStatus })
+    if (item.price.id === vipPrice) return json({ status: 'updated', paymentStatus, invoiceStatus: invoice?.status || null })
     if (item.price.id !== memberPrice) return json({ error: 'Upgrade je dostupný iba z MEMBER na VIP.' }, 409)
 
     if (action === 'status') return json({ status: 'ready' })
@@ -104,9 +109,16 @@ Deno.serve(async (request) => {
     const requiresPayment = ['requires_action', 'requires_confirmation', 'requires_payment_method'].includes(updatedPaymentStatus)
 
     return json({
-      status: updated.pending_update ? (requiresPayment ? 'requires_payment' : 'processing') : 'updated',
+      status: updated.pending_update
+        ? requiresPayment
+          ? 'requires_payment'
+          : updatedPaymentStatus === 'succeeded' || updatedInvoice?.status === 'paid'
+            ? 'waiting_for_subscription'
+            : 'processing'
+        : 'updated',
       clientSecret: requiresPayment ? updatedClientSecret : '',
       paymentStatus: updatedPaymentStatus,
+      invoiceStatus: updatedInvoice?.status || null,
     })
   } catch (error) {
     const stripeError = error as { code?: string; message?: string }

@@ -46,3 +46,14 @@ export async function getVipUpgradePreview() {
   }
   return data
 }
+
+export async function getVipUpgradeStatus() {
+  if (!supabase) throw new Error('Platby zatiaľ nie sú dostupné.')
+  const { data, error } = await supabase.functions.invoke('stripe-upgrade-subscription', { body: { action: 'status' } })
+  if (error) {
+    let message = data?.error || error.message
+    try { message = (await error.context?.json())?.error || message } catch { /* response nemusí byť JSON */ }
+    throw new Error(message || 'Stav prechodu na VIP sa nepodarilo načítať.')
+  }
+  return data
+}

@@ -7,6 +7,8 @@ const handledEvents = new Set([
   'checkout.session.completed',
   'customer.subscription.created',
   'customer.subscription.updated',
+  'customer.subscription.pending_update_applied',
+  'customer.subscription.pending_update_expired',
   'customer.subscription.deleted',
   'invoice.paid',
   'invoice.payment_failed',
@@ -28,6 +30,11 @@ function periodEnd(subscription: Stripe.Subscription) {
 }
 
 async function subscriptionForEvent(event: Stripe.Event) {
+  if (event.type === 'customer.subscription.pending_update_applied'
+    || event.type === 'customer.subscription.pending_update_expired') {
+    const eventSubscription = event.data.object as Stripe.Subscription
+    return stripe.subscriptions.retrieve(eventSubscription.id)
+  }
   if (event.type.startsWith('customer.subscription.')) return event.data.object as Stripe.Subscription
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
