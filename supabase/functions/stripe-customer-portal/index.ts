@@ -37,6 +37,7 @@ Deno.serve(async (request) => {
     if (!paidPlan) return json({ error: 'Predplatné používa neznámy plán.' }, 409)
     const end = periodEnd(subscription)
     const nowSeconds = Math.floor(Date.now() / 1000)
+    const cancellationScheduled = subscription.cancel_at_period_end || subscription.cancel_at !== null
     let membership = 'free'
     let membershipStatus = 'expired'
     if (subscription.status === 'active' || subscription.status === 'trialing'
@@ -47,29 +48,45 @@ Deno.serve(async (request) => {
       membershipStatus = 'cancelled'
     }
 
-    const { data: persistedProfile, error: updateError } = await admin.from('profiles').update({
-      stripe_price_id: priceId,
-      stripe_subscription_status: subscription.status,
-      stripe_cancel_at_period_end: subscription.cancel_at_period_end,
-      stripe_last_event_created_at: new Date(nowSeconds * 1000).toISOString(),
-      membership,
-      membership_status: membershipStatus,
-      membership_expires_at: end ? new Date(end * 1000).toISOString() : null,
-    }).eq('id', user.id).eq('stripe_customer_id', customerId)
+    const snapshotTime = new Date(nowSeconds * 1000).toISOString()
+    const snapshotEventId = [
+      'portal-sync', subscription.id, subscription.status, priceId,
+      cancellationScheduled ? 'cancel' : 'renew', end || 'no-end',
+    ].join(':')
+    const { error: syncError } = await admin.rpc('apply_stripe_subscription_event', {
+      p_event_id: snapshotEventId,
+      p_event_type: 'customer.subscription.portal_sync',
+      p_stripe_created_at: snapshotTime,
+      p_user_id: user.id,
+      p_customer_id: customerId,
+      p_subscription_id: subscription.id,
+      p_price_id: priceId,
+      p_subscription_status: subscription.status,
+      p_membership: membership,
+      p_membership_status: membershipStatus,
+      p_period_end: end ? new Date(end * 1000).toISOString() : null,
+      p_cancel_at_period_end: cancellationScheduled,
+    })
+    if (syncError) return json({ error: 'Stav predplatného sa nepodarilo uložiť.' }, 500)
+    const stripeSnapshot = {
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
+      canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
+      currentPeriodEnd: end ? new Date(end * 1000).toISOString() : null,
+      priceId,
+    }
+    const { data: persistedProfile, error: readError } = await createUserClient(token).from('profiles')
       .select('membership, membership_status, stripe_price_id, stripe_subscription_status, stripe_cancel_at_period_end, membership_expires_at')
-      .single()
-    if (updateError || !persistedProfile) return json({ error: 'Stav predplatného sa nepodarilo uložiť.' }, 500)
+      .eq('id', user.id).single()
+    if (readError || !persistedProfile) return json({
+      error: 'Aktualizovaný profil sa nepodarilo načítať.',
+      stripe: stripeSnapshot,
+    }, 500)
     return json({
       synced: true,
-      stripe: {
-        subscriptionId: subscription.id,
-        status: subscription.status,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        cancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : null,
-        canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
-        currentPeriodEnd: end ? new Date(end * 1000).toISOString() : null,
-        priceId,
-      },
+      stripe: stripeSnapshot,
       profile: persistedProfile,
     })
   }

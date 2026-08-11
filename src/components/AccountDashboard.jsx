@@ -19,7 +19,6 @@ export default function AccountDashboard() {
   const [portalLoading, setPortalLoading] = useState(false)
   const [billingMessage, setBillingMessage] = useState('')
   const [checkoutNotice, setCheckoutNotice] = useState('')
-  const [billingDiagnostic, setBillingDiagnostic] = useState(null)
   const subscriptionSyncRef = useRef('')
   const { session, profile, authLoading, profileLoading, profileError, refreshProfile, signOut } = useProfile()
   const checkoutState = useRef(new URLSearchParams(window.location.search).get('checkout')).current
@@ -54,16 +53,8 @@ export default function AccountDashboard() {
     subscriptionSyncRef.current = syncKey
     let active = true
     syncCustomerPortalSubscription()
-      .then((snapshot) => {
-        if (!active) return null
-        if (new URLSearchParams(window.location.search).get('billing') === 'diagnostic') setBillingDiagnostic(snapshot)
-        return refreshProfile({ silent: true })
-      })
-      .catch((error) => {
-        if (active && new URLSearchParams(window.location.search).get('billing') === 'diagnostic') {
-          setBillingDiagnostic({ error: error.message })
-        }
-      })
+      .then(() => active && refreshProfile({ silent: true }))
+      .catch(() => undefined)
     return () => { active = false }
   }, [session?.user?.id, profile?.stripe_subscription_id, refreshProfile])
   useEffect(() => {
@@ -129,7 +120,6 @@ export default function AccountDashboard() {
       <div className="account-heading"><div><span className="account-eyebrow">VÝCHOD BROTHERS / ÚČET</span><h1 id="account-heading">Môj účet</h1><p>Tvoj prístup k videám, benefitom a svetu Východ Brothers.</p></div><button className="account-signout" type="button" onClick={handleSignOut} disabled={signingOut}>{signingOut ? 'Odhlasujem…' : 'Odhlásiť sa'}</button></div>
       {checkoutNotice && <p className="account-billing-notice" role="status" aria-live="polite">{checkoutNotice}</p>}
       {billingMessage && <p className="account-billing-notice is-error" role="alert">{billingMessage}</p>}
-      {billingDiagnostic && <pre data-testid="billing-diagnostic">{JSON.stringify(billingDiagnostic, null, 2)}</pre>}
       {cancellationScheduled && <aside className="account-cancellation-notice" aria-labelledby="account-cancellation-heading"><div><span>AUTOMATICKÉ OBNOVENIE · ZRUŠENÉ</span><h2 id="account-cancellation-heading">Predplatné je zrušené</h2></div><p>Tvoj {membershipLabels[effectiveMembership]} prístup zostáva aktívny do <strong>{formatMembershipDate(profile.membership_expires_at)}</strong>. Po tomto dátume sa predplatné automaticky neobnoví.</p></aside>}
       <article className="account-profile">
         <div className="account-avatar" aria-label={`Avatar používateľa ${displayName}`}>{profile.avatar_url ? <img src={profile.avatar_url} alt="" /> : <span aria-hidden="true">{initials}</span>}</div>

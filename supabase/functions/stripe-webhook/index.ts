@@ -82,6 +82,7 @@ Deno.serve(async (request) => {
 
   const end = periodEnd(subscription)
   const endIso = end ? new Date(end * 1000).toISOString() : null
+  const cancellationScheduled = subscription.cancel_at_period_end || subscription.cancel_at !== null
   const nowSeconds = Math.floor(Date.now() / 1000)
   let membership = 'free'
   let membershipStatus = 'expired'
@@ -107,7 +108,7 @@ Deno.serve(async (request) => {
     p_membership: membership,
     p_membership_status: membershipStatus,
     p_period_end: endIso,
-    p_cancel_at_period_end: subscription.cancel_at_period_end,
+    p_cancel_at_period_end: cancellationScheduled,
   })
   if (error) return json({ error: 'Synchronizácia členstva zlyhala.' }, 500)
   return json({ received: true, handled: true, applied: data })
