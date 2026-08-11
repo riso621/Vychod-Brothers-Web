@@ -1,5 +1,5 @@
 import { bearerToken, corsHeaders, json } from '../_shared/http.ts'
-import { createUserClient } from '../_shared/supabase.ts'
+import { createAdminClient, createUserClient } from '../_shared/supabase.ts'
 
 type VideoRow = {
   id: string
@@ -82,6 +82,13 @@ Deno.serve(async (request) => {
   if (deleteError) {
     return json({ error: 'Video bolo odstránené z poskytovateľa, ale databázový záznam sa nepodarilo odstrániť. Operáciu môžete bezpečne zopakovať.' }, 500)
   }
+
+  const admin = createAdminClient()
+  await admin.from('admin_audit_logs').insert({
+    admin_user_id: user.id, admin_email: user.email, action_type: 'video.delete',
+    entity_type: 'video', entity_id: video.id, description: `Odstránené video ${video.id}`,
+    before_data: { provider: video.provider, thumbnail_url: video.thumbnail_url ? 'stored' : null },
+  })
 
   return json({ deleted: true, thumbnailRemoved: Boolean(path) })
 })

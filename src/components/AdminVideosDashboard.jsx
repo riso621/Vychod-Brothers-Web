@@ -5,6 +5,7 @@ import { invalidateVideoCache } from '../lib/videos'
 import { createStoragePath, uploadThumbnailFile } from '../lib/storage'
 import { createCloudflareUpload, deleteVideoFromProvider, uploadCloudflareVideo } from '../lib/cloudflare-stream'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
+import { adminRequest } from '../lib/admin-control-center'
 
 const accessLabels = { free: 'FREE', member: 'MEMBER', vip: 'VIP' }
 const providerLabels = { youtube: 'YouTube', stream: 'Legacy Stream', cloudflare_stream: 'Cloudflare Stream' }
@@ -129,11 +130,7 @@ function VideoFormModal({ video, onClose, onSaved }) {
         provider_video_id: cloudflareVideoUid || video?.provider_video_id,
         thumbnail_url: uploadedThumbnail || video?.thumbnail_url,
       }
-      const query = isEditing
-        ? supabase.from('videos').update(payload).eq('id', video.id)
-        : supabase.from('videos').insert(payload)
-      const { error } = await query
-      if (error) throw error
+      await adminRequest({ action:'save-video', videoId:video?.id || null, video:payload })
 
       if (isEditing && uploadedThumbnail && video.thumbnail_url && !/^https?:\/\//i.test(video.thumbnail_url)) await supabase.storage.from('thumbnails').remove([video.thumbnail_url])
       await onSaved(values.title, isEditing)
@@ -204,13 +201,16 @@ export default function AdminVideosDashboard() {
   const [query, setQuery] = useState('')
   const [accessFilter, setAccessFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [providerFilter, setProviderFilter] = useState('all')
+  const [sortOrder, setSortOrder] = useState('newest')
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const visibleVideos = videos.filter((video) => {
     const matchesQuery = `${video.title} ${video.slug}`.toLowerCase().includes(query.toLowerCase())
     const matchesAccess = accessFilter === 'all' || video.access_level === accessFilter
     const matchesStatus = statusFilter === 'all' || (statusFilter === 'published' ? video.published : !video.published)
-    return matchesQuery && matchesAccess && matchesStatus
-  })
+    const matchesProvider = providerFilter === 'all' || video.provider === providerFilter
+    return matchesQuery && matchesAccess && matchesStatus && matchesProvider
+  }).sort((a,b) => sortOrder === 'oldest' ? new Date(a.created_at) - new Date(b.created_at) : new Date(b.created_at) - new Date(a.created_at))
 
   const loadVideos = useCallback(async () => {
     setLoading(true)
@@ -253,6 +253,10 @@ export default function AdminVideosDashboard() {
     setDeletingVideo(null)
     setSuccess(`Video „${title}“ bolo odstránené.`)
   }
+  const toggle = async (video, field) => {
+    try { await adminRequest({ action:'video-toggle', videoId:video.id, field, value:!video[field] }); await loadVideos(); setSuccess(`Video „${video.title}“ bolo aktualizované.`) }
+    catch (error) { setError(error.message) }
+  }
 
   if (authLoading) {
     return <section className="admin-videos"><p className="admin-videos-status" aria-live="polite">Overujem oprávnenie…</p></section>
@@ -273,6 +277,8 @@ export default function AdminVideosDashboard() {
         <input type="search" placeholder="Hľadať video alebo slug" value={query} onChange={(event) => setQuery(event.target.value)} />
         <select value={accessFilter} onChange={(event) => setAccessFilter(event.target.value)} aria-label="Filtrovať prístup"><option value="all">Všetky prístupy</option><option value="free">FREE</option><option value="member">MEMBER</option><option value="vip">VIP</option></select>
         <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filtrovať stav"><option value="all">Všetky stavy</option><option value="published">Publikované</option><option value="draft">Koncepty</option></select>
+        <select value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)} aria-label="Filtrovať provider"><option value="all">Všetci provideri</option><option value="youtube">YouTube</option><option value="cloudflare_stream">Cloudflare</option><option value="stream">Legacy</option></select>
+        <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} aria-label="Zoradiť"><option value="newest">Najnovšie</option><option value="oldest">Najstaršie</option></select>
       </div>
 
       <div className="admin-video-list" aria-live="polite" aria-busy={loading}>
@@ -283,7 +289,7 @@ export default function AdminVideosDashboard() {
         {visibleVideos.map((video) => (
           <article className="admin-video-row" key={video.id}>
             <div className="admin-video-thumbnail"><StorageImage path={video.thumbnail_url} /><span aria-hidden="true">VB</span></div>
-            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
+            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><a href={`/videos/${video.slug}`} target="_blank" rel="noreferrer">Náhľad</a><button type="button" onClick={() => toggle(video,'published')}>{video.published?'Skryť':'Publikovať'}</button><button type="button" onClick={() => toggle(video,'featured')}>{video.featured?'Zrušiť featured':'Featured'}</button><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
             <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div></dl>
           </article>
         ))}

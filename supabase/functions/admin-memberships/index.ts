@@ -15,7 +15,7 @@ Deno.serve(async (request) => {
   if (userError || !user) return json({ error: 'Prihlásenie nie je platné.' }, 401)
   if (user.app_metadata?.role !== 'admin') return json({ error: 'Nemáte oprávnenie.' }, 403)
 
-  let body: { action?: string; userId?: string; membership?: string; status?: string; expiresAt?: string | null }
+  let body: { action?: string; userId?: string; membership?: string; status?: string; expiresAt?: string | null; reason?: string }
   try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
   if (body.action === 'list') {
     const adminClient = createAdminClient()
@@ -40,6 +40,7 @@ Deno.serve(async (request) => {
   if (body.action !== 'update') return json({ error: 'Neplatná operácia.' }, 400)
   const userId = String(body.userId || '')
   const membership = String(body.membership || '')
+  const reason = String(body.reason || '').trim()
   let status = String(body.status || '')
   if (!/^[0-9a-f-]{36}$/i.test(userId) || !levels.includes(membership) || !statuses.includes(status)) {
     return json({ error: 'Neplatné údaje členstva.' }, 400)
@@ -54,8 +55,10 @@ Deno.serve(async (request) => {
   }
 
   const { data: current, error: currentError } = await userClient.from('profiles')
-    .select('membership, membership_status, membership_started_at').eq('id', userId).maybeSingle()
+    .select('membership, membership_status, membership_started_at, membership_expires_at, stripe_subscription_id').eq('id', userId).maybeSingle()
   if (currentError || !current) return json({ error: 'Profil sa nenašiel.' }, 404)
+  if (current.stripe_subscription_id) return json({ error: 'Stripe členstvo nemožno prepísať manuálnym admin zásahom.' }, 409)
+  if (reason.length < 5 || membership !== 'free' && !expiresAt) return json({ error: 'Manuálne členstvo vyžaduje dôvod a dátum expirácie.' }, 400)
   const restarting = current.membership !== membership || (current.membership_status !== 'active' && status === 'active')
   const payload = {
     membership,
@@ -66,5 +69,12 @@ Deno.serve(async (request) => {
   const { data, error } = await userClient.from('profiles').update(payload).eq('id', userId)
     .select('id, username, avatar_url, membership, membership_started_at, membership_expires_at, membership_status, created_at').single()
   if (error) return json({ error: 'Členstvo sa nepodarilo aktualizovať.' }, 500)
+  const adminClient = createAdminClient()
+  await adminClient.from('admin_audit_logs').insert({
+    admin_user_id: user.id, admin_email: user.email, action_type: 'membership.manual_update',
+    entity_type: 'profile', entity_id: userId, description: reason,
+    before_data: { membership: current.membership, membership_status: current.membership_status, membership_expires_at: current.membership_expires_at },
+    after_data: { membership: data.membership, membership_status: data.membership_status, membership_expires_at: data.membership_expires_at },
+  })
   return json({ profile: data })
 })
