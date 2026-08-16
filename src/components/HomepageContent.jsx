@@ -36,7 +36,15 @@ export default function HomepageContent() {
   useEffect(() => {
     let active = true
     getLatestYouTubeVideo().then((video) => { if (active) setYoutubeVideo(video) }).catch(() => { if (active) setYoutubeError(true) }).finally(() => { if (active) setYoutubeLoading(false) })
-    getPublishedVideos().then((videos) => { if (active) setPremiumVideos(videos.filter((video) => ['member', 'vip'].includes(video.accessLevel)).slice(0, 3)) }).catch(() => {})
+    getPublishedVideos().then((videos) => {
+      if (!active) return
+      const premium = videos.filter((video) => ['member', 'vip'].includes(video.accessLevel))
+      const featured = premium.find((video) => video.featured)
+      const homepageVideos = [featured, ...premium.filter((video) => video.id !== featured?.id)]
+        .filter(Boolean)
+        .slice(0, 24)
+      setPremiumVideos(homepageVideos)
+    }).catch(() => {})
     return () => { active = false }
   }, [])
 

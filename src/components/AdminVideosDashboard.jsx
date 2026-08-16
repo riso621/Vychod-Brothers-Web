@@ -351,7 +351,7 @@ export default function AdminVideosDashboard() {
     setSuccess(`Video „${title}“ bolo odstránené.`)
   }
   const toggle = async (video, field) => {
-    try { await adminRequest({ action:'video-toggle', videoId:video.id, field, value:!video[field] }); await loadVideos(); setSuccess(`Video „${video.title}“ bolo aktualizované.`) }
+    try { await adminRequest({ action:'video-toggle', videoId:video.id, field, value:!video[field] }); invalidateVideoCache(); await loadVideos(); setSuccess(`Video „${video.title}“ bolo aktualizované.`) }
     catch (error) { setError(error.message) }
   }
   const previewTrailer = async (video) => {
@@ -363,7 +363,7 @@ export default function AdminVideosDashboard() {
   }
   const removeTrailer = async (video) => {
     if (!window.confirm(`Odstrániť trailer videa „${video.title}“? Hlavné video zostane zachované.`)) return
-    try { await deleteTrailerFromProvider(video.id); await loadVideos(); setSuccess(`Trailer videa „${video.title}“ bol odstránený.`) }
+    try { await deleteTrailerFromProvider(video.id); invalidateVideoCache(); await loadVideos(); setSuccess(`Trailer videa „${video.title}“ bol odstránený.`) }
     catch (trailerError) { setError(trailerError.message || 'Trailer sa nepodarilo odstrániť.') }
   }
 

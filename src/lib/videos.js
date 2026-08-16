@@ -2,6 +2,9 @@ import { supabase } from './supabase'
 
 const videoColumns = 'id, title, slug, description, thumbnail_url, provider, provider_video_id, trailer_provider_video_id, access_level, published, featured, duration, created_at, updated_at'
 let publishedVideosPromise = null
+let publishedVideosCache = null
+let publishedVideosCachedAt = 0
+const PUBLISHED_VIDEOS_TTL_MS = 30_000
 
 function mapVideo(row) {
   return {
@@ -31,10 +34,15 @@ function mapVideo(row) {
 
 export function invalidateVideoCache() {
   publishedVideosPromise = null
+  publishedVideosCache = null
+  publishedVideosCachedAt = 0
 }
 
-export async function getPublishedVideos() {
+export async function getPublishedVideos({ force = false } = {}) {
   if (!supabase) throw new Error('Supabase nie je nakonfigurovaný.')
+  if (!force && publishedVideosCache && Date.now() - publishedVideosCachedAt < PUBLISHED_VIDEOS_TTL_MS) {
+    return publishedVideosCache
+  }
   if (!publishedVideosPromise) {
     publishedVideosPromise = supabase
       .from('videos')
@@ -43,10 +51,12 @@ export async function getPublishedVideos() {
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) throw error
-        return (data || []).map(mapVideo)
+        publishedVideosCache = (data || []).map(mapVideo)
+        publishedVideosCachedAt = Date.now()
+        return publishedVideosCache
       })
+      .finally(() => { publishedVideosPromise = null })
       .catch((error) => {
-        publishedVideosPromise = null
         throw error
       })
   }
@@ -55,6 +65,9 @@ export async function getPublishedVideos() {
 
 export async function getPublishedVideoBySlug(slug) {
   if (!supabase) throw new Error('Supabase nie je nakonfigurovaný.')
+  if (publishedVideosCache && Date.now() - publishedVideosCachedAt < PUBLISHED_VIDEOS_TTL_MS) {
+    return publishedVideosCache.find((video) => video.slug === slug) || null
+  }
   if (publishedVideosPromise) {
     const videos = await publishedVideosPromise
     return videos.find((video) => video.slug === slug) || null
