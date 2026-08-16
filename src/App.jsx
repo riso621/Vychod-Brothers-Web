@@ -9,6 +9,8 @@ import { useSiteContent } from './hooks/useSiteContent'
 import CtaButton from './components/CtaButton'
 import ClubCommunityCard from './components/ClubCommunityCard'
 import { getHomepageCounts } from './lib/homepage-counts'
+import { formatSocialCount } from './lib/social-stats'
+import { useSocialStats } from './hooks/useSocialStats'
 import './App.css'
 
 const AuthControl = lazy(() => import('./components/AuthModal'))
@@ -112,10 +114,11 @@ function SocialStatIcon({ platform }) {
 }
 
 function Stats() {
+  const socialStats = useSocialStats()
   const visibleStats = ['youtube-subscribers', 'instagram-followers', 'tiktok-followers'].map((id) => stats.find((item) => item.id === id)).filter(Boolean)
   return <motion.section className="social-stats" id="onas" aria-labelledby="social-stats-title" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} transition={{ staggerChildren: .08 }}>
     <motion.header variants={reveal} className="social-stats-heading"><span>OVERENÉ ŠTATISTIKY</span><h2 id="social-stats-title">REÁLNE ČÍSLA.<br /><em>SKUTOČNÉ VÝSLEDKY.</em></h2></motion.header>
-    <div className="social-stats-grid">{visibleStats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className="social-stat-card" href={profile.url} target="_blank" rel="noreferrer" aria-label={`${profile.name}: ${item.value} ${item.lines[1].toLowerCase()}`} data-platform={item.platform} data-metric={item.metric} key={item.id}><div className="social-stat-icon"><SocialStatIcon platform={item.platform} /></div><span className="social-stat-platform">{profile.name}</span><AnimatedNumber value={item.value} placeholder={item.placeholder} /><b>{item.lines[1]}</b><i aria-hidden="true" /></motion.a> })}</div>
+    <div className="social-stats-grid">{visibleStats.map((item) => { const profile = socialProfiles[item.social]; const value = formatSocialCount(socialStats.data[item.platform]?.followers); return <motion.a variants={reveal} className={`social-stat-card${socialStats.loading ? ' is-loading' : ''}`} href={profile.url} target="_blank" rel="noreferrer" aria-label={`${profile.name}: ${value || 'údaj sa načítava'} ${item.lines[1].toLowerCase()}`} data-platform={item.platform} data-metric={item.metric} key={item.id}><div className="social-stat-icon"><SocialStatIcon platform={item.platform} /></div><span className="social-stat-platform">{profile.name}</span><AnimatedNumber value={value} placeholder={item.placeholder} /><b>{item.lines[1]}</b><i aria-hidden="true" /></motion.a> })}</div>
   </motion.section>
 }
 

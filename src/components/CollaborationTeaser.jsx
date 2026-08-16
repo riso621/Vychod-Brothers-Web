@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { stats } from '../data'
 import CtaButton from './CtaButton'
+import { formatSocialCount } from '../lib/social-stats'
+import { useSocialStats } from '../hooks/useSocialStats'
 
 const proofItems = [
   ['youtube-subscribers', 'YouTube'],
@@ -15,11 +17,12 @@ function SocialIcon({ name }) {
 }
 
 export default function CollaborationTeaser() {
+  const socialStats = useSocialStats()
   const socialProof = useMemo(() => proofItems.map(([id, label]) => ({
     id,
     label,
-    value: stats.find((item) => item.id === id)?.value || '—',
-  })), [])
+    value: formatSocialCount(socialStats.data[stats.find((item) => item.id === id)?.platform]?.followers) || '—',
+  })), [socialStats.data])
 
   return <section className="collaboration-teaser" id="kontakt" aria-labelledby="collaboration-teaser-heading">
     <div className="collaboration-teaser-copy">

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { stats } from '../data'
 import { supabase } from '../lib/supabase'
+import { formatSocialCount } from '../lib/social-stats'
+import { useSocialStats } from '../hooks/useSocialStats'
 
 const budgetOptions = [250, 500, 1000, 2000, 5000]
 const formatBudget = (value) => `${new Intl.NumberFormat('sk-SK').format(value)} €`
@@ -21,6 +23,7 @@ function Icon({ type }) {
 }
 
 export default function CollaborationSection() {
+  const socialStats = useSocialStats()
   const [budget, setBudget] = useState(1250)
   const [submitting, setSubmitting] = useState(false)
   const [status, setStatus] = useState('')
@@ -28,7 +31,7 @@ export default function CollaborationSection() {
     ['youtube', 'youtube-subscribers', 'Odberateľov na YouTube'],
     ['instagram', 'instagram-followers', 'Sledovateľov na Instagrame'],
     ['tiktok', 'tiktok-followers', 'Sledovateľov na TikToku'],
-  ].map(([icon, id, label]) => ({ icon, label, value: stats.find((item) => item.id === id)?.value || '—' })), [])
+  ].map(([icon, id, label]) => ({ icon, label, value: formatSocialCount(socialStats.data[stats.find((item) => item.id === id)?.platform]?.followers) || '—' })), [socialStats.data])
 
   const submit = async (event) => {
     event.preventDefault()

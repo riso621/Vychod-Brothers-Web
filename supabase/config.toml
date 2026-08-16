@@ -13,6 +13,9 @@ verify_jwt = false
 [functions.youtube-latest-video]
 verify_jwt = false
 
+[functions.social-stats-sync]
+verify_jwt = false
+
 [functions.stripe-create-checkout]
 verify_jwt = false
 
