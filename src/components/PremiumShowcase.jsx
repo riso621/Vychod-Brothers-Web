@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { canAccessMembership } from '../lib/membership'
+import TrailerModal from './TrailerModal'
 
 const labels = { member: 'ČLENSKÉ', vip: 'ČLENSKÉ' }
 const prices = { member: '5,99 € / mesiac', vip: '5,99 € / mesiac' }
@@ -29,21 +30,27 @@ function CardVisual({ video, thumbnailUrl, unlocked }) {
   </>
 }
 
-function PremiumShowcaseCard({ video, thumbnailUrl, unlocked }) {
+function PremiumShowcaseCard({ video, thumbnailUrl, unlocked, onPlayTrailer }) {
   const visual = <CardVisual video={video} thumbnailUrl={thumbnailUrl} unlocked={unlocked} />
 
   return <motion.article className={`members-showcase-card ${unlocked ? 'is-unlocked' : 'is-locked'}`} initial="hidden" whileInView="visible" viewport={{ once: true, amount: .2 }} variants={reveal}>
     {unlocked
       ? <a className="members-showcase-art" href={`/videos/${video.slug}`} aria-label={`Pozrieť video ${video.title}`}>{visual}</a>
-      : <details className="members-showcase-art"><summary aria-label={`Zobraziť členstvo pre video ${video.title}`}>{visual}</summary><a className="members-showcase-cta" href="/clenstvo">Stať sa členom <span aria-hidden="true">→</span></a></details>}
+      : video.trailerStreamVideoId
+        ? <div className="members-showcase-art has-trailer">{visual}<button className="members-showcase-trailer" type="button" onClick={onPlayTrailer}><span aria-hidden="true">▶</span><b>POZRIEŤ UKÁŽKU</b><small>ZDARMA</small></button></div>
+        : <details className="members-showcase-art"><summary aria-label={`Zobraziť členstvo pre video ${video.title}`}>{visual}</summary><a className="members-showcase-cta" href="/clenstvo">Stať sa členom <span aria-hidden="true">→</span></a></details>}
   </motion.article>
 }
 
-export default function PremiumShowcase({ videos, thumbnailUrls, profile, isAdmin }) {
+export default function PremiumShowcase({ videos, thumbnailUrls, profile, session, isAdmin }) {
+  const [trailerVideo, setTrailerVideo] = useState(null)
   if (!videos.length) return null
 
-  return <section className={`members-showcase count-${videos.length}`} aria-labelledby="members-showcase-heading">
+  const returnTo = trailerVideo ? `/videos/${trailerVideo.slug}` : '/videos'
+  const membershipHref = session ? `/checkout/club?returnTo=${encodeURIComponent(returnTo)}` : `/?auth=register&next=${encodeURIComponent(`/checkout/club?returnTo=${returnTo}`)}`
+
+  return <><section className={`members-showcase count-${videos.length}`} aria-labelledby="members-showcase-heading">
     <header className="members-showcase-heading"><div><span>ORIGINÁLNA TVORBA · BONUSY · PREMIÉRY</span><h2 id="members-showcase-heading">Len pre členov</h2><p>Príbehy a momenty, ktoré vo verejnom feede neuvidíš.</p></div><a href="/clenstvo">Objaviť členstvo <span aria-hidden="true">→</span></a></header>
-    <div className="members-showcase-row">{videos.map((video) => <PremiumShowcaseCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} unlocked={canAccessMembership(video.accessLevel, profile, isAdmin)} key={video.id} />)}</div>
-  </section>
+    <div className="members-showcase-row">{videos.map((video) => <PremiumShowcaseCard video={video} thumbnailUrl={thumbnailUrls.get(video.thumbnail)} unlocked={canAccessMembership(video.accessLevel, profile, isAdmin)} onPlayTrailer={() => setTrailerVideo(video)} key={video.id} />)}</div>
+  </section>{trailerVideo && <TrailerModal video={trailerVideo} membershipHref={membershipHref} onClose={() => setTrailerVideo(null)} />}</>
 }

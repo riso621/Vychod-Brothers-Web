@@ -71,7 +71,7 @@ export default function HomepageContent() {
       </motion.article>}
     </section>
 
-    <PremiumShowcase videos={premiumVideos} thumbnailUrls={thumbnailUrls} profile={profile} isAdmin={isAdmin} />
+    <PremiumShowcase videos={premiumVideos} thumbnailUrls={thumbnailUrls} profile={profile} session={session} isAdmin={isAdmin} />
 
     <ContinueWatchingSection />
   </div>
