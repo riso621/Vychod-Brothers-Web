@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import CtaButton from './CtaButton'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -66,7 +67,7 @@ export default function NewsletterSection() {
               }
             }}
           />
-          <button type="submit">Odoberať <span aria-hidden="true">→</span></button>
+          <CtaButton type="submit" variant="primary" icon="mail" label="ODOBERAŤ" />
         </div>
         <p className={`newsletter-form__status is-${status}`} id="newsletter-status" aria-live="polite">{message}</p>
       </form>

@@ -6,6 +6,7 @@ import { getSignedStorageUrls } from '../lib/storage'
 import { getLatestYouTubeVideo } from '../lib/youtube'
 import { useProfile } from '../context/profile-context'
 import PremiumShowcase from './PremiumShowcase'
+import CtaButton from './CtaButton'
 
 const reveal = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: .7, ease: [.2, .7, .2, 1] } } }
 
@@ -75,7 +76,7 @@ export default function HomepageContent() {
       {!youtubeLoading && youtubeError && <div className="home-youtube-fallback" role="status"><div><span>YOUTUBE</span><h3>Najnovšie video momentálne načítavame</h3><p>Všetky verejné videá nájdeš priamo na našom YouTube kanáli.</p></div><a href="https://www.youtube.com/@Vychodbrothers1" target="_blank" rel="noreferrer">Otvoriť YouTube <span aria-hidden="true">↗</span></a></div>}
       {youtubeVideo && <motion.article className="home-latest-card" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .2 }} variants={reveal}>
         <a className="home-latest-image" href={youtubeVideo.youtubeUrl} target="_blank" rel="noreferrer" aria-label={`Pozrieť na YouTube: ${youtubeVideo.title}`}><Thumbnail url={youtubeVideo.thumbnail} eager /><span className="home-latest-play" aria-hidden="true">▶</span><span className="home-youtube-badge">NAJNOVŠIE NA YOUTUBE</span></a>
-        <div className="home-latest-copy"><div className="home-video-meta"><span>YOUTUBE</span><time dateTime={youtubeVideo.publishedAt}>{formatDate(youtubeVideo.publishedAt)}</time></div><h3>{youtubeVideo.title}</h3><p>{shortDescription(youtubeVideo.description)}</p><a className="home-video-cta" href={youtubeVideo.youtubeUrl} target="_blank" rel="noreferrer">Pozrieť na YouTube <span aria-hidden="true">↗</span></a></div>
+        <div className="home-latest-copy"><div className="home-video-meta"><span>YOUTUBE</span><time dateTime={youtubeVideo.publishedAt}>{formatDate(youtubeVideo.publishedAt)}</time></div><h3>{youtubeVideo.title}</h3><p>{shortDescription(youtubeVideo.description)}</p><CtaButton className="home-youtube-cta" href={youtubeVideo.youtubeUrl} external icon="youtube" label="POZRIEŤ NA YOUTUBE" /></div>
       </motion.article>}
     </section>
 

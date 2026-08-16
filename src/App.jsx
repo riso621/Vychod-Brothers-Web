@@ -6,10 +6,10 @@ import Footer from './components/Footer'
 import { useProfile } from './context/profile-context'
 import { isActiveClubMember } from './lib/membership'
 import { useSiteContent } from './hooks/useSiteContent'
+import CtaButton from './components/CtaButton'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
-const MotionLink = motion.create('a')
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
 const WatchHistoryProvider = lazy(() => import('./context/WatchHistoryProvider'))
@@ -79,7 +79,7 @@ function Hero() {
       <Header />
       <motion.div className="hero-photo" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} animate={reduceMotion ? undefined : { scale: [1.015, 1.055] }} transition={{ duration: 18, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }} />
       <div className="hero-smoke" aria-hidden="true" />
-      <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}>{String(siteContent['homepage.hero.headline'] || 'VÝCHOD BROTHERS').split(' ').map((word)=><span key={word}>{word}</span>)}</motion.h1><motion.p variants={reveal}>{siteContent['homepage.hero.subtitle'] || <>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</>}</motion.p><MotionLink variants={reveal} className="outline-btn" href={socialProfiles.youtube.url} target="_blank" rel="noreferrer" whileHover={{ y: -2 }} whileTap={{ scale: .98 }}><b>▶</b> POZRIEŤ NAJNOVŠIE VIDEO</MotionLink></motion.div>
+      <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}>{String(siteContent['homepage.hero.headline'] || 'VÝCHOD BROTHERS').split(' ').map((word)=><span key={word}>{word}</span>)}</motion.h1><motion.p variants={reveal}>{siteContent['homepage.hero.subtitle'] || <>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</>}</motion.p><motion.div variants={reveal}><CtaButton className="hero-main-cta" href={socialProfiles.youtube.url} external icon="play" label="POZRIEŤ NAJNOVŠIE VIDEO" /></motion.div></motion.div>
       <motion.div className="neon-mark" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: .76 }} transition={{ delay: .8, duration: 1.2 }}>VB</motion.div>
       <FilmStrip />
       <motion.p className="mentality" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: .8 }}>NIE JE LEN MIESTO,<br />JE TO MENTALITA.<i /></motion.p>

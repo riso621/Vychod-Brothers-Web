@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { canAccessMembership } from '../lib/membership'
 import VideoPlayer from './VideoPlayer'
+import CtaButton from './CtaButton'
 
 const labels = { member: 'ČLENSKÉ', vip: 'ČLENSKÉ' }
 
@@ -15,18 +16,11 @@ function LockIcon() {
   return <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 14v-3a7 7 0 0 1 14 0v3" /><rect x="6" y="14" width="20" height="15" rx="4" /><path d="M16 20v4" /></svg>
 }
 
-function formatDuration(seconds) {
-  const value = Math.max(0, Math.round(seconds || 0))
-  if (!value) return ''
-  return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, '0')}`
-}
-
 function InlineTrailerFeature({ video, thumbnailUrl, membershipHref }) {
   const sectionRef = useRef(null)
   const [nearViewport, setNearViewport] = useState(false)
   const [inViewport, setInViewport] = useState(false)
   const [ended, setEnded] = useState(false)
-  const [duration, setDuration] = useState(0)
   const [replaySignal, setReplaySignal] = useState(0)
   const reducedMotion = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false, [])
 
@@ -50,12 +44,12 @@ function InlineTrailerFeature({ video, thumbnailUrl, membershipHref }) {
 
   return <div className="members-inline-feature">
     <div className="members-inline-player" ref={sectionRef}>
-      {nearViewport ? <VideoPlayer title={`${video.title} – verejná ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer autoPlay={!reducedMotion} startMuted playbackActive={inViewport && !reducedMotion && !ended} replaySignal={replaySignal} onDurationChange={setDuration} onEnded={handleEnded} /> : <Artwork url={thumbnailUrl} />}
-      <span className="members-inline-badge">UKÁŽKA{duration ? ` · ${formatDuration(duration)}` : ''}</span>
-      {ended && <div className="members-inline-ended" role="status"><span>CHCEŠ VIDIEŤ CELÉ VIDEO?</span><p>Odomkni celé video a všetok členský obsah.</p><a href={membershipHref}>ODOMKNÚŤ CELÉ VIDEO – 5,99 € / MESIAC</a><button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button></div>}
+      {nearViewport ? <VideoPlayer title={`${video.title} – verejná ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer autoPlay={!reducedMotion} startMuted playbackActive={inViewport && !reducedMotion && !ended} replaySignal={replaySignal} onEnded={handleEnded} /> : <Artwork url={thumbnailUrl} />}
+      <span className="members-inline-badge">TRAILER</span>
+      {ended && <div className="members-inline-ended" role="status"><span>CHCEŠ VIDIEŤ CELÉ VIDEO?</span><p>Odomkni celé video a všetok členský obsah.</p><CtaButton href={membershipHref} variant="primary" icon="crown" label="ODOMKNÚŤ CELÉ VIDEO" sublabel="5,99 € / MESIAC" /><button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button></div>}
       <small className="members-inline-note">Bezplatná ukážka. Celé členské video zostáva chránené.</small>
     </div>
-    <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>Chceš vidieť, ako to dopadlo?</h3><p>Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><a href={membershipHref}>ODOMKNÚŤ CELÉ VIDEO <strong>5,99 € / MESIAC</strong></a>{ended && <button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button>}</aside>
+    <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>Chceš vidieť, ako to dopadlo?</h3><p>Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><CtaButton href={membershipHref} variant="primary" fullWidth icon="crown" label="ODOMKNÚŤ CELÉ VIDEO" sublabel="5,99 € / MESIAC" />{ended && <button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button>}</aside>
   </div>
 }
 
@@ -72,7 +66,7 @@ function FeaturedPoster({ video, thumbnailUrl, unlocked, membershipHref }) {
 }
 
 function OfferPanel({ video, unlocked, membershipHref }) {
-  return <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>{unlocked ? video.title : 'Chceš vidieť, ako to dopadlo?'}</h3><p>{unlocked ? 'Toto členské video máte odomknuté. Pokračujte priamo na celé video.' : 'Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.'}</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><a href={unlocked ? `/videos/${video.slug}` : membershipHref}>{unlocked ? 'POZRIEŤ CELÉ VIDEO' : 'ODOMKNÚŤ CELÉ VIDEO'} {!unlocked && <strong>5,99 € / MESIAC</strong>}</a></aside>
+  return <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>{unlocked ? video.title : 'Chceš vidieť, ako to dopadlo?'}</h3><p>{unlocked ? 'Toto členské video máte odomknuté. Pokračujte priamo na celé video.' : 'Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.'}</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><CtaButton href={unlocked ? `/videos/${video.slug}` : membershipHref} variant="primary" fullWidth icon={unlocked ? 'play' : 'crown'} label={unlocked ? 'POZRIEŤ CELÉ VIDEO' : 'ODOMKNÚŤ CELÉ VIDEO'} sublabel={unlocked ? '' : '5,99 € / MESIAC'} /></aside>
 }
 
 function MemberVideoRail({ videos, selectedId, thumbnailUrls, onSelect }) {
@@ -113,7 +107,7 @@ export default function PremiumShowcase({ videos, thumbnailUrls, profile, sessio
   const selectedThumbnail = thumbnailUrls.get(selectedVideo.thumbnail)
 
   return <section className={`members-showcase count-${videos.length} has-inline-trailer`} aria-labelledby="members-showcase-heading">
-    <header className="members-showcase-heading"><div><span>ORIGINÁLNA TVORBA · BONUSY · PREMIÉRY</span><h2 id="members-showcase-heading">Len pre členov</h2><p>Príbehy a momenty, ktoré vo verejnom feede neuvidíš.</p></div><a href="/clenstvo">Objaviť členstvo <span aria-hidden="true">→</span></a></header>
+    <header className="members-showcase-heading"><div><span>ORIGINÁLNA TVORBA · BONUSY · PREMIÉRY</span><h2 id="members-showcase-heading">Len pre členov</h2><p>Príbehy a momenty, ktoré vo verejnom feede neuvidíš.</p></div><CtaButton className="club-discover-cta" href="/clenstvo" icon="crown" label="OBJAVIŤ ČLENSTVO" /></header>
     <div className="members-featured-switch" key={selectedVideo.id}>
       {!unlocked && selectedVideo.trailerStreamVideoId
         ? <InlineTrailerFeature video={selectedVideo} thumbnailUrl={selectedThumbnail} membershipHref={membershipHref} />

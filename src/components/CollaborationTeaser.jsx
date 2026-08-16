@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { stats } from '../data'
+import CtaButton from './CtaButton'
 
 const proofItems = [
   ['youtube-subscribers', 'YouTube'],
@@ -25,7 +26,7 @@ export default function CollaborationTeaser() {
       <span>SPOLUPRÁCE / PARTNERSTVÁ</span>
       <h2 id="collaboration-teaser-heading">Poďme vytvoriť<br />niečo silné.</h2>
       <p>Máte značku, produkt alebo nápad, ktorý patrí do sveta Východ Brothers? Pošlite nám konkrétnu ponuku.</p>
-      <a href="/spolupraca">MÁM ZÁUJEM O SPOLUPRÁCU <b aria-hidden="true">→</b></a>
+      <CtaButton className="collaboration-main-cta" href="/spolupraca" icon="handshake" label="MÁM ZÁUJEM O SPOLUPRÁCU" />
     </div>
     <div className="collaboration-teaser-proof" aria-label="Dosah Východ Brothers">
       {socialProof.map((item) => <div key={item.id}><SocialIcon name={item.label} /><strong>{item.value}</strong><small>{item.label}</small></div>)}
