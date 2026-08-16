@@ -27,7 +27,7 @@ Deno.serve(async (request) => {
   if (userError || !user) return json({ error: 'Prihlásenie nie je platné.' }, 401)
   if (user.app_metadata?.role !== 'admin') return json({ error: 'Nemáte oprávnenie.' }, 403)
 
-  let body: { id?: string; slug?: string }
+  let body: { id?: string; slug?: string; action?: string; expectedUid?: string }
   try {
     body = await request.json()
   } catch {
@@ -45,6 +45,27 @@ Deno.serve(async (request) => {
 
   if (videoError) return json({ error: 'Video sa nepodarilo načítať.' }, 500)
   if (!video) return json({ deleted: true, alreadyDeleted: true })
+
+  if (body.action === 'delete-trailer' || body.action === 'cleanup-trailer') {
+    const currentUid = String(video.trailer_provider_video_id || '').trim()
+    const expectedUid = String(body.expectedUid || '').trim()
+    const trailerUid = body.action === 'cleanup-trailer' ? expectedUid : currentUid
+    if (!trailerUid) return json({ trailerDeleted: true, alreadyDeleted: true })
+    if (!/^[a-zA-Z0-9]+$/.test(trailerUid)) return json({ error: 'Trailer nemá platný identifikátor.' }, 409)
+    if (body.action === 'cleanup-trailer' && trailerUid === currentUid) return json({ error: 'Aktuálny trailer nemožno odstrániť ako starý asset.' }, 409)
+    const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID')
+    const apiToken = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')
+    if (!accountId || !apiToken) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${trailerUid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${apiToken}` } })
+    if (!response.ok && response.status !== 404) return json({ error: 'Trailer sa nepodarilo odstrániť.' }, 502)
+    if (body.action === 'delete-trailer') {
+      const { error: clearError } = await supabase.from('videos').update({ trailer_provider_video_id: null }).eq('id', video.id).eq('trailer_provider_video_id', trailerUid)
+      if (clearError) return json({ error: 'Trailer bol odstránený, ale záznam sa nepodarilo aktualizovať.' }, 500)
+    }
+    const admin = createAdminClient()
+    await admin.from('admin_audit_logs').insert({ admin_user_id: user.id, admin_email: user.email, action_type: body.action === 'delete-trailer' ? 'video.trailer_delete' : 'video.trailer_cleanup', entity_type: 'video', entity_id: video.id, description: `Odstránený trailer videa ${video.id}` })
+    return json({ trailerDeleted: true })
+  }
 
   if (video.provider === 'stream') {
     return json({ error: 'Legacy Stream video vyžaduje manuálne overenie a nebolo odstránené.' }, 409)

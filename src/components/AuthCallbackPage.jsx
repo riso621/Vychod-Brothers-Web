@@ -1,4 +1,5 @@
 import { useProfile } from '../context/profile-context'
+import { safeInternalReturnPath } from '../lib/safe-return'
 
 export default function AuthCallbackPage() {
   const { session, authLoading, profileLoading, profileError } = useProfile()
@@ -6,7 +7,7 @@ export default function AuthCallbackPage() {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
   const callbackError = search.get('error_description') || hash.get('error_description')
   const nextPath = search.get('next')
-  const safeNextPath = nextPath?.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
+  const safeNextPath = safeInternalReturnPath(nextPath)
   const loginHref = `/?auth=login${safeNextPath ? `&next=${encodeURIComponent(safeNextPath)}` : ''}`
 
   if (authLoading || (session && profileLoading)) {

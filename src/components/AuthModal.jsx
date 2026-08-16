@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useProfile } from '../context/profile-context'
+import { safeInternalReturnPath } from '../lib/safe-return'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -44,7 +45,7 @@ function AuthModal({ mode, onModeChange, onClose }) {
   const emailRef = useRef(null)
 
   const nextPath = new URLSearchParams(window.location.search).get('next')
-  const safeNextPath = nextPath?.startsWith('/') && !nextPath.startsWith('//') ? nextPath : ''
+  const safeNextPath = safeInternalReturnPath(nextPath)
   const confirmationRedirect = `${window.location.origin}/auth/callback${safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ''}`
 
   useEffect(() => {

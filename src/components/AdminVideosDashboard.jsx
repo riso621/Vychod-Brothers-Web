@@ -3,7 +3,7 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { useProfile } from '../context/profile-context'
 import { invalidateVideoCache } from '../lib/videos'
 import { createStoragePath, uploadThumbnailFile } from '../lib/storage'
-import { createCloudflareUpload, deleteVideoFromProvider, uploadCloudflareVideo } from '../lib/cloudflare-stream'
+import { createCloudflareUpload, deleteTrailerFromProvider, deleteVideoFromProvider, getCloudflarePlaybackUrl, uploadCloudflareVideo } from '../lib/cloudflare-stream'
 import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 import { adminRequest } from '../lib/admin-control-center'
 import AdminVideoComments from '../admin/AdminVideoComments'
@@ -144,6 +144,10 @@ function VideoFormModal({ video, onClose, onSaved }) {
       }
       await adminRequest({ action:'save-video', videoId:video?.id || null, video:payload })
 
+      if (cloudflareTrailerUid && video?.trailer_provider_video_id && video.trailer_provider_video_id !== cloudflareTrailerUid) {
+        await deleteTrailerFromProvider(video.id, video.trailer_provider_video_id).catch(() => undefined)
+      }
+
       if (isEditing && uploadedThumbnail && video.thumbnail_url && !/^https?:\/\//i.test(video.thumbnail_url)) await supabase.storage.from('thumbnails').remove([video.thumbnail_url])
       await onSaved(values.title, isEditing)
     } catch (error) {
@@ -275,6 +279,18 @@ export default function AdminVideosDashboard() {
     try { await adminRequest({ action:'video-toggle', videoId:video.id, field, value:!video[field] }); await loadVideos(); setSuccess(`Video „${video.title}“ bolo aktualizované.`) }
     catch (error) { setError(error.message) }
   }
+  const previewTrailer = async (video) => {
+    try {
+      const url = await getCloudflarePlaybackUrl(video.trailer_provider_video_id, true)
+      if (!url) throw new Error('Trailer momentálne nie je dostupný.')
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (previewError) { setError(previewError.message || 'Trailer momentálne nie je dostupný.') }
+  }
+  const removeTrailer = async (video) => {
+    if (!window.confirm(`Odstrániť trailer videa „${video.title}“? Hlavné video zostane zachované.`)) return
+    try { await deleteTrailerFromProvider(video.id); await loadVideos(); setSuccess(`Trailer videa „${video.title}“ bol odstránený.`) }
+    catch (trailerError) { setError(trailerError.message || 'Trailer sa nepodarilo odstrániť.') }
+  }
 
   if (authLoading) {
     return <section className="admin-videos"><p className="admin-videos-status" aria-live="polite">Overujem oprávnenie…</p></section>
@@ -310,8 +326,8 @@ export default function AdminVideosDashboard() {
         {visibleVideos.map((video) => (
           <article className="admin-video-row" key={video.id}>
             <div className="admin-video-thumbnail"><StorageImage path={video.thumbnail_url} /><span aria-hidden="true">VB</span></div>
-            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><a href={`/videos/${video.slug}`} target="_blank" rel="noreferrer">Náhľad</a><button type="button" onClick={() => {window.history.pushState({},'',`/admin/videos/${video.id}/comments`);window.dispatchEvent(new PopStateEvent('popstate'));setSelectedVideoId(video.id)}}>Komentáre</button><button type="button" onClick={() => toggle(video,'published')}>{video.published?'Skryť':'Publikovať'}</button><button type="button" onClick={() => toggle(video,'featured')}>{video.featured?'Zrušiť featured':'Featured'}</button><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
-            <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div><div><dt>❤️ Srdiečka</dt><dd>{interactionStats[video.id]?.likes??0}</dd></div><div><dt>💬 Komentáre</dt><dd>{interactionStats[video.id]?.comments??0}</dd></div></dl>
+            <div className="admin-video-title"><span>Názov</span><h2>{video.title}</h2><time dateTime={video.created_at}>{formatDate(video.created_at)}</time><div className="admin-video-actions"><a href={`/videos/${video.slug}`} target="_blank" rel="noreferrer">Náhľad videa</a>{video.trailer_provider_video_id && <><button type="button" onClick={() => previewTrailer(video)}>Prehrať trailer</button><button type="button" onClick={() => removeTrailer(video)}>Odstrániť trailer</button></>}<button type="button" onClick={() => {window.history.pushState({},'',`/admin/videos/${video.id}/comments`);window.dispatchEvent(new PopStateEvent('popstate'));setSelectedVideoId(video.id)}}>Komentáre</button><button type="button" onClick={() => toggle(video,'published')}>{video.published?'Skryť':'Publikovať'}</button><button type="button" onClick={() => toggle(video,'featured')}>{video.featured?'Zrušiť featured':'Featured'}</button><button type="button" onClick={() => { setEditingVideo(video); setModalOpen(true); setSuccess('') }}>Upraviť</button><button className="is-danger" type="button" onClick={() => { setDeletingVideo(video); setSuccess('') }}>Odstrániť</button></div></div>
+            <dl><div><dt>Provider</dt><dd>{providerLabels[video.provider] || video.provider}</dd></div><div><dt>Prístup</dt><dd className={`access-${video.access_level}`}>{accessLabels[video.access_level] || video.access_level}</dd></div><div><dt>Trailer</dt><dd>{video.trailer_provider_video_id ? 'Nahraný' : 'Chýba'}</dd></div><div><dt>Publikované</dt><dd>{video.published ? 'Áno' : 'Nie'}</dd></div><div><dt>Featured</dt><dd>{video.featured ? 'Áno' : 'Nie'}</dd></div><div><dt>❤️ Srdiečka</dt><dd>{interactionStats[video.id]?.likes??0}</dd></div><div><dt>💬 Komentáre</dt><dd>{interactionStats[video.id]?.comments??0}</dd></div></dl>
           </article>
         ))}
       </div>

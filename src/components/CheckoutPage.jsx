@@ -4,6 +4,7 @@ import { useProfile } from '../context/profile-context'
 import { confirmVipUpgrade, createCheckoutSession, createCustomerPortalSession, getVipUpgradePreview, getVipUpgradeStatus } from '../lib/billing'
 import { classifyVipUpgradeState, clearCheckoutMarker, readCheckoutMarker, writeCheckoutMarker } from '../lib/checkout-flow'
 import { formatMembershipDate, getEffectiveMembership } from '../lib/membership'
+import { safeInternalReturnPath } from '../lib/safe-return'
 
 const planDetails = {
   club: { name: 'VÝCHOD BROTHERS CLUB', price: '5,99 €', description: 'Jedno mesačné členstvo s prístupom ku všetkým exkluzívnym videám a členským funkciám.' },
@@ -77,6 +78,7 @@ export default function CheckoutPage({ plan }) {
   const upgradeMountRef = useRef(null)
   const upgradeSubmitRef = useRef(false)
   const details = planDetails[plan]
+  const returnTo = safeInternalReturnPath(new URLSearchParams(window.location.search).get('returnTo'), '/videos')
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
   const currentMembership = getEffectiveMembership(profile)
@@ -264,7 +266,7 @@ export default function CheckoutPage({ plan }) {
       const stripe = await stripePromise
       const { error: paymentError } = await stripe.confirmPayment({
         elements: elementsRef.current,
-        confirmParams: { return_url: `${window.location.origin}/checkout/${plan}?payment=return` },
+        confirmParams: { return_url: `${window.location.origin}/checkout/${plan}?payment=return&returnTo=${encodeURIComponent(returnTo)}` },
         redirect: 'if_required',
       })
       if (paymentError) throw paymentError
@@ -458,7 +460,7 @@ export default function CheckoutPage({ plan }) {
             <ul><li>Platba bola úspešne spracovaná</li><li>Členstvo je aktívne</li><li>Exkluzívny obsah je odomknutý</li><li>Predplatné sa obnovuje automaticky</li></ul>
             {renewalDate && <p className="checkout-result-renewal"><span>Ďalšie obnovenie</span><strong>{renewalDate}</strong></p>}
           </div>
-          <div className="checkout-result-actions"><a className="checkout-result-primary" href="/videos" onClick={leaveSuccess}>Pozrieť členské videá</a><a className="checkout-result-secondary" href="/account" onClick={leaveSuccess}>Prejsť na môj účet</a></div>
+          <div className="checkout-result-actions"><a className="checkout-result-primary" href={returnTo} onClick={leaveSuccess}>{returnTo.startsWith('/videos/') ? 'Pozrieť celé video' : 'Pozrieť členské videá'}</a><a className="checkout-result-secondary" href="/account" onClick={leaveSuccess}>Prejsť na môj účet</a></div>
         </div>
       </section>
     )

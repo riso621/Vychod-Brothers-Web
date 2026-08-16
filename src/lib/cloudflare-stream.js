@@ -54,3 +54,12 @@ export async function deleteVideoFromProvider(videoId) {
   }
   return data
 }
+
+export async function deleteTrailerFromProvider(videoId, expectedUid = '') {
+  if (!supabase || !videoId) throw new Error('Trailer sa nepodarilo odstrániť.')
+  const { data, error } = await supabase.functions.invoke('cloudflare-stream-delete-video', {
+    body: { id: videoId, action: expectedUid ? 'cleanup-trailer' : 'delete-trailer', expectedUid },
+  })
+  if (error || !data?.trailerDeleted) throw new Error(data?.error || error?.message || 'Trailer sa nepodarilo bezpečne odstrániť.')
+  return data
+}
