@@ -31,3 +31,8 @@ export async function getSocialStats({ force = false } = {}) {
 
   return pendingRequest
 }
+
+export function invalidateSocialStatsCache() {
+  cachedStats = null
+  cachedAt = 0
+}

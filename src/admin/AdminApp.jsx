@@ -14,6 +14,7 @@ const AdminMembershipsDashboard = lazy(() => import('../components/AdminMembersh
 const AdminInvoices = lazy(() => import('./AdminInvoices'))
 const AdminCollaborations = lazy(() => import('./AdminCollaborations'))
 const AdminAnalytics = lazy(() => import('./AdminAnalytics'))
+const AdminSocialStats = lazy(() => import('./AdminSocialStats'))
 
 const navItems = [
   ['analytics', 'Analytika', '◒'],
@@ -22,6 +23,7 @@ const navItems = [
   ['dashboard', 'Prehľad', '▦'], ['videos', 'Videá', '▶'], ['users', 'Používatelia', '◉'],
   ['memberships', 'Členstvá', '◆'], ['payments', 'Platby', '€'], ['merch', 'Merch', '▣'],
   ['content', 'Obsah webu', '◫'], ['settings', 'Nastavenia', '⚙'], ['logs', 'Logy', '≡'],
+  ['social', 'Sociálne siete', '◎'],
 ]
 
 const labels = Object.fromEntries(navItems.map(([key, label]) => [key, label]))
@@ -156,6 +158,7 @@ export default function AdminApp() {
   else if (route === 'invoices') content = <Suspense fallback={<AdminLoading/>}><AdminInvoices /></Suspense>
   else if (route === 'collaborations') content = <Suspense fallback={<AdminLoading/>}><AdminCollaborations id={pathParts[1]||''}/></Suspense>
   else if (route === 'analytics') content = <Suspense fallback={<AdminLoading/>}><AdminAnalytics/></Suspense>
+  else if (route === 'social') content = <Suspense fallback={<AdminLoading/>}><AdminSocialStats/></Suspense>
   else if (route === 'logs') content = <Logs logs={logs}/>
   else if (route === 'content') content = <Content content={siteContent} reload={load}/>
   else if (route === 'settings') content = <Settings content={siteContent} integrations={integrations} reload={load}/>

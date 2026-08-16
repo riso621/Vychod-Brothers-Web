@@ -107,6 +107,27 @@ Deno.serve(async (request) => {
   }
   if (body.action === 'integrations') return json({ integrations:{ supabase:true,stripe:Boolean(Deno.env.get('STRIPE_SECRET_KEY')),cloudflare:Boolean(Deno.env.get('CLOUDFLARE_ACCOUNT_ID')&&Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')) } })
 
+  if (body.action === 'social-stats') {
+    const { data, error } = await admin.from('social_stats').select('platform,followers,synced_at,updated_at').order('platform')
+    return error ? json({ error:'Sociálne štatistiky sa nepodarilo načítať.' },500) : json({ stats:data || [] })
+  }
+
+  if (body.action === 'save-social-stats') {
+    const input = body.stats && typeof body.stats === 'object' ? body.stats : {}
+    const allowed = ['youtube','instagram','tiktok']
+    const rows = allowed.map((platform) => ({ platform, followers:Number(input[platform]) }))
+    if (rows.some((row) => !Number.isSafeInteger(row.followers) || row.followers < 0)) return json({ error:'Zadajte celé nezáporné hodnoty pre všetky platformy.' },400)
+    const { data: before, error: readError } = await admin.from('social_stats').select('platform,followers').in('platform',allowed)
+    if (readError) return json({ error:'Aktuálne sociálne štatistiky sa nepodarilo načítať.' },500)
+    const now = new Date().toISOString()
+    const { error } = await admin.from('social_stats').upsert(rows.map((row) => ({ ...row, synced_at:now, updated_at:now, status:'ok', last_error:null })), { onConflict:'platform' })
+    if (error) return json({ error:'Sociálne štatistiky sa nepodarilo uložiť.' },500)
+    const beforeMap = new Map((before || []).map((row:any) => [row.platform,row.followers]))
+    const changed = rows.filter((row) => beforeMap.get(row.platform) !== row.followers)
+    await admin.from('admin_audit_logs').insert({ admin_user_id:auth.user!.id, admin_email:auth.user!.email, action_type:'social_stats.updated', entity_type:'social_stats', entity_id:'youtube,instagram,tiktok', description:`Aktualizované sociálne štatistiky: ${changed.map((row) => row.platform).join(', ') || 'bez zmeny'}`, before_data:Object.fromEntries(beforeMap), after_data:Object.fromEntries(rows.map((row) => [row.platform,row.followers])) })
+    return json({ ok:true, updatedAt:now, changed:changed.map((row) => row.platform) })
+  }
+
   if(body.action==='video-interaction-stats'){
     const {data,error}=await admin.from('video_interaction_stats').select('video_id,like_count,comment_count')
     return error?json({error:'Štatistiky interakcií sa nepodarilo načítať.'},500):json({stats:data||[]})
