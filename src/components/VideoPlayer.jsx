@@ -44,7 +44,7 @@ const formatTime = (seconds) => {
   return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}` : `${minutes}:${String(rest).padStart(2, '0')}`
 }
 
-function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onWatchProgress, autoPlay = false, onEnded }) {
+function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onWatchProgress, autoPlay = false, startMuted = false, playbackActive = true, replaySignal = 0, poster = '', onDurationChange, onTimeProgress, onEnded }) {
   const videoRef = useRef(null)
   const hlsRef = useRef(null)
   const [qualityLevels, setQualityLevels] = useState([])
@@ -53,7 +53,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [paused, setPaused] = useState(true)
-  const [muted, setMuted] = useState(false)
+  const [muted, setMuted] = useState(startMuted)
   const [volume, setVolume] = useState(1)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [resumeToastVisible, setResumeToastVisible] = useState(false)
@@ -62,6 +62,8 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
   const [controlsHideDelay, setControlsHideDelay] = useState(3000)
   const resumeToastTimerRef = useRef(null)
   const controlsTimerRef = useRef(null)
+  const playbackActiveRef = useRef(playbackActive)
+  const initialMuteAppliedRef = useRef(false)
   const latestRef = useRef({ positionSeconds: 0, durationSeconds: 0 })
   const lastSavedRef = useRef(watchProgress?.position_seconds || 0)
   const resumePositionRef = useRef(watchProgress && !watchProgress.completed && watchProgress.position_seconds > 10 ? watchProgress.position_seconds : 0)
@@ -78,6 +80,8 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
     setControlsActivity((value) => value + 1)
   }, [])
 
+  useEffect(() => { playbackActiveRef.current = playbackActive }, [playbackActive])
+
   useEffect(() => {
     window.clearTimeout(controlsTimerRef.current)
     if (paused || settingsOpen) {
@@ -91,6 +95,11 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
   useEffect(() => {
     const video = videoRef.current
     if (!video) return undefined
+    if (poster) video.poster = poster
+    if (startMuted && !initialMuteAppliedRef.current) {
+      video.muted = true
+      initialMuteAppliedRef.current = true
+    }
     let hls
     let disposed = false
     const persist = (force = false, completed = false) => {
@@ -110,6 +119,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
     }
     const handleMetadata = () => {
       updateSnapshot()
+      onDurationChange?.(Number(video.duration) || 0)
       if (resumePosition) {
         video.currentTime = resumePosition
         setCurrentTime(resumePosition)
@@ -118,11 +128,13 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
         resumeToastTimerRef.current = window.setTimeout(() => setResumeToastVisible(false), 2600)
       }
     }
-    const handleTimeUpdate = () => { updateSnapshot(); persist() }
+    const handleTimeUpdate = () => { updateSnapshot(); onTimeProgress?.({ currentTime: Number(video.currentTime) || 0, duration: Number(video.duration) || 0 }); persist() }
     const handlePlay = () => { setPaused(false); revealControls(3000) }
     const handlePause = () => { setPaused(true); revealControls(); updateSnapshot(); persist(true) }
     const handleEnded = () => { setPaused(true); revealControls(); updateSnapshot(); persist(true, true); onEnded?.() }
-    const handleCanPlay = () => { if (autoPlay && video.paused) video.play().catch(() => {}) }
+    const handleCanPlay = () => {
+      if (autoPlay && playbackActiveRef.current && video.paused) video.play().catch(() => {})
+    }
     const handleVolumeChange = () => { setMuted(video.muted); setVolume(video.volume); revealControls() }
     const handleVisibility = () => { if (document.visibilityState === 'hidden') persist(true) }
     const handlePageHide = () => persist(true)
@@ -176,7 +188,23 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
       window.clearTimeout(resumeToastTimerRef.current)
       window.clearTimeout(controlsTimerRef.current)
     }
-  }, [autoPlay, manifestUrl, onEnded, onWatchProgress, resumePosition, revealControls, videoId])
+  }, [autoPlay, manifestUrl, onDurationChange, onEnded, onTimeProgress, onWatchProgress, poster, resumePosition, revealControls, startMuted, videoId])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !autoPlay) return
+    if (!playbackActive) video.pause()
+    else if (video.readyState >= 2 && video.paused && !video.ended) video.play().catch(() => {})
+  }, [autoPlay, playbackActive])
+
+  useEffect(() => {
+    if (!replaySignal) return
+    const video = videoRef.current
+    if (!video) return
+    video.currentTime = 0
+    setCurrentTime(0)
+    video.play().catch(() => {})
+  }, [replaySignal])
 
   const handleQualityChange = (value) => {
     revealControls()
@@ -233,7 +261,7 @@ function CloudflareTrackedPlayer({ playerUrl, title, videoId, watchProgress, onW
   return <div className={`video-detail-stage video-player-cloudflare ${controlsVisible ? 'controls-visible' : 'controls-hidden'}`} data-stream-video-id={videoId || undefined} data-audio-tracks={audioTrackCount} onPointerMove={() => revealControls()} onPointerDown={() => revealControls()} onKeyDown={() => revealControls()}><video ref={videoRef} title={`Prehrať video ${title}`} playsInline preload="metadata" onClick={handleTogglePlayback}>Tvoj prehliadač nepodporuje prehrávanie videa.</video><div className={`video-custom-controls${controlsVisible ? ' is-visible' : ''}`}><input className="video-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={handleSeek} onPointerMove={() => revealControls()} aria-label="Pozícia videa" /><div className="video-control-row"><button type="button" onClick={handleTogglePlayback} aria-label={paused ? 'Prehrať video' : 'Pozastaviť video'}>{paused ? '▶' : 'Ⅱ'}</button><span className="video-time">{formatTime(currentTime)} / {formatTime(duration)}</span><div className="video-volume"><button type="button" onClick={handleMute} aria-label={muted || volume === 0 ? 'Zapnúť zvuk' : 'Stlmiť zvuk'}>{muted || volume === 0 ? '🔇' : '🔊'}</button><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={handleVolume} aria-label="Hlasitosť" /></div><div className="video-controls-spacer" />{qualityLevels.length > 0 && <div className="video-settings"><button type="button" className={settingsOpen ? 'is-active' : ''} onClick={handleSettingsToggle} aria-label={`Nastavenia kvality, ${selectedQualityLabel}`} aria-expanded={settingsOpen}>⚙</button>{settingsOpen && <div className="video-quality-menu" role="menu" aria-label="Kvalita videa"><strong>Kvalita</strong><button type="button" role="menuitemradio" aria-checked={selectedQuality === 'auto'} onClick={() => handleQualityChange('auto')}><span>{selectedQuality === 'auto' ? '✓' : ''}</span>Auto</button>{qualityLevels.map((level) => { const value = String(level.index); return <button type="button" role="menuitemradio" aria-checked={selectedQuality === value} onClick={() => handleQualityChange(value)} key={level.height}><span>{selectedQuality === value ? '✓' : ''}</span>{level.height}p</button> })}</div>}</div>}<button type="button" onClick={handleFullscreen} aria-label="Prepnúť video na celú obrazovku">⛶</button></div></div>{resumePosition > 0 && <span className={`video-resume-notice${resumeToastVisible ? ' is-visible' : ''}`}>Pokračujeme od {formatTime(resumePosition)}</span>}</div>
 }
 
-export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '', hasAccess = accessLevel === 'free', accessLoading = false, lockedCopy = null, videoId = '', watchProgress = null, onWatchProgress = null, trailer = false, autoPlay = false, onEnded }) {
+export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVideoId, provider = 'none', poster = '', previewImage = '', hasAccess = accessLevel === 'free', accessLoading = false, lockedCopy = null, videoId = '', watchProgress = null, onWatchProgress = null, trailer = false, autoPlay = false, startMuted = false, playbackActive = true, replaySignal = 0, onDurationChange, onTimeProgress, onEnded }) {
   const youtubeVideoId = provider === 'youtube' && hasAccess ? getYoutubeVideoId(youtubeUrl) : null
   const accessMessage = 'Celé video je dostupné aktívnym členom Východ Brothers Club'
   const imagePath = previewImage || poster
@@ -253,7 +281,7 @@ export default function VideoPlayer({ youtubeUrl, title, accessLevel, streamVide
   if (provider === 'cloudflare_stream') {
     if (cloudflareLoading || imageLoading) return <PlayerState heading="Overujeme prístup…" accessLevel={accessLevel} image={image} />
     if (!cloudflarePlayerUrl) return <PlayerState heading="Video momentálne nie je dostupné." accessLevel={accessLevel} image={image} />
-    return <CloudflareTrackedPlayer key={cloudflarePlayerUrl} playerUrl={cloudflarePlayerUrl} title={title} videoId={videoId} watchProgress={watchProgress} onWatchProgress={onWatchProgress} autoPlay={autoPlay} onEnded={onEnded} />
+    return <CloudflareTrackedPlayer key={cloudflarePlayerUrl} playerUrl={cloudflarePlayerUrl} title={title} videoId={videoId} watchProgress={watchProgress} onWatchProgress={onWatchProgress} autoPlay={autoPlay} startMuted={startMuted} playbackActive={playbackActive} replaySignal={replaySignal} poster={image || ''} onDurationChange={onDurationChange} onTimeProgress={onTimeProgress} onEnded={onEnded} />
   }
 
   if (provider === 'none') return <PlayerState heading="Video pripravujeme." accessMessage={accessLevel === 'free' ? '' : accessMessage} accessLevel={accessLevel} image={image} />
