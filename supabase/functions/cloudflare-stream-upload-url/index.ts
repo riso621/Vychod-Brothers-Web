@@ -23,11 +23,25 @@ Deno.serve(async (request) => {
   if (userError || !user) return json({ error: 'Prihlásenie nie je platné.' }, 401)
   if (user.app_metadata?.role !== 'admin') return json({ error: 'Nemáte oprávnenie.' }, 403)
 
-  let body: { fileName?: string; fileSize?: number; accessLevel?: string; assetType?: string }
+  let body: { action?: string; videoUid?: string; fileName?: string; fileSize?: number; accessLevel?: string; assetType?: string }
   try {
     body = await request.json()
   } catch {
     return json({ error: 'Neplatné údaje uploadu.' }, 400)
+  }
+
+  const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID')
+  const apiToken = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')
+  if (!accountId || !apiToken) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+
+  if (body.action === 'status') {
+    const videoUid = String(body.videoUid || '').trim()
+    if (!/^[a-zA-Z0-9]+$/.test(videoUid)) return json({ error: 'Neplatný identifikátor uploadu.' }, 400)
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${videoUid}`, { headers: { Authorization: `Bearer ${apiToken}` } })
+    if (!response.ok) return json({ error: 'Stav uploadu sa nepodarilo overiť.' }, 502)
+    const payload = await response.json()
+    const result = payload?.result || {}
+    return json({ ready: Boolean(result.readyToStream || result.status?.state === 'ready'), state: result.status?.state || 'processing', progress: Number(result.status?.pctComplete || 0) })
   }
 
   const fileName = String(body.fileName || '')
@@ -37,10 +51,6 @@ Deno.serve(async (request) => {
   if (!fileName.toLowerCase().endsWith('.mp4')) return json({ error: 'Video musí byť vo formáte MP4.' }, 400)
   if (!Number.isSafeInteger(fileSize) || fileSize <= 0 || fileSize > MAX_VIDEO_BYTES) return json({ error: 'Neplatná veľkosť videa.' }, 400)
   if (!['free', 'member', 'vip'].includes(accessLevel)) return json({ error: 'Neplatná úroveň prístupu.' }, 400)
-
-  const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID')
-  const apiToken = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')
-  if (!accountId || !apiToken) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
 
   const expiry = new Date(Date.now() + 60 * 60 * 1000).toISOString()
   const uploadMetadata = [

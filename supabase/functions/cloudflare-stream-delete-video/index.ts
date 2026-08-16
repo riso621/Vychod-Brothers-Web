@@ -34,6 +34,21 @@ Deno.serve(async (request) => {
     return json({ error: 'Neplatná požiadavka.' }, 400)
   }
 
+  if (body.action === 'cleanup-upload') {
+    const uid = String(body.expectedUid || '').trim()
+    if (!/^[a-zA-Z0-9]+$/.test(uid)) return json({ error: 'Neplatný identifikátor dočasného uploadu.' }, 400)
+    const admin = createAdminClient()
+    const { data: linked } = await admin.from('videos').select('id').or(`provider_video_id.eq.${uid},trailer_provider_video_id.eq.${uid}`).limit(1)
+    if (linked?.length) return json({ error: 'Asset je už priradený k videu a nemožno ho vyčistiť.' }, 409)
+    const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID')
+    const apiToken = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')
+    if (!accountId || !apiToken) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${uid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${apiToken}` } })
+    if (!response.ok && response.status !== 404) return json({ error: 'Dočasný upload sa nepodarilo odstrániť.' }, 502)
+    await admin.from('admin_audit_logs').insert({ admin_user_id: user.id, admin_email: user.email, action_type: 'video.upload_cleanup', entity_type: 'video', description: 'Odstránený nepriradený Cloudflare upload' })
+    return json({ uploadCleaned: true, alreadyDeleted: response.status === 404 })
+  }
+
   const id = String(body.id || '').trim()
   const slug = String(body.slug || '').trim()
   if (!id && !slug) return json({ error: 'Chýba identifikátor videa.' }, 400)

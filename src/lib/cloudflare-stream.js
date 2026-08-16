@@ -12,7 +12,7 @@ export async function createCloudflareUpload(file, accessLevel, assetType = 'ful
   return data
 }
 
-export function uploadCloudflareVideo({ uploadUrl, file, onProgress }) {
+export function uploadCloudflareVideo({ uploadUrl, file, onProgress, signal }) {
   return new Promise((resolve, reject) => {
     const upload = new tus.Upload(file, {
       uploadUrl,
@@ -23,8 +23,43 @@ export function uploadCloudflareVideo({ uploadUrl, file, onProgress }) {
       onProgress: (uploaded, total) => onProgress?.(total ? Math.round((uploaded / total) * 100) : 0),
       onSuccess: resolve,
     })
+    const abort = () => upload.abort(true).finally(() => reject(new DOMException('Upload bol zrušený.', 'AbortError')))
+    if (signal?.aborted) return abort()
+    signal?.addEventListener('abort', abort, { once: true })
     upload.start()
   })
+}
+
+export async function getCloudflareUploadStatus(videoUid) {
+  if (!supabase || !videoUid) throw new Error('Chýba identifikátor uploadu.')
+  const { data, error } = await supabase.functions.invoke('cloudflare-stream-upload-url', {
+    body: { action: 'status', videoUid },
+  })
+  if (error || typeof data?.ready !== 'boolean') throw new Error(data?.error || error?.message || 'Stav videa sa nepodarilo overiť.')
+  return data
+}
+
+export async function waitForCloudflareUpload(videoUid, { signal, onStatus, timeoutMs = 5 * 60 * 1000 } = {}) {
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < timeoutMs) {
+    if (signal?.aborted) throw new DOMException('Upload bol zrušený.', 'AbortError')
+    const status = await getCloudflareUploadStatus(videoUid)
+    onStatus?.(status)
+    if (status.ready) return status
+    await new Promise((resolve, reject) => {
+      const timer = window.setTimeout(resolve, 2500)
+      signal?.addEventListener('abort', () => { window.clearTimeout(timer); reject(new DOMException('Upload bol zrušený.', 'AbortError')) }, { once: true })
+    })
+  }
+  throw new Error('Cloudflare video stále spracúva. Skúste stav overiť znova.')
+}
+
+export async function cleanupCloudflareUpload(videoUid) {
+  if (!supabase || !videoUid) return
+  const { data, error } = await supabase.functions.invoke('cloudflare-stream-delete-video', {
+    body: { action: 'cleanup-upload', expectedUid: videoUid },
+  })
+  if (error || !data?.uploadCleaned) throw new Error(data?.error || error?.message || 'Dočasný upload sa nepodarilo vyčistiť.')
 }
 
 export async function getCloudflarePlaybackUrl(videoUid, trailer = false) {

@@ -17,7 +17,7 @@ export function createStoragePath(userId, file) {
   return `${userId}/${crypto.randomUUID()}.${extension}`
 }
 
-export async function uploadThumbnailFile({ path, file, onProgress }) {
+export async function uploadThumbnailFile({ path, file, onProgress, signal }) {
   const { Upload } = await import('tus-js-client')
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('Prihlásenie vypršalo. Prihlás sa znova.')
@@ -40,6 +40,9 @@ export async function uploadThumbnailFile({ path, file, onProgress }) {
       onProgress: (uploaded, total) => onProgress?.(total ? Math.round((uploaded / total) * 100) : 0),
       onSuccess: () => resolve(path),
     })
+    const abort = () => upload.abort(true).finally(() => reject(new DOMException('Upload bol zrušený.', 'AbortError')))
+    if (signal?.aborted) return abort()
+    signal?.addEventListener('abort', abort, { once: true })
     upload.start()
   })
 }
