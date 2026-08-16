@@ -11,7 +11,6 @@ import ClubCommunityCard from './components/ClubCommunityCard'
 import { getHomepageCounts } from './lib/homepage-counts'
 import './App.css'
 
-const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
 const WatchHistoryProvider = lazy(() => import('./context/WatchHistoryProvider'))
@@ -106,8 +105,18 @@ function AnimatedNumber({ value, placeholder = '--' }) {
   return <strong ref={ref} aria-label={hasVerifiedValue ? value : 'Štatistika zatiaľ nie je načítaná'}>{hasVerifiedValue ? `${display}${suffix}` : placeholder}</strong>
 }
 
+function SocialStatIcon({ platform }) {
+  if (platform === 'youtube') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="6" /><path d="m13 11 8 5-8 5V11Z" className="is-filled" /></svg>
+  if (platform === 'instagram') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="7" /><circle cx="16" cy="16" r="5.5" /><circle cx="23.5" cy="8.7" r="1.2" className="is-filled" /></svg>
+  return <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18.5 5v15.2a6.2 6.2 0 1 1-5.3-6.1" /><path d="M18.5 5c.8 4.4 3.4 6.8 7.5 7" /></svg>
+}
+
 function Stats() {
-  return <motion.section className="stats-panel" id="onas" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">OVERENÉ<br />ŠTATISTIKY <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className={`stat stat-${item.status}`} href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} data-platform={item.platform} data-metric={item.metric} key={item.id}><AnimatedNumber value={item.value} placeholder={item.placeholder} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
+  const visibleStats = ['youtube-subscribers', 'instagram-followers', 'tiktok-followers'].map((id) => stats.find((item) => item.id === id)).filter(Boolean)
+  return <motion.section className="social-stats" id="onas" aria-labelledby="social-stats-title" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} transition={{ staggerChildren: .08 }}>
+    <motion.header variants={reveal} className="social-stats-heading"><span>OVERENÉ ŠTATISTIKY</span><h2 id="social-stats-title">REÁLNE ČÍSLA.<br /><em>SKUTOČNÉ VÝSLEDKY.</em></h2></motion.header>
+    <div className="social-stats-grid">{visibleStats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className="social-stat-card" href={profile.url} target="_blank" rel="noreferrer" aria-label={`${profile.name}: ${item.value} ${item.lines[1].toLowerCase()}`} data-platform={item.platform} data-metric={item.metric} key={item.id}><div className="social-stat-icon"><SocialStatIcon platform={item.platform} /></div><span className="social-stat-platform">{profile.name}</span><AnimatedNumber value={item.value} placeholder={item.placeholder} /><b>{item.lines[1]}</b><i aria-hidden="true" /></motion.a> })}</div>
+  </motion.section>
 }
 
 function HomePage() {
