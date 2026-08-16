@@ -8,7 +8,7 @@ import { isActiveClubMember } from './lib/membership'
 import { useSiteContent } from './hooks/useSiteContent'
 import CtaButton from './components/CtaButton'
 import ClubCommunityCard from './components/ClubCommunityCard'
-import { getClubMemberCount } from './lib/club-member-count'
+import { getHomepageCounts } from './lib/homepage-counts'
 import './App.css'
 
 const Arrow = () => <span className="arrow" aria-hidden="true">→</span>
@@ -106,25 +106,23 @@ function AnimatedNumber({ value, placeholder = '--' }) {
   return <strong ref={ref} aria-label={hasVerifiedValue ? value : 'Štatistika zatiaľ nie je načítaná'}>{hasVerifiedValue ? `${display}${suffix}` : placeholder}</strong>
 }
 
-function Stats({ memberCount, memberCountLoading }) {
-  const memberStat = { id: 'club-members', platform: 'club', metric: 'activeMembers', value: memberCount === null ? null : String(memberCount), status: memberCountLoading ? 'pending' : memberCount === null ? 'unavailable' : 'verified', placeholder: '—', lines: ['ČLENOV', 'CLUBU'] }
-  const displayStats = [stats[0], memberStat, ...stats.slice(1)]
-  return <motion.section className="stats-panel" id="onas" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">OVERENÉ<br />ŠTATISTIKY <Arrow /></motion.div>{displayStats.map((item) => { const profile = socialProfiles[item.social]; const Element = profile?.url ? motion.a : motion.div; return <Element variants={reveal} className={`stat stat-${item.status}`} href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} data-platform={item.platform} data-metric={item.metric} key={item.id}><AnimatedNumber value={item.value} placeholder={item.placeholder} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></Element> })}</motion.section>
+function Stats() {
+  return <motion.section className="stats-panel" id="onas" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .25 }} transition={{ staggerChildren: .08 }}><motion.div variants={reveal} className="stats-intro">OVERENÉ<br />ŠTATISTIKY <Arrow /></motion.div>{stats.map((item) => { const profile = socialProfiles[item.social]; return <motion.a variants={reveal} className={`stat stat-${item.status}`} href={profile?.url || undefined} target={profile?.url ? '_blank' : undefined} rel={profile?.url ? 'noreferrer' : undefined} aria-label={profile?.url ? `${item.lines.join(' ')} – ${profile.name}` : undefined} data-platform={item.platform} data-metric={item.metric} key={item.id}><AnimatedNumber value={item.value} placeholder={item.placeholder} /><span>{item.lines[0]}<br />{item.lines[1]}</span><i /></motion.a> })}</motion.section>
 }
 
 function HomePage() {
-  const [memberCountState, setMemberCountState] = useState({ count: null, loading: true, error: false })
+  const [homepageCounts, setHomepageCounts] = useState({ memberCount: null, videoCount: null, loading: true, error: false })
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   useEffect(() => {
     let active = true
-    getClubMemberCount()
-      .then((count) => { if (active) setMemberCountState({ count, loading: false, error: false }) })
-      .catch(() => { if (active) setMemberCountState({ count: null, loading: false, error: true }) })
+    getHomepageCounts()
+      .then(({ memberCount, videoCount }) => { if (active) setHomepageCounts({ memberCount, videoCount, loading: false, error: false }) })
+      .catch(() => { if (active) setHomepageCounts({ memberCount: null, videoCount: null, loading: false, error: true }) })
     return () => { active = false }
   }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><ClubCommunityCard count={memberCountState.count} loading={memberCountState.loading} error={memberCountState.error} /><Stats memberCount={memberCountState.count} memberCountLoading={memberCountState.loading} /><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {
