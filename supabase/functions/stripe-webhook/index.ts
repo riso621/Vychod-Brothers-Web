@@ -1,7 +1,7 @@
 import Stripe from 'npm:stripe@20.4.0'
 import { json } from '../_shared/http.ts'
 import { createAdminClient } from '../_shared/supabase.ts'
-import { planForPrice, stripe, stripeConfig } from '../_shared/stripe.ts'
+import { membershipForPrice, planForPrice, stripe, stripeConfig } from '../_shared/stripe.ts'
 import { notifyAdmin } from '../_shared/notifications.ts'
 
 const handledEvents = new Set([
@@ -53,7 +53,7 @@ async function createEventNotifications(admin: ReturnType<typeof createAdminClie
     }, `stripe:invoice:${invoice.id}:${paid ? 'paid' : 'failed'}`)
   }
   if ((event.type === 'customer.subscription.created' || event.type === 'checkout.session.completed') && ['active', 'trialing'].includes(subscription.status)) {
-    add('membership-created', { type: 'membership.activated', title: `Nový ${plan.toUpperCase()}`, message: `${email} aktivoval členstvo ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' }, `membership:activated:${subscription.id}:${plan}`)
+    add('membership-created', { type: 'membership.activated', title: 'Nový člen', message: `${email} si aktivoval Východ Brothers Club.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' }, `membership:activated:${subscription.id}:${plan}`)
   }
   if (event.type === 'customer.subscription.pending_update_applied') {
     add('membership-upgraded', { type: 'membership.upgraded', title: `Prechod na ${plan.toUpperCase()}`, message: `${email} prešiel na ${plan.toUpperCase()}.`, entityType: 'user', entityId: userId, targetUrl, metadata: { plan, subscriptionId: subscription.id }, dedupeKey: '' }, `membership:plan:${subscription.id}:${subscription.items.data[0]?.price.id || plan}:${periodEnd(subscription) || 'current'}`)
@@ -117,7 +117,8 @@ Deno.serve(async (request) => {
   if (!subscription) return json({ received: true, handled: false })
   const priceId = subscription.items.data[0]?.price?.id || ''
   const paidPlan = planForPrice(priceId)
-  if (!paidPlan) return json({ error: 'Subscription používa neznámy Price ID.' }, 400)
+  const paidMembership = membershipForPrice(priceId)
+  if (!paidPlan || !paidMembership) return json({ error: 'Subscription používa neznámy Price ID.' }, 400)
 
   const customerId = idOf(subscription.customer)
   const admin = createAdminClient()
@@ -135,10 +136,10 @@ Deno.serve(async (request) => {
   let membership = 'free'
   let membershipStatus = 'expired'
   if (['active', 'trialing'].includes(subscription.status)) {
-    membership = paidPlan
+    membership = paidMembership
     membershipStatus = 'active'
   } else if (subscription.status === 'past_due' && end && end > nowSeconds) {
-    membership = paidPlan
+    membership = paidMembership
     membershipStatus = 'active'
   } else if (subscription.status === 'canceled') {
     membershipStatus = 'cancelled'
@@ -159,6 +160,9 @@ Deno.serve(async (request) => {
     p_cancel_at_period_end: cancellationScheduled,
   })
   if (error) return json({ error: 'Synchronizácia členstva zlyhala.' }, 500)
-  if (data === true) await createEventNotifications(admin, event, subscription, userId, paidPlan)
+  if (data === true) {
+    await admin.from('profiles').update({ membership_plan: paidPlan }).eq('id', userId)
+    await createEventNotifications(admin, event, subscription, userId, paidPlan)
+  }
   return json({ received: true, handled: true, applied: data })
 })

@@ -6,6 +6,7 @@ import { classifyVipUpgradeState, clearCheckoutMarker, readCheckoutMarker, write
 import { formatMembershipDate, getEffectiveMembership } from '../lib/membership'
 
 const planDetails = {
+  club: { name: 'VÝCHOD BROTHERS CLUB', price: '5,99 €', description: 'Jedno mesačné členstvo s prístupom ku všetkým exkluzívnym videám a členským funkciám.' },
   member: { name: 'MEMBER', price: '4,99 €', description: 'Mesačné členstvo Východ Brothers s prístupom k exkluzívnemu obsahu pre členov.' },
   vip: { name: 'VIP', price: '9,99 €', description: 'Najvyššie členstvo so všetkým MEMBER obsahom a exkluzívnymi VIP premiérami.' },
 }
@@ -38,6 +39,9 @@ function initialCheckoutFlow() {
 }
 
 function membershipConfirmed(profile, plan) {
+  if (plan === 'club') return ['member', 'vip'].includes(profile?.membership)
+    && profile?.membership_status === 'active'
+    && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
   return profile?.membership === plan
     && profile?.membership_status === 'active'
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')

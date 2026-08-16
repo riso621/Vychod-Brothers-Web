@@ -7,8 +7,8 @@ import { canAccessMembership } from '../lib/membership'
 
 const accessLabels = {
   free: 'FREE',
-  member: 'MEMBER',
-  vip: 'VIP OBSAH',
+  member: 'ČLENSKÉ',
+  vip: 'ČLENSKÉ',
 }
 
 const categoryLabels = {

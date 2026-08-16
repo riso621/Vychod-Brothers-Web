@@ -45,26 +45,34 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
-  let body: { videoUid?: string }
+  let body: { videoUid?: string; trailer?: boolean }
   try {
     body = await request.json()
   } catch {
     return json({ error: 'Neplatná požiadavka.' }, 400)
   }
   const videoUid = String(body.videoUid || '').trim()
+  const trailer = body.trailer === true
   if (!/^[a-zA-Z0-9]+$/.test(videoUid)) return json({ error: 'Video nie je dostupné.' }, 400)
 
   const token = bearerToken(request)
   const userToken = token.split('.').length === 3 ? token : ''
   const catalogClient = createUserClient()
-  const { data: video, error: videoError } = await catalogClient
+  let videoQuery = catalogClient
     .from('videos')
-    .select('provider_video_id, access_level, published')
-    .eq('provider', 'cloudflare_stream')
-    .eq('provider_video_id', videoUid)
+    .select('provider_video_id, trailer_provider_video_id, access_level, published')
     .eq('published', true)
-    .maybeSingle()
+  videoQuery = trailer
+    ? videoQuery.eq('trailer_provider_video_id', videoUid)
+    : videoQuery.eq('provider', 'cloudflare_stream').eq('provider_video_id', videoUid)
+  const { data: video, error: videoError } = await videoQuery.maybeSingle()
   if (videoError || !video) return json({ error: 'Video nie je dostupné.' }, 404)
+
+  if (trailer) {
+    const customerCode = Deno.env.get('CLOUDFLARE_STREAM_CUSTOMER_CODE')
+    if (!customerCode) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+    return json({ playerUrl: `https://${playerHost(customerCode)}/${videoUid}/iframe`, expiresAt: null, trailer: true })
+  }
 
   if (video.access_level !== 'free') {
     if (!userToken) return json({ error: 'Prihlásenie je povinné.' }, 401)
@@ -82,9 +90,7 @@ Deno.serve(async (request) => {
       if (profileError || !profile) return json({ error: 'Prístup sa nepodarilo overiť.' }, 403)
       const active = profile.membership_status === 'active'
         && (!profile.membership_expires_at || new Date(profile.membership_expires_at) > new Date())
-      const allowed = active && (video.access_level === 'member'
-        ? ['member', 'vip'].includes(profile.membership)
-        : profile.membership === 'vip')
+      const allowed = active && ['member', 'vip'].includes(profile.membership)
       if (!allowed) return json({ error: 'Nemáte prístup k tomuto videu.' }, 403)
     }
   }

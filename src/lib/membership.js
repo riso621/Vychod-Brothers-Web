@@ -19,6 +19,13 @@ export const membershipPrices = {
   vip: '9,99 € / mesiac',
 }
 
+export const clubPlan = {
+  id: 'club',
+  name: 'VÝCHOD BROTHERS CLUB',
+  price: '5,99 € / mesiac',
+  perks: ['Všetky exkluzívne videá', 'Komentáre a interakcie', 'História sledovania', 'Všetok budúci členský obsah'],
+}
+
 export const membershipPlans = [
   {
     id: 'free', name: 'FREE', icon: '▶', description: 'Verejné videá a svet Východ Brothers bez obmedzení.', popular: false,
@@ -33,8 +40,6 @@ export const membershipPlans = [
     perks: ['Všetko z MEMBER', 'VIP minifilmy', 'Všetky bonusové videá', 'VIP odznak a meno v titulkoch'],
   },
 ]
-
-const membershipRank = { free: 0, member: 1, vip: 2 }
 
 export function getMembershipStatus(profile, now = new Date()) {
   if (!profile) return 'active'
@@ -52,7 +57,16 @@ export function getEffectiveMembership(profile, now = new Date()) {
 export function canAccessMembership(requiredLevel, profile, isAdmin = false) {
   if (isAdmin) return true
   const required = requiredLevel === 'public' ? 'free' : requiredLevel
-  return (membershipRank[getEffectiveMembership(profile)] ?? 0) >= (membershipRank[required] ?? 0)
+  if (required === 'free') return true
+  return ['member', 'vip'].includes(getEffectiveMembership(profile))
+}
+
+export function isActiveClubMember(profile, isAdmin = false) {
+  return isAdmin || ['member', 'vip'].includes(getEffectiveMembership(profile))
+}
+
+export function customerMembershipLabel(profile, isAdmin = false) {
+  return isActiveClubMember(profile, isAdmin) ? 'VÝCHOD BROTHERS CLUB' : 'BEZ ČLENSTVA'
 }
 
 export function formatMembershipDate(value) {

@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { getPublishedVideoBySlug } from '../lib/videos'
 import { useProfile } from '../context/profile-context'
 import VideoPlayer from './VideoPlayer'
-import { canAccessMembership, getEffectiveMembership } from '../lib/membership'
+import { canAccessMembership } from '../lib/membership'
 import { useWatchHistory } from '../context/watch-history-context'
 import VideoInteractions from './VideoInteractions'
 
 const accessLabels = {
   free: 'FREE',
-  member: 'Pre členov',
-  vip: 'VIP obsah',
+  member: 'Členské video',
+  vip: 'Členské video',
 }
 
 const categoryLabels = {
@@ -59,12 +59,7 @@ export default function VideoDetail({ slug }) {
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const hasAccess = canAccessMembership(video.accessLevel, profile, isAdmin)
   const accessLoading = video.accessLevel !== 'free' && (authLoading || profileLoading)
-  const membership = getEffectiveMembership(profile)
-  const lockedCopy = !session
-    ? { heading: 'Najprv sa prihlás', description: 'Po prihlásení overíme, či máš prístup k tomuto videu.', ctaLabel: 'Prihlásiť sa', ctaHref: `/?auth=login&next=${encodeURIComponent(`/videos/${slug}`)}` }
-    : video.accessLevel === 'vip'
-      ? { heading: 'Toto video je dostupné iba pre VIP členov.', description: membership === 'member' ? 'Prejdi na VIP a odomkni celý prémiový katalóg.' : 'Aktivuj VIP a odomkni najexkluzívnejší obsah.', ctaLabel: membership === 'member' ? 'Zmeniť na VIP' : 'Stať sa VIP', ctaHref: '/clenstvo' }
-      : { heading: 'Toto video je dostupné pre členov.', description: 'Aktivuj MEMBER a odomkni členské videá a bonusy.', ctaLabel: 'Stať sa MEMBER', ctaHref: '/clenstvo' }
+  const lockedCopy = { heading: 'Celé video je dostupné členom.', description: 'Aktivuj Východ Brothers Club a odomkni všetky členské videá.', ctaLabel: 'Stať sa členom – 5,99 € / mesiac', ctaHref: '/clenstvo' }
   const watchProgress = getProgress(video.id)
 
   return (
@@ -80,7 +75,8 @@ export default function VideoDetail({ slug }) {
         <p>{video.shortDescription}</p>
       </header>
 
-      <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} lockedCopy={lockedCopy} videoId={video.id} watchProgress={watchProgress} onWatchProgress={watchHistoryEnabled ? saveProgress : null} />
+      {!hasAccess && video.trailerStreamVideoId && !accessLoading && <section className="video-trailer-preview"><h2>Pozrite si ukážku</h2><VideoPlayer title={`${video.title} – ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer /><a className="video-membership-cta" href="/clenstvo">POZRIEŤ CELÉ VIDEO · STAŤ SA ČLENOM ZA 5,99 € / MESIAC →</a></section>}
+      {(hasAccess || !video.trailerStreamVideoId || accessLoading) && <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} lockedCopy={lockedCopy} videoId={video.id} watchProgress={watchProgress} onWatchProgress={watchHistoryEnabled ? saveProgress : null} />}
 
       <div className="video-detail-content">
         <div className="video-detail-description">

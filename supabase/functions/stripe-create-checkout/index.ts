@@ -19,7 +19,7 @@ Deno.serve(async (request) => {
   const plan = String(body.plan || '').toLowerCase()
   const priceId = priceForPlan(plan)
   const { siteUrl } = stripeConfig()
-  if (!['member', 'vip'].includes(plan)) return json({ error: 'Neplatný plán.' }, 400)
+  if (plan !== 'club') return json({ error: 'Neplatný plán.' }, 400)
   if (!priceId || !siteUrl || !Deno.env.get('STRIPE_SECRET_KEY')) return json({ error: 'Platby zatiaľ nie sú nakonfigurované.' }, 503)
 
   const admin = createAdminClient()
@@ -81,7 +81,7 @@ Deno.serve(async (request) => {
       status: stripeError.statusCode || 500, message: stripeError.message || 'unknown',
     })
     const message = stripeError.code === 'resource_missing'
-      ? `Platobný plán ${plan.toUpperCase()} nie je v Stripe Sandboxe dostupný.`
+      ? 'Platobný plán Východ Brothers Club nie je v Stripe Sandboxe dostupný.'
       : 'Platobný formulár momentálne nie je dostupný. Skúste to znova.'
     return json({ error: message, code: stripeError.code || 'stripe_request_failed' }, 502)
   }

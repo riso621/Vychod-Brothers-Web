@@ -5,6 +5,7 @@ type VideoRow = {
   id: string
   provider: 'youtube' | 'stream' | 'cloudflare_stream'
   provider_video_id: string | null
+  trailer_provider_video_id: string | null
   thumbnail_url: string | null
 }
 
@@ -37,7 +38,7 @@ Deno.serve(async (request) => {
   const slug = String(body.slug || '').trim()
   if (!id && !slug) return json({ error: 'Chýba identifikátor videa.' }, 400)
 
-  let query = supabase.from('videos').select('id, provider, provider_video_id, thumbnail_url')
+  let query = supabase.from('videos').select('id, provider, provider_video_id, trailer_provider_video_id, thumbnail_url')
   query = id ? query.eq('id', id) : query.eq('slug', slug)
   const { data, error: videoError } = await query.maybeSingle()
   const video = data as VideoRow | null
@@ -67,6 +68,16 @@ Deno.serve(async (request) => {
       console.error('Cloudflare Stream delete failed', response.status)
       return json({ error: 'Cloudflare video sa nepodarilo odstrániť. Databázový záznam zostal zachovaný.' }, 502)
     }
+  }
+
+  const trailerUid = String(video.trailer_provider_video_id || '').trim()
+  if (trailerUid) {
+    if (!/^[a-zA-Z0-9]+$/.test(trailerUid)) return json({ error: 'Trailer nemá platný identifikátor a záznam nebol odstránený.' }, 409)
+    const accountId = Deno.env.get('CLOUDFLARE_ACCOUNT_ID')
+    const apiToken = Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')
+    if (!accountId || !apiToken) return json({ error: 'Cloudflare Stream nie je nakonfigurovaný.' }, 503)
+    const trailerResponse = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${trailerUid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${apiToken}` } })
+    if (!trailerResponse.ok && trailerResponse.status !== 404) return json({ error: 'Trailer sa nepodarilo odstrániť. Databázový záznam zostal zachovaný.' }, 502)
   }
 
   const path = thumbnailPath(video.thumbnail_url)

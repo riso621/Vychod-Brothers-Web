@@ -4,7 +4,7 @@ import { activeSocialProfiles, media, navItems, socialProfiles, stats } from './
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
 import { useProfile } from './context/profile-context'
-import { getEffectiveMembership } from './lib/membership'
+import { isActiveClubMember } from './lib/membership'
 import { useSiteContent } from './hooks/useSiteContent'
 import './App.css'
 
@@ -37,7 +37,7 @@ function Logo() {
 function Header() {
   const [open, setOpen] = useState(false)
   const { profile, session } = useProfile()
-  const membership = session?.user?.app_metadata?.role === 'admin' ? 'vip' : getEffectiveMembership(profile)
+  const isMember = isActiveClubMember(profile, session?.user?.app_metadata?.role === 'admin')
   const isVideosPage = window.location.pathname.startsWith('/videos')
   const isMembershipPage = window.location.pathname.startsWith('/clenstvo')
   const isHomePage = window.location.pathname === '/'
@@ -50,7 +50,7 @@ function Header() {
       <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
         {navItems.map((item, index) => <a className={isVideosPage && index === 1 || isMembershipPage && index === 3 || isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
-      <a className="join-brush" href={membership === 'vip' ? '/videos' : '/clenstvo'}>{membership === 'vip' ? 'VIP VIDEÁ' : membership === 'member' ? 'PREJSŤ NA VIP' : 'STAŤ SA ČLENOM'}</a>
+      <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'ČLENSKÉ VIDEÁ' : 'STAŤ SA ČLENOM'}</a>
       <Suspense fallback={null}><AuthControl /></Suspense>
       <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
     </header>
@@ -142,8 +142,8 @@ export default function App() {
   }
   const page = path.startsWith('/videos')
     ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
-    : /^\/checkout\/(member|vip)\/?$/.test(path)
-      ? <CheckoutRoute plan={path.split('/')[2]} />
+    : /^\/checkout\/(club|member|vip)\/?$/.test(path)
+      ? <CheckoutRoute plan="club" />
     : path === '/account' || path === '/account/'
       ? <AccountPage />
       : path === '/clenstvo' || path === '/clenstvo/'

@@ -1,10 +1,10 @@
 import * as tus from 'tus-js-client'
 import { supabase } from './supabase'
 
-export async function createCloudflareUpload(file, accessLevel) {
+export async function createCloudflareUpload(file, accessLevel, assetType = 'full') {
   if (!supabase) throw new Error('Supabase nie je nakonfigurovaný.')
   const { data, error } = await supabase.functions.invoke('cloudflare-stream-upload-url', {
-    body: { fileName: file.name, fileSize: file.size, accessLevel },
+    body: { fileName: file.name, fileSize: file.size, accessLevel, assetType },
   })
   if (error || !data?.uploadUrl || !data?.uid) {
     throw new Error(data?.error || error?.message || 'Nepodarilo sa pripraviť Cloudflare upload.')
@@ -27,10 +27,10 @@ export function uploadCloudflareVideo({ uploadUrl, file, onProgress }) {
   })
 }
 
-export async function getCloudflarePlaybackUrl(videoUid) {
+export async function getCloudflarePlaybackUrl(videoUid, trailer = false) {
   if (!supabase || !videoUid) return null
   const { data, error } = await supabase.functions.invoke('cloudflare-stream-playback-token', {
-    body: { videoUid },
+    body: { videoUid, trailer },
   })
   if (error || !data?.playerUrl) return null
   return data.playerUrl

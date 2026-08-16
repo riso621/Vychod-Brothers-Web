@@ -18,7 +18,7 @@ async function canAccess(admin:ReturnType<typeof createAdminClient>,video:{acces
   if(user.app_metadata?.role==='admin')return true
   const {data:profile}=await admin.from('profiles').select('membership,membership_status,membership_expires_at').eq('id',user.id).maybeSingle()
   if(!profile||profile.membership_status!=='active'||profile.membership_expires_at&&new Date(profile.membership_expires_at)<=new Date())return false
-  return video.access_level==='member'?['member','vip'].includes(profile.membership):profile.membership==='vip'
+  return ['member','vip'].includes(profile.membership)
 }
 
 function rpcError(error:any){

@@ -1,7 +1,7 @@
 import Stripe from 'npm:stripe@20.4.0'
 import { bearerToken, corsHeaders, json } from '../_shared/http.ts'
 import { createAdminClient, createUserClient } from '../_shared/supabase.ts'
-import { planForPrice, stripe, stripeConfig } from '../_shared/stripe.ts'
+import { membershipForPrice, planForPrice, stripe, stripeConfig } from '../_shared/stripe.ts'
 
 function periodEnd(subscription: Stripe.Subscription) {
   const legacy = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end
@@ -34,7 +34,8 @@ Deno.serve(async (request) => {
 
     const priceId = subscription.items.data[0]?.price?.id || ''
     const paidPlan = planForPrice(priceId)
-    if (!paidPlan) return json({ error: 'Predplatné používa neznámy plán.' }, 409)
+    const paidMembership = membershipForPrice(priceId)
+    if (!paidPlan || !paidMembership) return json({ error: 'Predplatné používa neznámy plán.' }, 409)
     const end = periodEnd(subscription)
     const nowSeconds = Math.floor(Date.now() / 1000)
     const cancellationScheduled = subscription.cancel_at_period_end || subscription.cancel_at !== null
@@ -42,7 +43,7 @@ Deno.serve(async (request) => {
     let membershipStatus = 'expired'
     if (subscription.status === 'active' || subscription.status === 'trialing'
       || (subscription.status === 'past_due' && end && end > nowSeconds)) {
-      membership = paidPlan
+      membership = paidMembership
       membershipStatus = 'active'
     } else if (subscription.status === 'canceled') {
       membershipStatus = 'cancelled'
@@ -68,6 +69,7 @@ Deno.serve(async (request) => {
       p_cancel_at_period_end: cancellationScheduled,
     })
     if (syncError) return json({ error: 'Stav predplatného sa nepodarilo uložiť.' }, 500)
+    await admin.from('profiles').update({ membership_plan: paidPlan }).eq('id', user.id)
     const stripeSnapshot = {
       subscriptionId: subscription.id,
       status: subscription.status,

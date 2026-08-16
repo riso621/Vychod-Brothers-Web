@@ -66,7 +66,8 @@ function invoiceSummary(invoices:any[]) {
     paidTotal:currency?paid.reduce((sum,i)=>sum+i.amountPaid,0):null,
     unpaidTotal:currency?unpaid.reduce((sum,i)=>sum+i.amountDue,0):null,
     memberRevenue:currency?paid.filter((i)=>i.plan==='member').reduce((sum,i)=>sum+i.amountPaid,0):null,
-    vipRevenue:currency?paid.filter((i)=>i.plan==='vip').reduce((sum,i)=>sum+i.amountPaid,0):null }
+    vipRevenue:currency?paid.filter((i)=>i.plan==='vip').reduce((sum,i)=>sum+i.amountPaid,0):null,
+    clubRevenue:currency?paid.filter((i)=>i.plan==='club').reduce((sum,i)=>sum+i.amountPaid,0):null }
 }
 
 Deno.serve(async (request) => {

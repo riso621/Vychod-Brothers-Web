@@ -23,7 +23,7 @@ Deno.serve(async (request) => {
   if (userError || !user) return json({ error: 'Prihlásenie nie je platné.' }, 401)
   if (user.app_metadata?.role !== 'admin') return json({ error: 'Nemáte oprávnenie.' }, 403)
 
-  let body: { fileName?: string; fileSize?: number; accessLevel?: string }
+  let body: { fileName?: string; fileSize?: number; accessLevel?: string; assetType?: string }
   try {
     body = await request.json()
   } catch {
@@ -33,6 +33,7 @@ Deno.serve(async (request) => {
   const fileName = String(body.fileName || '')
   const fileSize = Number(body.fileSize)
   const accessLevel = String(body.accessLevel || '')
+  const assetType = body.assetType === 'trailer' ? 'trailer' : 'full'
   if (!fileName.toLowerCase().endsWith('.mp4')) return json({ error: 'Video musí byť vo formáte MP4.' }, 400)
   if (!Number.isSafeInteger(fileSize) || fileSize <= 0 || fileSize > MAX_VIDEO_BYTES) return json({ error: 'Neplatná veľkosť videa.' }, 400)
   if (!['free', 'member', 'vip'].includes(accessLevel)) return json({ error: 'Neplatná úroveň prístupu.' }, 400)
@@ -45,7 +46,7 @@ Deno.serve(async (request) => {
   const uploadMetadata = [
     `name ${metadataValue(fileName)}`,
     `maxDurationSeconds ${metadataValue(String(MAX_DURATION_SECONDS))}`,
-    accessLevel === 'free' ? null : 'requiresignedurls',
+    assetType === 'trailer' || accessLevel === 'free' ? null : 'requiresignedurls',
     `expiry ${metadataValue(expiry)}`,
   ].filter(Boolean).join(',')
 

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { canAccessMembership } from '../lib/membership'
 
-const labels = { member: 'MEMBER', vip: 'VIP' }
-const prices = { member: '4,99 € / mesiac', vip: '9,99 € / mesiac' }
+const labels = { member: 'ČLENSKÉ', vip: 'ČLENSKÉ' }
+const prices = { member: '5,99 € / mesiac', vip: '5,99 € / mesiac' }
 const reveal = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0, transition: { duration: .65, ease: [.2, .7, .2, 1] } } }
 
 function Artwork({ url }) {

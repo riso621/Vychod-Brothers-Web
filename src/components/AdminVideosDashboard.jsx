@@ -8,7 +8,7 @@ import { useSignedStorageUrl } from '../hooks/useSignedStorageUrl'
 import { adminRequest } from '../lib/admin-control-center'
 import AdminVideoComments from '../admin/AdminVideoComments'
 
-const accessLabels = { free: 'FREE', member: 'MEMBER', vip: 'VIP' }
+const accessLabels = { free: 'VEREJNÉ', member: 'ČLENSKÉ', vip: 'ČLENSKÉ (legacy)' }
 const providerLabels = { youtube: 'YouTube', stream: 'Legacy Stream', cloudflare_stream: 'Cloudflare Stream' }
 const MAX_VIDEO_SIZE = 5 * 1024 * 1024 * 1024
 const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024
@@ -30,7 +30,7 @@ function formatDate(value) {
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-function validateVideo(values, { videoFile, thumbnailFile, isEditing }) {
+function validateVideo(values, { videoFile, trailerFile, thumbnailFile, isEditing }) {
   if (!values.title || values.title.length > 160) return 'Názov je povinný a môže mať najviac 160 znakov.'
   if (!values.slug || values.slug.length > 180 || !slugPattern.test(values.slug)) return 'Slug používaj malými písmenami, číslami a pomlčkami.'
   if (!values.description || values.description.length > 5000) return 'Popis je povinný a môže mať najviac 5 000 znakov.'
@@ -39,6 +39,8 @@ function validateVideo(values, { videoFile, thumbnailFile, isEditing }) {
   if (!isEditing && !thumbnailFile) return 'Vyber thumbnail obrázok.'
   if (videoFile && (videoFile.type !== 'video/mp4' || !videoFile.name.toLowerCase().endsWith('.mp4'))) return 'Video musí byť vo formáte MP4.'
   if (videoFile?.size > MAX_VIDEO_SIZE) return 'Video môže mať najviac 5 GB.'
+  if (trailerFile && (trailerFile.type !== 'video/mp4' || !trailerFile.name.toLowerCase().endsWith('.mp4'))) return 'Trailer musí byť vo formáte MP4.'
+  if (trailerFile?.size > MAX_VIDEO_SIZE) return 'Trailer môže mať najviac 5 GB.'
   if (thumbnailFile && (!imageTypes.includes(thumbnailFile.type) || !/\.(jpe?g|png|webp)$/i.test(thumbnailFile.name))) return 'Thumbnail musí byť JPG, JPEG, PNG alebo WEBP.'
   if (thumbnailFile?.size > MAX_THUMBNAIL_SIZE) return 'Thumbnail môže mať najviac 10 MB.'
   return ''
@@ -75,8 +77,10 @@ function VideoFormModal({ video, onClose, onSaved }) {
   const [submitting, setSubmitting] = useState(false)
   const [videoFile, setVideoFile] = useState(null)
   const [thumbnailFile, setThumbnailFile] = useState(null)
+  const [trailerFile, setTrailerFile] = useState(null)
   const [videoProgress, setVideoProgress] = useState(0)
   const [thumbnailProgress, setThumbnailProgress] = useState(0)
+  const [trailerProgress, setTrailerProgress] = useState(0)
   const isEditing = Boolean(video)
 
   useEffect(() => {
@@ -97,7 +101,7 @@ function VideoFormModal({ video, onClose, onSaved }) {
       featured: formData.has('featured'),
       published: formData.has('published'),
     }
-    const validationError = validateVideo(values, { videoFile, thumbnailFile, isEditing })
+    const validationError = validateVideo(values, { videoFile, trailerFile, thumbnailFile, isEditing })
     if (validationError) {
       setMessage(validationError)
       return
@@ -114,6 +118,7 @@ function VideoFormModal({ video, onClose, onSaved }) {
 
     let uploadedThumbnail = null
     let cloudflareVideoUid = null
+    let cloudflareTrailerUid = null
     try {
       if (thumbnailFile) {
         uploadedThumbnail = createStoragePath(userId, thumbnailFile)
@@ -124,12 +129,18 @@ function VideoFormModal({ video, onClose, onSaved }) {
         cloudflareVideoUid = directUpload.uid
         await uploadCloudflareVideo({ uploadUrl: directUpload.uploadUrl, file: videoFile, onProgress: setVideoProgress })
       }
+      if (trailerFile) {
+        const trailerUpload = await createCloudflareUpload(trailerFile, 'free', 'trailer')
+        cloudflareTrailerUid = trailerUpload.uid
+        await uploadCloudflareVideo({ uploadUrl: trailerUpload.uploadUrl, file: trailerFile, onProgress: setTrailerProgress })
+      }
 
       const payload = {
         ...values,
         provider: cloudflareVideoUid ? 'cloudflare_stream' : video?.provider || 'cloudflare_stream',
         provider_video_id: cloudflareVideoUid || video?.provider_video_id,
         thumbnail_url: uploadedThumbnail || video?.thumbnail_url,
+        trailer_provider_video_id: cloudflareTrailerUid || video?.trailer_provider_video_id || null,
       }
       await adminRequest({ action:'save-video', videoId:video?.id || null, video:payload })
 
@@ -152,7 +163,8 @@ function VideoFormModal({ video, onClose, onSaved }) {
           <label className="is-wide">Popis<textarea name="description" rows="4" maxLength="5000" defaultValue={video?.description || ''} required /></label>
           <FileUploadField label="Thumbnail" accept=".jpg,.jpeg,.png,.webp" file={thumbnailFile} progress={thumbnailProgress} onChange={setThumbnailFile} optional={isEditing} />
           <FileUploadField label="Video MP4" accept="video/mp4,.mp4" file={videoFile} progress={videoProgress} onChange={setVideoFile} optional={isEditing} />
-          <label>Prístup<select name="access_level" defaultValue={video?.access_level || 'free'}><option value="free">FREE</option><option value="member">MEMBER</option><option value="vip">VIP</option></select></label>
+          <FileUploadField label="Verejný trailer MP4" accept="video/mp4,.mp4" file={trailerFile} progress={trailerProgress} onChange={setTrailerFile} optional />
+          <label>Prístup<select name="access_level" defaultValue={video?.access_level === 'free' ? 'free' : 'member'}><option value="free">Verejné celé video</option><option value="member">Členské video</option></select></label>
           <fieldset><legend>Stav</legend><label className="admin-check"><input name="featured" type="checkbox" defaultChecked={video?.featured || false} /> Featured</label><label className="admin-check"><input name="published" type="checkbox" defaultChecked={video?.published || false} /> Publikované</label></fieldset>
           <div className="admin-form-actions is-wide"><p className={message ? 'is-error' : ''} role={message ? 'alert' : undefined} aria-live="polite">{message}</p><button type="button" onClick={onClose} disabled={submitting}>Zrušiť</button><button className="is-primary" type="submit" disabled={submitting}>{submitting ? 'Ukladám…' : isEditing ? 'Uložiť zmeny' : 'Uložiť video'}</button></div>
         </form>
@@ -219,7 +231,7 @@ export default function AdminVideosDashboard() {
     setLoading(true)
     const [{ data, error: queryError },statsResult] = await Promise.all([supabase
       .from('videos')
-      .select('id, title, slug, description, thumbnail_url, provider, provider_video_id, access_level, published, featured, created_at')
+      .select('id, title, slug, description, thumbnail_url, provider, provider_video_id, trailer_provider_video_id, access_level, published, featured, created_at')
       .order('created_at', { ascending: false }),adminRequest({action:'video-interaction-stats'}).catch(()=>({stats:[]}))])
     setVideos(data || [])
     setInteractionStats(Object.fromEntries((statsResult.stats||[]).map((item)=>[item.video_id,{likes:Number(item.like_count||0),comments:Number(item.comment_count||0)}])))
@@ -284,7 +296,7 @@ export default function AdminVideosDashboard() {
 
       <div className="admin-toolbar admin-video-toolbar">
         <input type="search" placeholder="Hľadať video alebo slug" value={query} onChange={(event) => setQuery(event.target.value)} />
-        <select value={accessFilter} onChange={(event) => setAccessFilter(event.target.value)} aria-label="Filtrovať prístup"><option value="all">Všetky prístupy</option><option value="free">FREE</option><option value="member">MEMBER</option><option value="vip">VIP</option></select>
+        <select value={accessFilter} onChange={(event) => setAccessFilter(event.target.value)} aria-label="Filtrovať prístup"><option value="all">Všetky prístupy</option><option value="free">Verejné</option><option value="member">Členské</option><option value="vip">Členské (legacy)</option></select>
         <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filtrovať stav"><option value="all">Všetky stavy</option><option value="published">Publikované</option><option value="draft">Koncepty</option></select>
         <select value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)} aria-label="Filtrovať provider"><option value="all">Všetci provideri</option><option value="youtube">YouTube</option><option value="cloudflare_stream">Cloudflare</option><option value="stream">Legacy</option></select>
         <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} aria-label="Zoradiť"><option value="newest">Najnovšie</option><option value="oldest">Najstaršie</option></select>

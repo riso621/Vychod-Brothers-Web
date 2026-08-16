@@ -11,7 +11,7 @@ export function isConfirmedPaidMembership(profile) {
 
 export function confirmedCheckoutMessage(profile) {
   return isConfirmedPaidMembership(profile)
-    ? `Platba úspešná. Členstvo ${profile.membership.toUpperCase()} je aktívne.`
+    ? 'Platba úspešná. Východ Brothers Club je aktívny.'
     : ''
 }
 

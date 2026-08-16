@@ -3,7 +3,7 @@ import { getCloudflarePlaybackUrl } from '../lib/cloudflare-stream'
 
 const REFRESH_INTERVAL_MS = 14 * 60 * 1000
 
-export function useCloudflarePlaybackUrl(videoUid, enabled = true) {
+export function useCloudflarePlaybackUrl(videoUid, enabled = true, trailer = false) {
   const [url, setUrl] = useState(null)
   const [loading, setLoading] = useState(Boolean(videoUid && enabled))
 
@@ -19,7 +19,7 @@ export function useCloudflarePlaybackUrl(videoUid, enabled = true) {
       }
       setLoading(true)
       try {
-        const nextUrl = await getCloudflarePlaybackUrl(videoUid)
+        const nextUrl = await getCloudflarePlaybackUrl(videoUid, trailer)
         if (active) setUrl(nextUrl)
       } catch {
         if (active) setUrl(null)
@@ -36,7 +36,7 @@ export function useCloudflarePlaybackUrl(videoUid, enabled = true) {
       active = false
       window.clearTimeout(timer)
     }
-  }, [videoUid, enabled])
+  }, [videoUid, enabled, trailer])
 
   return { url, loading }
 }
