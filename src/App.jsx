@@ -23,6 +23,7 @@ const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
 const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
 const CollaborationSection = lazy(() => import('./components/CollaborationSection'))
+const CollaborationTeaser = lazy(() => import('./components/CollaborationTeaser'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker'))
 
 const reveal = {
@@ -111,7 +112,7 @@ function HomePage() {
   useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><HomepageContent /><Suspense fallback={null}><CollaborationSection /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><Stats /><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {
@@ -134,6 +135,10 @@ function CheckoutRoute({ plan }) {
   return <main className="checkout-page"><Header /><CheckoutPage plan={plan} /></main>
 }
 
+function CollaborationPage() {
+  return <main className="collaboration-page"><Header /><CollaborationSection /><Footer /></main>
+}
+
 export default function App() {
   const path = window.location.pathname
   const isAdminRoute = path === '/admin' || path.startsWith('/admin/')
@@ -148,6 +153,8 @@ export default function App() {
       ? <AccountPage />
       : path === '/clenstvo' || path === '/clenstvo/'
         ? <MembershipPage />
+        : path === '/spolupraca' || path === '/spolupraca/'
+          ? <CollaborationPage />
         : path === '/reset-hesla' || path === '/reset-hesla/'
           ? <AuthFlowPage type="reset" />
           : path === '/auth/callback' || path === '/auth/callback/'
