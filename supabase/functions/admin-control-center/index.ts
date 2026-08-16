@@ -197,11 +197,27 @@ Deno.serve(async (request) => {
     const video = body.video || {}
     if (!video.title || !video.slug || !['free','member','vip'].includes(video.access_level) || !['youtube','stream','cloudflare_stream'].includes(video.provider)) return json({error:'Neplatné údaje videa.'},400)
     const id = String(body.videoId || '')
+    if (id && !/^[0-9a-f-]{36}$/i.test(id)) return json({error:'Neplatný identifikátor videa.'},400)
+    const providerVideoId = video.provider_video_id == null ? null : String(video.provider_video_id).trim()
+    const trailerVideoId = video.trailer_provider_video_id == null ? null : String(video.trailer_provider_video_id).trim()
+    if (video.provider === 'cloudflare_stream' && providerVideoId && !/^[a-zA-Z0-9]+$/.test(providerVideoId)) return json({error:'Hlavné video nemá platný Cloudflare identifikátor.'},400)
+    if (trailerVideoId && !/^[a-zA-Z0-9]+$/.test(trailerVideoId)) return json({error:'Trailer nemá platný Cloudflare identifikátor.'},400)
+    const safeVideo = {
+      title: String(video.title).trim(), slug: String(video.slug).trim(),
+      description: String(video.description || '').trim(), thumbnail_url: video.thumbnail_url || null,
+      provider: video.provider, provider_video_id: providerVideoId,
+      trailer_provider_video_id: trailerVideoId, access_level: video.access_level,
+      published: Boolean(video.published), featured: Boolean(video.featured),
+    }
     const { data:before } = id ? await admin.from('videos').select('id,title,slug,access_level,published,featured,provider').eq('id',id).maybeSingle() : { data:null }
-    const query = id ? admin.from('videos').update(video).eq('id',id).select('id').single() : admin.from('videos').insert(video).select('id').single()
+    const query = id ? admin.from('videos').update(safeVideo).eq('id',id).select('id').single() : admin.from('videos').insert(safeVideo).select('id').single()
     const { data:saved,error } = await query
-    if (error) return json({error:error.code==='23505'?'Video s týmto slugom už existuje.':'Video sa nepodarilo uložiť.'},400)
-    await admin.from('admin_audit_logs').insert({admin_user_id:auth.user!.id,admin_email:auth.user!.email,action_type:id?'video.update':'video.create',entity_type:'video',entity_id:saved.id,description:`${id?'Upravené':'Vytvorené'} video ${video.title}`,before_data:before,after_data:{title:video.title,slug:video.slug,access_level:video.access_level,published:video.published,featured:video.featured,provider:video.provider}})
+    if (error) {
+      console.error('Admin video save failed', { code:error.code, id:id || 'new' })
+      const errorMessage = error.code === '23505' ? 'Video s týmto slugom už existuje.' : error.code === '42501' ? 'Server nemá databázové oprávnenie uložiť video.' : 'Video sa nepodarilo uložiť.'
+      return json({error:errorMessage,code:error.code || 'video_save_failed'},400)
+    }
+    await admin.from('admin_audit_logs').insert({admin_user_id:auth.user!.id,admin_email:auth.user!.email,action_type:id?'video.update':'video.create',entity_type:'video',entity_id:saved.id,description:`${id?'Upravené':'Vytvorené'} video ${safeVideo.title}`,before_data:before,after_data:{title:safeVideo.title,slug:safeVideo.slug,access_level:safeVideo.access_level,published:safeVideo.published,featured:safeVideo.featured,provider:safeVideo.provider,trailer:trailerVideoId?'stored':null}})
     return json({ok:true,id:saved.id})
   }
   return json({ error:'Neplatná operácia.' },400)

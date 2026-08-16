@@ -45,6 +45,8 @@ function readableMutationError(error, action = 'uložiť') {
   if (error?.code === '42501') return 'Nemáte oprávnenie meniť videá.'
   if (error?.code === '23514') return 'Niektorá hodnota nie je povolená databázou.'
   if (/unauthorized|forbidden|row-level security|permission/i.test(error?.message || '')) return 'Nemáte oprávnenie nahrať alebo zmeniť toto video.'
+  if (/server nemá databázové oprávnenie/i.test(error?.message || '')) return 'Server momentálne nemá oprávnenie uložiť video. Nahrané súbory zostali zachované; skúste uloženie znova.'
+  if (/video sa nepodarilo uložiť/i.test(error?.message || '')) return 'Video sa nepodarilo uložiť. Nahrané súbory zostali zachované; skúste uloženie znova.'
   if (/size|too large|maximum/i.test(error?.message || '')) return 'Súbor prekračuje povolenú veľkosť.'
   return `Video sa nepodarilo ${action}. Skontroluj údaje a skús to znova.`
 }
