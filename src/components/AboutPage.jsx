@@ -61,12 +61,12 @@ export default function AboutPage() {
         <blockquote>„Prvýkrát sme pocítili, že sme možno našli niečo, čo je skutočne naše.“</blockquote>
       </Chapter>
 
-      <Chapter number={4} eyebrow="Z JEDNÉHO VIDEA BOLA SÉRIA" title="Ešte jedno. A potom ďalšie.">
+      <Chapter number={4} eyebrow="Z JEDNÉHO VIDEA BOLA SÉRIA" title="Ešte jedno. A potom ďalšie." className="is-series">
         <p>Povedali sme si, že skúsime ešte jedno.</p><p>Fungovalo.</p><p>Tak sme natočili ďalšie. A ďalšie.</p><p>Postupne vznikali nové postavy, situácie zo života, susedia, rodinné scénky a najmä náš vlastný východniarsky humor.</p><p>Nechceli sme kopírovať niekoho iného. Chceli sme robiť situácie, pri ktorých si človek povie:</p><blockquote>„Presne toto poznám!“</blockquote><p>Niekoľko mesiacov sme tvorili prakticky iba krátke videá. Postupne nám však začalo dochádzať, že ak to chceme robiť spolu, potrebujeme spoločné meno.</p>
       </Chapter>
 
       <Chapter number={5} eyebrow="IVAN PRICHÁDZA PRED KAMERU" title={<>Najprv kameroval.<br /><em>Potom prišiel Pišta.</em></>} className="is-ivan">
-        <p>A potom tu bol Ivan.</p>
+        <p>Lenže Východ Brothers ešte neboli kompletní.</p>
         <p>Keď sme s Davidom začínali natáčať prvé spoločné videá, Ivan bol väčšinou na druhej strane telefónu. Kameroval nás.</p>
         <p>Pred kameru sa totiž veľmi nehrnul. Práve naopak.</p>
         <p>Dodnes sa na tom smejeme, pretože nám hovoril, že on sa na internete nebude strápňovať, nebude sa ukazovať vo videách a že toto jednoducho nie je pre neho.</p>
@@ -85,13 +85,20 @@ export default function AboutPage() {
 
       <Reveal className="story-name-reveal"><span>A TAK VZNIKLI</span><strong>VÝCHOD<br /><em>BROTHERS.</em></strong></Reveal>
 
-      <Chapter number={6} eyebrow="Z TIKTOKU NA YOUTUBE" title="Chceli sme väčšie príbehy.">
+      <Chapter number={6} eyebrow="Z TIKTOKU NA YOUTUBE" title="Chceli sme väčšie príbehy." className="is-journey">
         <p>Neskôr prišiel ďalší krok.</p><p>YouTube.</p><p>Krátke videá nám už nestačili. Chceli sme robiť väčšie príbehy, dlhšie scénky, nové postavy a projekty, pri ktorých budeme mať väčšiu slobodu.</p><p>A tak sme začali budovať YouTube kanál Východ Brothers.</p>
-        <ol className="story-steps" aria-label="Vývoj tvorby"><li>KRÁTKE VIDEÁ</li><li>VÝCHOD BROTHERS</li><li>YOUTUBE</li><li>VÄČŠIE PROJEKTY</li></ol>
+        <ol className="story-steps" aria-label="Vývoj tvorby">
+          <li><span>01</span><strong>KRÁTKE VIDEÁ</strong><small>Začiatky na sociálnych sieťach</small></li>
+          <li><span>02</span><strong>VÝCHOD BROTHERS</strong><small>Vznik spoločnej identity</small></li>
+          <li><span>03</span><strong>YOUTUBE</strong><small>Dlhšie príbehy a nové formáty</small></li>
+          <li><span>04</span><strong>VÄČŠIE PROJEKTY</strong><small>Viac možností, väčšia sloboda</small></li>
+        </ol>
       </Chapter>
 
       <Chapter number={7} eyebrow="KTO SME DNES" title={<>Sme<br /><em>Východ Brothers.</em></>} className="is-identity">
-        <strong className="story-names">DAVID • IVAN • RIŠO</strong><p>Traja chalani, ktorých spojilo kamarátstvo, humor a východ Slovenska.</p><p>Za tie roky nebolo všetko dokonalé.</p><p>Pohádali sme sa. Urobili sme chyby. Niektoré videá uspeli, iné vôbec. Stretli sme ľudí, ktorí nám pomohli, ale aj takých, ktorí sa nás snažili oklamať. Boli chvíle, keď veci nešli podľa predstáv.</p><p>Jedna vec sa však nezmenila:</p><strong className="story-statement">NEVZDALI SME SA.</strong>
+        <strong className="story-names">DAVID • IVAN • RIŠO</strong>
+        <figure className="story-today-portrait"><img src="/images/team/vychod-brothers-team-evening.webp" alt="David, Ivan a Rišo – Východ Brothers dnes" width="1536" height="2048" loading="lazy" decoding="async" /><figcaption><span>VÝCHOD BROTHERS • DNES</span><strong>DAVID • IVAN • RIŠO</strong></figcaption></figure>
+        <p>Traja chalani, ktorých spojilo kamarátstvo, humor a východ Slovenska.</p><p>Za tie roky nebolo všetko dokonalé.</p><p>Pohádali sme sa. Urobili sme chyby. Niektoré videá uspeli, iné vôbec. Stretli sme ľudí, ktorí nám pomohli, ale aj takých, ktorí sa nás snažili oklamať. Boli chvíle, keď veci nešli podľa predstáv.</p><p>Jedna vec sa však nezmenila:</p><strong className="story-statement">NEVZDALI SME SA.</strong>
       </Chapter>
 
       <Chapter number={8} eyebrow="VÝCHOD JE NÁŠ DOMOV" title={<>Východ nie je<br />iba náš názov.<br /><em>Je to náš domov.</em></>} className="is-home">
@@ -99,7 +106,7 @@ export default function AboutPage() {
       </Chapter>
 
       <Chapter number={9} eyebrow="PREČO TO ROBÍME" title="Za každým číslom je človek." className="is-purpose">
-        <p>Na začiatku nás tešilo niekoľko stoviek lajkov.</p><p>Dnes pre nás majú najväčšiu hodnotu úplne iné správy.</p><p>Za tie roky nám písali ľudia, ktorí prechádzali veľmi ťažkým obdobím. Ozvali sa nám aj ľudia bojujúci s vážnymi chorobami, ktorí nám povedali, že naše videá im aspoň na chvíľu pomohli vypnúť, zasmiať sa a myslieť na niečo iné.</p><p>A práve vtedy si človek uvedomí, že za každým číslom na obrazovke je skutočný človek.</p><p>Ak dokážeme niekomu po ťažkom dni zlepšiť náladu, rozosmiať rodinu pri jednom videu alebo aspoň na pár minút pomôcť zabudnúť na problémy, potom má to, čo robíme, zmysel.</p>
+        <p>Na začiatku nás tešilo niekoľko stoviek lajkov.</p><p>Dnes pre nás majú najväčšiu hodnotu úplne iné správy.</p><p>Za tie roky nám písali ľudia, ktorí prechádzali veľmi ťažkým obdobím. Ozvali sa nám aj ľudia bojujúci s vážnymi chorobami, ktorí nám povedali, že naše videá im aspoň na chvíľu pomohli vypnúť, zasmiať sa a myslieť na niečo iné.</p><p className="story-purpose-truth">A práve vtedy si človek uvedomí, že za každým číslom na obrazovke je skutočný človek.</p><p>Ak dokážeme niekomu po ťažkom dni zlepšiť náladu, rozosmiať rodinu pri jednom videu alebo aspoň na pár minút pomôcť zabudnúť na problémy, potom má to, čo robíme, zmysel.</p>
       </Chapter>
 
       <Reveal as="footer" className="story-finale"><span>VÝCHOD BROTHERS</span><h2>Kým sa budete<br />smiať vy,<br /><em>budeme tvoriť my.</em></h2><strong>DAVID • IVAN • RIŠO</strong><p>Nie preto, že všetko vždy vyjde.<br />Nie preto, že cesta je jednoduchá.<br />Ale preto, že nás to stále baví.</p><CtaButton href="/videos" icon="play" label="POZRIEŤ NAŠE VIDEÁ" /></Reveal>
