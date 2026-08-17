@@ -63,14 +63,16 @@ const newVideoHeader=()=>`<tr><td class="drop-pad" style="padding:18px 34px 11px
   <div style="padding-top:10px;text-align:center;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:25px;font-weight:900;line-height:1;text-shadow:0 0 12px #8e8900">VB</div>
 </td></tr>`
 
-const newVideoCta=(url:string)=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td bgcolor="#f1e900" style="border:2px solid #fff72a;border-radius:7px;box-shadow:0 0 18px #8a8500">
-  <a href="${esc(url)}" style="display:block;padding:17px 18px;color:#050605;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;letter-spacing:2.2px;line-height:1.2;text-align:center;text-decoration:none">POZRIEŤ VIDEO &nbsp;→</a>
+const newVideoCta=(url:string,assetBase:string)=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"${assetBase?` background="${esc(assetBase)}/cta-frame"`:''} style="background-position:center;background-repeat:no-repeat;background-size:100% 100%"><tr><td style="padding:12px 15px">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td bgcolor="#f1e900" style="border:1px solid #fff72a;border-radius:5px;box-shadow:0 0 14px #8a8500">
+    <a href="${esc(url)}" style="display:block;padding:15px 18px;color:#050605;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;letter-spacing:2.2px;line-height:1.2;text-align:center;text-decoration:none">POZRIEŤ VIDEO &nbsp;→</a>
+  </td></tr></table>
 </td></tr></table>`
 
-const newVideoSocialRow=()=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 6px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:38px;height:38px;border:1px solid #d8d100;border-radius:50%;box-shadow:0 0 9px #555100;color:#f1e900;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:900;line-height:38px;text-align:center;text-decoration:none">${item.short}</a></td>`).join('')}</tr></table>`
+const newVideoSocialRow=(assetBase:string)=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 6px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:42px;height:42px;border:1px solid #f1e900;border-radius:50%;box-shadow:0 0 11px #8d8700;text-align:center;text-decoration:none"><img src="${esc(assetBase)}/icon-${item.label.toLowerCase()}" width="22" height="22" alt="${item.label}" style="display:block;width:22px;height:22px;margin:10px;border:0"></a></td>`).join('')}</tr></table>`
 
-const newVideoFooter=(site:string)=>`<tr><td class="drop-pad" style="padding:20px 34px 24px;border-top:1px solid #383600;text-align:center">
-  ${newVideoSocialRow()}
+const newVideoFooter=(site:string,assetBase:string)=>`<tr><td class="drop-pad" style="padding:20px 34px 24px;border-top:1px solid #383600;text-align:center">
+  ${newVideoSocialRow(assetBase)}
   <div style="margin-top:15px;color:#a8a9a2;font-family:Arial,Helvetica,sans-serif;font-size:8px;letter-spacing:4px">VÝCHOD BROTHERS CLUB</div>
   <p style="margin:9px 0 0;color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.5">Tento e-mail posiela Východ Brothers Club.<br>Obsahové notifikácie spravuješ v nastaveniach účtu.</p>
   <p style="margin:7px 0 0"><a href="${esc(site)}/account" style="color:#e7e000;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
@@ -120,19 +122,20 @@ export function renderClubEmail(input:TemplateInput){
   const safeTitle=esc(input.title||'Nové členské video')
   const description=excerpt(input.description)
   const supabaseUrl=(Deno.env.get('SUPABASE_URL')||'').replace(/\/$/,'')
-  const dropBackground=supabaseUrl?`${supabaseUrl}/functions/v1/club-email-assets`:''
+  const dropAssetBase=supabaseUrl?`${supabaseUrl}/functions/v1/club-email-assets`:''
+  const dropBackground=dropAssetBase?`${dropAssetBase}/background`:''
   const newVideoContent=`
     <tr><td class="drop-pad" style="padding:15px 34px 8px"><div style="color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:3px">NOVÉ V CLUBE</div><h1 class="drop-title" style="margin:10px 0 0;color:#f7f6ef;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:54px;font-weight:900;letter-spacing:-2.6px;line-height:.83">NOVÉ VIDEO<br><span style="color:#f1e900">PRÁVE<br>PRISTÁLO.</span></h1><div style="width:185px;height:3px;margin:16px 0 1px;background:#f1e900;box-shadow:0 0 10px #b6b000"></div></td></tr>
     <tr><td class="drop-pad" style="padding:18px 34px 27px">
-      ${input.thumbnailUrl?`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#f1e900" style="border:2px solid #fff727;border-radius:9px;box-shadow:0 0 20px #8d8700"><tr><td style="padding:3px"><img src="${esc(input.thumbnailUrl)}" width="590" alt="${safeTitle}" style="display:block;width:100%;height:auto;border:0;border-radius:5px"></td></tr></table>`:'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid #f1e900;border-radius:9px;background:#111210;box-shadow:0 0 20px #6d6800"><tr><td align="center" style="padding:62px 20px;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:42px">VB</td></tr></table>'}
+      ${input.thumbnailUrl?`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"${dropAssetBase?` background="${esc(dropAssetBase)}/thumbnail-frame"`:''} style="background-position:center;background-repeat:no-repeat;background-size:100% 100%"><tr><td style="padding:12px"><img src="${esc(input.thumbnailUrl)}" width="572" alt="${safeTitle}" style="display:block;width:100%;height:auto;border:0;border-radius:5px"></td></tr></table>`:'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid #f1e900;border-radius:9px;background:#111210;box-shadow:0 0 20px #6d6800"><tr><td align="center" style="padding:62px 20px;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:42px">VB</td></tr></table>'}
       <div class="drop-meta" style="margin-top:19px;color:#f3f2eb;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;letter-spacing:2.1px;white-space:nowrap"><span style="color:#f1e900">ϟ</span>&nbsp; ORIGINÁLNA TVORBA &nbsp;|&nbsp; <span style="color:#f1e900">□</span>&nbsp; BONUSY &nbsp;|&nbsp; <span style="color:#f1e900">☆</span>&nbsp; PREMIÉRY</div>
       <h2 class="video-title" style="margin:10px 0 0;color:#f8f7f0;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:32px;font-weight:900;line-height:1.06">${safeTitle}</h2>
       ${description?`<p style="margin:9px 0 0;color:#d0d1c9;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55">${esc(description)}</p>`:''}
-      <div style="padding-top:21px">${newVideoCta(ctaUrl)}</div>
+      <div style="padding-top:21px">${newVideoCta(ctaUrl,dropAssetBase)}</div>
     </td></tr>`
   const welcomeShell=`<table role="presentation" class="shell" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;border:1px solid #292a25;background:#090a09">${brandHeader()}${welcomeContent}${footer(site)}</table>`
   const dropBackgroundAttrs=dropBackground?` background="${esc(dropBackground)}" style="max-width:680px;border:1px solid #514e00;background-color:#080908;background-image:url('${esc(dropBackground)}');background-position:top center;background-repeat:repeat-y;background-size:680px auto"`:' style="max-width:680px;border:1px solid #514e00;background:#080908"'
-  const newVideoShell=`<table role="presentation" class="shell drop-shell" width="100%" cellspacing="0" cellpadding="0"${dropBackgroundAttrs}>${newVideoHeader()}${newVideoContent}${newVideoFooter(site)}</table>`
+  const newVideoShell=`<table role="presentation" class="shell drop-shell" width="100%" cellspacing="0" cellpadding="0"${dropBackgroundAttrs}>${newVideoHeader()}${newVideoContent}${newVideoFooter(site,dropAssetBase)}</table>`
   const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">${responsive}</head><body style="margin:0;padding:0;background:#050605;color:#f6f5ef"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preview)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050605"><tr><td class="outer" align="center" style="padding:24px 10px">${isWelcome?welcomeShell:newVideoShell}</td></tr></table></body></html>`
   if(isWelcome)assertWelcomeEmailCopy(html)
   else assertNewVideoEmailPayload(html,input)

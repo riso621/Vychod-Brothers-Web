@@ -36,4 +36,4 @@ verify_jwt = false
 
 [functions.club-email-assets]
 verify_jwt = false
-static_files = ["./functions/club-email-assets/*.jpg"]
+static_files = ["./functions/club-email-assets/*.jpg", "./functions/club-email-assets/*.png"]
