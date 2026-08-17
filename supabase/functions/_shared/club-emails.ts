@@ -4,6 +4,12 @@ type TemplateInput={kind:'welcome'|'new_video';name?:string|null;title?:string;d
 
 const esc=(value:string)=>value.replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[char]!))
 const excerpt=(value='')=>value.trim().replace(/\s+/g,' ').slice(0,220)
+const visibleEmailText=(html:string)=>html.replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()
+
+export function assertWelcomeEmailCopy(html:string){
+  const text=visibleEmailText(html)
+  if(!text.includes('Ďakujeme, že si v tom s nami!')||text.includes('Ďakujeme, že sí v tom s nami!'))throw new Error('Welcome email copy validation failed')
+}
 
 const socialLinks=[
   {label:'YouTube',short:'YT',url:'https://www.youtube.com/@Vychodbrothers1'},
@@ -68,7 +74,7 @@ export function renderClubEmail(input:TemplateInput){
     </td></tr>
     <tr><td class="pad-x" style="padding:0 34px 22px">${cta(ctaUrl,'POZRIEŤ ČLENSKÉ VIDEÁ')}</td></tr>
     <tr><td class="pad-x" style="padding:0 34px 24px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #30312d;border-radius:8px;background:#0a0b0a"><tr><td align="center" style="padding:22px 18px">
-      <div class="thank-title" style="color:#f1e900;font-family:'Segoe Print','Bradley Hand',cursive;font-size:25px;font-style:italic;line-height:1.25">Ďakujeme, že si v tom s nami!</div>
+      <div class="thank-title" style="color:#f1e900;font-family:'Segoe Print','Bradley Hand',cursive;font-size:25px;font-style:italic;line-height:1.25">Ďakujeme, že <span style="font-family:Arial,Helvetica,sans-serif;font-style:normal">si</span> v tom s nami!</div>
       <div style="width:65%;height:1px;margin:9px auto 13px;background:#726e00"></div>
       <p style="margin:0;color:#c5c6be;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55">Vďaka ľuďom ako ty môžeme robiť viac videí, väčšie projekty<br>a obsah, ktorý by na YouTube nevznikol.</p>
       <div style="margin:12px 0 7px;color:#f1e900;font-family:Georgia,serif;font-size:23px;line-height:1">♡</div>
@@ -87,6 +93,7 @@ export function renderClubEmail(input:TemplateInput){
       <div style="padding-top:20px">${cta(ctaUrl,'POZRIEŤ VIDEO')}</div>
     </td></tr>`
   const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">${responsive}</head><body style="margin:0;padding:0;background:#050605;color:#f6f5ef"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preview)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050605"><tr><td class="outer" align="center" style="padding:24px 10px"><table role="presentation" class="shell" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;border:1px solid #292a25;background:#090a09">${brandHeader()}${isWelcome?welcomeContent:newVideoContent}${footer(site)}</table></td></tr></table></body></html>`
+  if(isWelcome)assertWelcomeEmailCopy(html)
   const text=isWelcome?`VITAJ V CLUBE.\n\nTvoje členstvo je aktívne. Od tejto chvíle máš prístup ku všetkému členskému obsahu Východ Brothers.\n\nPozrieť členské videá: ${ctaUrl}\n\nĎakujeme, že nás podporuješ.\nVýchod Brothers`
     :`NOVÉ VIDEO PRÁVE PRISTÁLO.\n\n${input.title||'Nové členské video'}\n${excerpt(input.description)}\n\nPozrieť video: ${ctaUrl}`
   return {subject,preview,html,text}
