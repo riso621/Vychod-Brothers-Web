@@ -65,22 +65,40 @@ export default function AboutPage() {
         <p>Povedali sme si, že skúsime ešte jedno.</p><p>Fungovalo.</p><p>Tak sme natočili ďalšie. A ďalšie.</p><p>Postupne vznikali nové postavy, situácie zo života, susedia, rodinné scénky a najmä náš vlastný východniarsky humor.</p><p>Nechceli sme kopírovať niekoho iného. Chceli sme robiť situácie, pri ktorých si človek povie:</p><blockquote>„Presne toto poznám!“</blockquote><p>Niekoľko mesiacov sme tvorili prakticky iba krátke videá. Postupne nám však začalo dochádzať, že ak to chceme robiť spolu, potrebujeme spoločné meno.</p>
       </Chapter>
 
+      <Chapter number={5} eyebrow="IVAN PRICHÁDZA PRED KAMERU" title={<>Najprv kameroval.<br /><em>Potom prišiel Pišta.</em></>} className="is-ivan">
+        <p>A potom tu bol Ivan.</p>
+        <p>Keď sme s Davidom začínali natáčať prvé spoločné videá, Ivan bol väčšinou na druhej strane telefónu. Kameroval nás.</p>
+        <p>Pred kameru sa totiž veľmi nehrnul. Práve naopak.</p>
+        <p>Dodnes sa na tom smejeme, pretože nám hovoril, že on sa na internete nebude strápňovať, nebude sa ukazovať vo videách a že toto jednoducho nie je pre neho.</p>
+        <div className="story-ivan-turn" aria-label="Ivanov prechod spoza kamery pred kameru">
+          <div><span>KEDYSI</span><strong>„JA SA NA VIDEÁCH<br />STRÁPŇOVAŤ NEBUDEM.“</strong></div>
+          <i aria-hidden="true">↓</i>
+          <div><span>DNES</span><strong>PIŠTA.</strong><small>JEDNA Z NAJVÝRAZNEJŠÍCH<br />POSTÁV VÝCHOD BROTHERS.</small></div>
+        </div>
+        <p>My sme však vedeli svoje.</p>
+        <p>Postupne sme ho začali prehovárať, až sa jedného dňa ocitol pred kamerou aj on. A ukázalo sa, že to bol celkom dobrý nápad.</p>
+        <p>Z človeka, ktorý pôvodne nechcel byť vo videách vôbec, sa postupne stala jedna z najvýraznejších tvárí Východ Brothers.</p>
+        <p>A potom prišiel <strong>PIŠTA</strong>. Postava, pod ktorou dnes Ivana pozná množstvo našich divákov.</p>
+        <p>Jeho prejav, improvizácia a spôsob, akým dokáže Pištu zahrať, sa stali neoddeliteľnou súčasťou našich videí.</p>
+        <p>A keď si dnes spomenieme na to, že kedysi nechcel ani stáť pred kamerou, o to viac sa na tom smejeme.</p>
+      </Chapter>
+
       <Reveal className="story-name-reveal"><span>A TAK VZNIKLI</span><strong>VÝCHOD<br /><em>BROTHERS.</em></strong></Reveal>
 
-      <Chapter number={5} eyebrow="Z TIKTOKU NA YOUTUBE" title="Chceli sme väčšie príbehy.">
+      <Chapter number={6} eyebrow="Z TIKTOKU NA YOUTUBE" title="Chceli sme väčšie príbehy.">
         <p>Neskôr prišiel ďalší krok.</p><p>YouTube.</p><p>Krátke videá nám už nestačili. Chceli sme robiť väčšie príbehy, dlhšie scénky, nové postavy a projekty, pri ktorých budeme mať väčšiu slobodu.</p><p>A tak sme začali budovať YouTube kanál Východ Brothers.</p>
         <ol className="story-steps" aria-label="Vývoj tvorby"><li>KRÁTKE VIDEÁ</li><li>VÝCHOD BROTHERS</li><li>YOUTUBE</li><li>VÄČŠIE PROJEKTY</li></ol>
       </Chapter>
 
-      <Chapter number={6} eyebrow="KTO SME DNES" title={<>Sme<br /><em>Východ Brothers.</em></>} className="is-identity">
+      <Chapter number={7} eyebrow="KTO SME DNES" title={<>Sme<br /><em>Východ Brothers.</em></>} className="is-identity">
         <strong className="story-names">DAVID • IVAN • RIŠO</strong><p>Traja chalani, ktorých spojilo kamarátstvo, humor a východ Slovenska.</p><p>Za tie roky nebolo všetko dokonalé.</p><p>Pohádali sme sa. Urobili sme chyby. Niektoré videá uspeli, iné vôbec. Stretli sme ľudí, ktorí nám pomohli, ale aj takých, ktorí sa nás snažili oklamať. Boli chvíle, keď veci nešli podľa predstáv.</p><p>Jedna vec sa však nezmenila:</p><strong className="story-statement">NEVZDALI SME SA.</strong>
       </Chapter>
 
-      <Chapter number={7} eyebrow="VÝCHOD JE NÁŠ DOMOV" title={<>Východ nie je<br />iba náš názov.<br /><em>Je to náš domov.</em></>} className="is-home">
+      <Chapter number={8} eyebrow="VÝCHOD JE NÁŠ DOMOV" title={<>Východ nie je<br />iba náš názov.<br /><em>Je to náš domov.</em></>} className="is-home">
         <p>Nikdy sme nezabudli, odkiaľ pochádzame.</p><p>Sme na východ Slovenska hrdí a práve jeho humor, ľudia, nárečie, rodiny a každodenné situácie sú veľkou časťou toho, čo tvoríme.</p>
       </Chapter>
 
-      <Chapter number={8} eyebrow="PREČO TO ROBÍME" title="Za každým číslom je človek." className="is-purpose">
+      <Chapter number={9} eyebrow="PREČO TO ROBÍME" title="Za každým číslom je človek." className="is-purpose">
         <p>Na začiatku nás tešilo niekoľko stoviek lajkov.</p><p>Dnes pre nás majú najväčšiu hodnotu úplne iné správy.</p><p>Za tie roky nám písali ľudia, ktorí prechádzali veľmi ťažkým obdobím. Ozvali sa nám aj ľudia bojujúci s vážnymi chorobami, ktorí nám povedali, že naše videá im aspoň na chvíľu pomohli vypnúť, zasmiať sa a myslieť na niečo iné.</p><p>A práve vtedy si človek uvedomí, že za každým číslom na obrazovke je skutočný človek.</p><p>Ak dokážeme niekomu po ťažkom dni zlepšiť náladu, rozosmiať rodinu pri jednom videu alebo aspoň na pár minút pomôcť zabudnúť na problémy, potom má to, čo robíme, zmysel.</p>
       </Chapter>
 
