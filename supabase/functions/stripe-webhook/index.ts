@@ -164,7 +164,8 @@ Deno.serve(async (request) => {
   if (data === true) {
     await admin.from('profiles').update({ membership_plan: paidPlan }).eq('id', userId)
     await createEventNotifications(admin, event, subscription, userId, paidPlan)
-    if (membershipStatus === 'active' && ['checkout.session.completed','customer.subscription.created'].includes(event.type)) {
+    const isInitialPaidInvoice = event.type === 'invoice.paid' && (event.data.object as Stripe.Invoice).billing_reason === 'subscription_create'
+    if (membershipStatus === 'active' && (['checkout.session.completed','customer.subscription.created'].includes(event.type) || isInitialPaidInvoice)) {
       EdgeRuntime.waitUntil(sendWelcomeOnce(admin,userId,subscription.id).catch((error)=>console.error('Welcome email failed',error instanceof Error?error.message:'unknown')))
     }
   }
