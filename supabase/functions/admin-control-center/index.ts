@@ -123,7 +123,7 @@ Deno.serve(async (request) => {
     const type=body.type==='new_video'?'new_video':body.type==='welcome'?'welcome':''
     const recipient=String(body.email||'').trim().toLowerCase()
     if(!type||!/^\S+@\S+\.\S+$/.test(recipient))return json({error:'Zadajte platný typ a testovací e-mail.'},400)
-    let template:any={kind:'welcome',name:'Člen'}
+    let template:any={kind:'welcome'}
     let videoId:string|null=null
     if(type==='new_video'){
       const {data:video}=await admin.from('videos').select('id,title,slug,description,thumbnail_url').eq('published',true).in('access_level',['member','vip']).order('created_at',{ascending:false}).limit(1).maybeSingle()
