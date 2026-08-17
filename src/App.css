@@ -540,6 +540,12 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 @media(max-width:340px){.story-hero{padding-inline:17px}.story-hero-copy h1{font-size:44px}.story-hero-copy>strong{font-size:23px}.story-body{width:calc(100% - 28px)}.story-chapter-heading h2{font-size:36px}.story-name-reveal strong{font-size:55px}.story-finale h2{font-size:41px}.story-steps{padding-inline:13px}.story-steps li{padding-left:58px}}
 @media(prefers-reduced-motion:reduce){.story-today-portrait img{transition:none}.story-today-portrait:hover img{transform:none}}
 
+/* Compact documentary end-card */
+.story-numbers{margin-bottom:23px}.story-finale{margin-top:clamp(76px,9vw,125px);padding:clamp(48px,6vw,76px) clamp(30px,7vw,88px);min-height:0}.story-finale h2{max-width:920px;margin:22px auto 0;font-size:clamp(53px,7vw,92px);line-height:.78;letter-spacing:-.05em}.story-finale p{margin:25px auto 0;color:#a8aba5;line-height:1.7}.story-finale>strong{display:block;margin-top:24px}.story-finale>.vb-cta{width:max-content;margin:30px auto 0}
+@media(max-width:720px){.story-finale{margin-inline:-2px;padding:44px 20px}.story-finale h2{font-size:clamp(45px,13.6vw,62px);line-height:.82;letter-spacing:-.04em}.story-finale p{margin-top:22px;font-size:13px;line-height:1.65}.story-finale>strong{margin-top:20px}.story-finale>.vb-cta{width:100%;margin-top:25px}}
+@media(max-width:430px){.story-finale{margin-top:72px;padding:39px 17px}.story-finale h2{font-size:clamp(41px,12.3vw,53px)}}
+@media(max-width:340px){.story-finale{padding-inline:14px}.story-finale h2{font-size:39px}}
+
 /* Verified social reach */
 .social-stats{margin:18px 22px 0;padding:34px clamp(28px,4vw,56px) 38px;overflow:hidden;border:1px solid rgba(228,220,0,.3);border-radius:13px;background:radial-gradient(circle at 12% 0,rgba(228,220,0,.055),transparent 28%),radial-gradient(circle at 82% 100%,rgba(228,220,0,.025),transparent 34%),linear-gradient(125deg,#111311,#080a09 72%);box-shadow:0 18px 42px rgba(0,0,0,.4),0 0 14px rgba(228,220,0,.025),inset 0 1px rgba(255,255,255,.04)}
 .social-stats-heading{margin-bottom:27px}.social-stats-heading>span{position:relative;display:inline-block;padding-bottom:11px;color:var(--yellow);font:850 10px/1 var(--condensed);letter-spacing:.13em}.social-stats-heading>span:after{content:"";position:absolute;left:0;bottom:0;width:32px;height:2px;border-radius:2px;background:var(--yellow);box-shadow:0 0 6px rgba(228,220,0,.16)}
