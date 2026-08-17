@@ -24,3 +24,12 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.admin-control-center]
+verify_jwt = false
+
+[functions.club-email-dispatch]
+verify_jwt = false
+
+[functions.club-email-thumbnail]
+verify_jwt = false

@@ -1,6 +1,7 @@
 import { bearerToken, corsHeaders, json } from '../_shared/http.ts'
 import { createAdminClient, createUserClient } from '../_shared/supabase.ts'
 import { planForPrice, stripe } from '../_shared/stripe.ts'
+import { deliverEmail } from '../_shared/club-emails.ts'
 
 async function requireAdmin(request: Request) {
   const token = bearerToken(request)
@@ -24,6 +25,11 @@ function invoiceType(invoice: any) {
 
 const invoiceMonthCache = new Map<string, { expiresAt:number, invoices:any[] }>()
 const INVOICE_CACHE_MS = 60_000
+
+function kickEmailDispatch(){
+  const url=Deno.env.get('SUPABASE_URL')||'',key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||''
+  EdgeRuntime.waitUntil(fetch(`${url}/functions/v1/club-email-dispatch`,{method:'POST',headers:{Authorization:`Bearer ${key}`}}).catch((error)=>console.error('Email dispatch start failed',error instanceof Error?error.message:'unknown')))
+}
 
 function safeInvoice(invoice:any) {
   const pricedLines=(invoice.lines?.data||[]).filter((item:any)=>item.price?.id||item.pricing?.price_details?.price)
@@ -106,6 +112,30 @@ Deno.serve(async (request) => {
     return error ? json({error:'Audit log sa nepodarilo načítať.'},500) : json({logs:data||[]})
   }
   if (body.action === 'integrations') return json({ integrations:{ supabase:true,stripe:Boolean(Deno.env.get('STRIPE_SECRET_KEY')),cloudflare:Boolean(Deno.env.get('CLOUDFLARE_ACCOUNT_ID')&&Deno.env.get('CLOUDFLARE_STREAM_API_TOKEN')) } })
+
+  if(body.action==='emails'){
+    const {data,error}=await admin.from('email_deliveries').select('id,event_type,status,attempts,provider_message_id,created_at,sent_at,last_error,video_id').order('created_at',{ascending:false}).limit(100)
+    if(error)return json({error:'E-mailový prehľad sa nepodarilo načítať.'},500)
+    const rows=data||[]
+    return json({deliveries:rows,summary:{sent:rows.filter((row)=>row.status==='sent').length,failed:rows.filter((row)=>row.status==='failed').length,pending:rows.filter((row)=>['pending','processing'].includes(row.status)).length,welcome:rows.filter((row)=>row.event_type==='membership_welcome').length,video:rows.filter((row)=>row.event_type==='video_published').length}})
+  }
+  if(body.action==='send-test-email'){
+    const type=body.type==='new_video'?'new_video':body.type==='welcome'?'welcome':''
+    const recipient=String(body.email||'').trim().toLowerCase()
+    if(!type||!/^\S+@\S+\.\S+$/.test(recipient))return json({error:'Zadajte platný typ a testovací e-mail.'},400)
+    let template:any={kind:'welcome',name:'Člen'}
+    let videoId:string|null=null
+    if(type==='new_video'){
+      const {data:video}=await admin.from('videos').select('id,title,slug,description,thumbnail_url').eq('published',true).in('access_level',['member','vip']).order('created_at',{ascending:false}).limit(1).maybeSingle()
+      if(!video)return json({error:'Nie je dostupné publikované členské video pre test.'},400)
+      videoId=video.id;const site=(Deno.env.get('SITE_URL')||'https://vychodbrothersclub.sk').replace(/\/$/,'')
+      template={kind:'new_video',title:video.title,description:video.description,videoUrl:`${site}/videos/${encodeURIComponent(video.slug)}`,thumbnailUrl:video.thumbnail_url?`${Deno.env.get('SUPABASE_URL')}/functions/v1/club-email-thumbnail?video=${video.id}`:null}
+    }
+    const {data:delivery,error}=await admin.from('email_deliveries').insert({event_type:`test_${type}`,user_id:auth.user!.id,video_id:videoId,dedupe_key:`test:${type}:${auth.user!.id}:${crypto.randomUUID()}`,status:'processing',attempts:1}).select('id').single()
+    if(error||!delivery)return json({error:'Testovací e-mail sa nepodarilo pripraviť.'},500)
+    try{await deliverEmail(admin,delivery.id,recipient,template);await admin.from('admin_audit_logs').insert({admin_user_id:auth.user!.id,admin_email:auth.user!.email,action_type:'email.test_sent',entity_type:'email',entity_id:delivery.id,description:`Odoslaný testovací ${type} e-mail`,after_data:{type}});return json({ok:true})}
+    catch(error){await admin.from('email_deliveries').update({status:'failed',last_error:error instanceof Error?error.message:'Delivery failed',updated_at:new Date().toISOString()}).eq('id',delivery.id);return json({error:'Testovací e-mail sa nepodarilo odoslať.'},502)}
+  }
 
   if (body.action === 'social-stats') {
     const { data, error } = await admin.from('social_stats').select('platform,followers,synced_at,updated_at').order('platform')
@@ -208,10 +238,14 @@ Deno.serve(async (request) => {
   if (body.action === 'video-toggle') {
     const field = body.field === 'published' ? 'published' : body.field === 'featured' ? 'featured' : ''
     if (!field || !/^[0-9a-f-]{36}$/i.test(String(body.videoId || '')) || typeof body.value !== 'boolean') return json({error:'Neplatná zmena videa.'},400)
-    const { data:before } = await admin.from('videos').select('id,title,published,featured').eq('id',body.videoId).single()
+    const { data:before } = await admin.from('videos').select('id,title,published,featured,access_level').eq('id',body.videoId).single()
     const { error } = await admin.from('videos').update({ [field]:body.value }).eq('id',body.videoId)
     if (error) return json({error:'Video sa nepodarilo zmeniť.'},500)
     await admin.from('admin_audit_logs').insert({ admin_user_id:auth.user!.id,admin_email:auth.user!.email,action_type:`video.${field}`,entity_type:'video',entity_id:body.videoId,description:`${field} zmenené pre ${before?.title || body.videoId}`,before_data:{[field]:before?.[field]},after_data:{[field]:body.value} })
+    if(field==='published'&&body.value===true&&before?.published===false&&['member','vip'].includes(before.access_level)){
+      const {data:campaign,error:queueError}=await admin.rpc('queue_member_video_email',{p_video_id:body.videoId})
+      if(queueError)console.error('Video email queue failed',{code:queueError.code});else if(campaign)kickEmailDispatch()
+    }
     return json({ok:true})
   }
   if (body.action === 'save-video') {
@@ -239,6 +273,10 @@ Deno.serve(async (request) => {
       return json({error:errorMessage,code:error.code || 'video_save_failed'},400)
     }
     await admin.from('admin_audit_logs').insert({admin_user_id:auth.user!.id,admin_email:auth.user!.email,action_type:id?'video.update':'video.create',entity_type:'video',entity_id:saved.id,description:`${id?'Upravené':'Vytvorené'} video ${safeVideo.title}`,before_data:before,after_data:{title:safeVideo.title,slug:safeVideo.slug,access_level:safeVideo.access_level,published:safeVideo.published,featured:safeVideo.featured,provider:safeVideo.provider,trailer:trailerVideoId?'stored':null}})
+    if(safeVideo.published&&before?.published!==true&&['member','vip'].includes(safeVideo.access_level)){
+      const {data:campaign,error:queueError}=await admin.rpc('queue_member_video_email',{p_video_id:saved.id})
+      if(queueError)console.error('Video email queue failed',{code:queueError.code});else if(campaign)kickEmailDispatch()
+    }
     return json({ok:true,id:saved.id})
   }
   return json({ error:'Neplatná operácia.' },400)

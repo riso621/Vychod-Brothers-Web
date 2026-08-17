@@ -12,5 +12,6 @@ export async function adminRequest(body) {
     invalidateAdminCache('admin-social-stats', 'admin-logs', 'admin-core')
     invalidateSocialStatsCache()
   }
+  if (body?.action === 'send-test-email') invalidateAdminCache('admin-emails', 'admin-logs', 'admin-core')
   return data
 }

@@ -3,6 +3,7 @@ import { json } from '../_shared/http.ts'
 import { createAdminClient } from '../_shared/supabase.ts'
 import { membershipForPrice, planForPrice, stripe, stripeConfig } from '../_shared/stripe.ts'
 import { notifyAdmin } from '../_shared/notifications.ts'
+import { sendWelcomeOnce } from '../_shared/club-emails.ts'
 
 const handledEvents = new Set([
   'checkout.session.completed',
@@ -163,6 +164,9 @@ Deno.serve(async (request) => {
   if (data === true) {
     await admin.from('profiles').update({ membership_plan: paidPlan }).eq('id', userId)
     await createEventNotifications(admin, event, subscription, userId, paidPlan)
+    if (membershipStatus === 'active' && ['checkout.session.completed','customer.subscription.created'].includes(event.type)) {
+      EdgeRuntime.waitUntil(sendWelcomeOnce(admin,userId,subscription.id).catch((error)=>console.error('Welcome email failed',error instanceof Error?error.message:'unknown')))
+    }
   }
   return json({ received: true, handled: true, applied: data })
 })
