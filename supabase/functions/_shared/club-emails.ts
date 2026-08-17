@@ -5,10 +5,13 @@ type TemplateInput={kind:'welcome'|'new_video';name?:string|null;title?:string;d
 const esc=(value:string)=>value.replace(/[&<>"']/g,(char)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':'&quot;',"'":"&#39;"}[char]!))
 const excerpt=(value='')=>value.trim().replace(/\s+/g,' ').slice(0,220)
 const visibleEmailText=(html:string)=>html.replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim()
+const welcomeThankYou='Ďakujeme, že si v tom s nami!'
+const forbiddenWelcomeCopy=['Ďakujeme, že sí v tom s nami!','Ďakujeme, že si v tom s namí!','Ďakujeme, že sí v tom s namí!']
 
 export function assertWelcomeEmailCopy(html:string){
   const text=visibleEmailText(html)
-  if(!text.includes('Ďakujeme, že si v tom s nami!')||text.includes('Ďakujeme, že sí v tom s nami!'))throw new Error('Welcome email copy validation failed')
+  const headline=html.match(/<div class="thank-title"[^>]*>([^<]*)<\/div>/)?.[1]
+  if(headline!==welcomeThankYou||!text.includes(welcomeThankYou)||forbiddenWelcomeCopy.some((copy)=>text.includes(copy)))throw new Error('Welcome email copy validation failed')
 }
 
 const socialLinks=[
@@ -74,7 +77,7 @@ export function renderClubEmail(input:TemplateInput){
     </td></tr>
     <tr><td class="pad-x" style="padding:0 34px 22px">${cta(ctaUrl,'POZRIEŤ ČLENSKÉ VIDEÁ')}</td></tr>
     <tr><td class="pad-x" style="padding:0 34px 24px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #30312d;border-radius:8px;background:#0a0b0a"><tr><td align="center" style="padding:22px 18px">
-      <div class="thank-title" style="color:#f1e900;font-family:'Segoe Print','Bradley Hand',cursive;font-size:25px;font-style:italic;line-height:1.25">Ďakujeme, že <span style="font-family:Arial,Helvetica,sans-serif;font-style:normal">si</span> v tom s nami!</div>
+      <div class="thank-title" style="color:#f1e900;font-family:'Comic Sans MS','Segoe Print',cursive;font-size:25px;font-style:normal;font-weight:700;line-height:1.25">${welcomeThankYou}</div>
       <div style="width:65%;height:1px;margin:9px auto 13px;background:#726e00"></div>
       <p style="margin:0;color:#c5c6be;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55">Vďaka ľuďom ako ty môžeme robiť viac videí, väčšie projekty<br>a obsah, ktorý by na YouTube nevznikol.</p>
       <div style="margin:12px 0 7px;color:#f1e900;font-family:Georgia,serif;font-size:23px;line-height:1">♡</div>
