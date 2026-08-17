@@ -83,7 +83,7 @@ export const navItems = ['DOMOV', 'VIDEÁ', 'O NÁS', 'ČLENSTVO', 'MERCH', 'KON
 export const footerNavigation = [
   { label: 'Domov', href: '/' },
   { label: 'Videá', href: '/videos' },
-  { label: 'O nás', href: '/#onas' },
+  { label: 'O nás', href: '/o-nas' },
   { label: 'Členstvo', href: '/clenstvo' },
   { label: 'Merch', href: '/#merch' },
   { label: 'Kontakt', href: '/#kontakt' },

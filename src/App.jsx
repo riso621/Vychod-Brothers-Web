@@ -27,6 +27,8 @@ const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
 const CollaborationSection = lazy(() => import('./components/CollaborationSection'))
 const CollaborationTeaser = lazy(() => import('./components/CollaborationTeaser'))
+const AboutStoryTeaser = lazy(() => import('./components/AboutStoryTeaser'))
+const AboutPage = lazy(() => import('./components/AboutPage'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker'))
 
 const reveal = {
@@ -44,15 +46,16 @@ function Header() {
   const isMember = isActiveClubMember(profile, session?.user?.app_metadata?.role === 'admin')
   const isVideosPage = window.location.pathname.startsWith('/videos')
   const isMembershipPage = window.location.pathname.startsWith('/clenstvo')
+  const isAboutPage = window.location.pathname.startsWith('/o-nas')
   const isHomePage = window.location.pathname === '/'
   const hrefs = !isHomePage
-    ? ['/', '/videos', '/#onas', '/clenstvo', '/#merch', '/#kontakt']
-    : ['#domov', '/videos', '#onas', '/clenstvo', '#merch', '#kontakt']
+    ? ['/', '/videos', '/o-nas', '/clenstvo', '/#merch', '/#kontakt']
+    : ['#domov', '/videos', '/o-nas', '/clenstvo', '#merch', '#kontakt']
   return (
     <header className="topbar">
       <Logo />
       <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
-        {navItems.map((item, index) => <a className={isVideosPage && index === 1 || isMembershipPage && index === 3 || isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
+        {navItems.map((item, index) => <a className={isVideosPage && index === 1 || isAboutPage && index === 2 || isMembershipPage && index === 3 || isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
       </nav>
       <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'ČLENSKÉ VIDEÁ' : 'STAŤ SA ČLENOM'}</a>
       <Suspense fallback={null}><AuthControl /></Suspense>
@@ -134,7 +137,7 @@ function HomePage() {
   }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><Suspense fallback={null}><AboutStoryTeaser /></Suspense><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {
@@ -161,6 +164,10 @@ function CollaborationPage() {
   return <main className="collaboration-page"><Header /><CollaborationSection /><Footer /></main>
 }
 
+function AboutRoute() {
+  return <main className="about-page"><Header /><AboutPage /><Footer /></main>
+}
+
 export default function App() {
   const path = window.location.pathname
   const isAdminRoute = path === '/admin' || path.startsWith('/admin/')
@@ -175,6 +182,8 @@ export default function App() {
       ? <AccountPage />
       : path === '/clenstvo' || path === '/clenstvo/'
         ? <MembershipPage />
+        : path === '/o-nas' || path === '/o-nas/'
+          ? <AboutRoute />
         : path === '/spolupraca' || path === '/spolupraca/'
           ? <CollaborationPage />
         : path === '/reset-hesla' || path === '/reset-hesla/'

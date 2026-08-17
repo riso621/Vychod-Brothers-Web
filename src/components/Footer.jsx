@@ -1,11 +1,13 @@
 import { activeSocialProfiles, contactEmail, footerNavigation, footerSlogan, legalLinks } from '../data'
 
 export default function Footer() {
+  const homeHref = window.location.pathname === '/' ? '#domov' : '/'
+
   return (
     <footer className="site-footer" id="kontakt">
       <div className="site-footer__top">
         <div className="site-footer__brand">
-          <a className="site-footer__logo" href="#domov" aria-label="Východ Brothers – domov"><i>V</i>B</a>
+          <a className="site-footer__logo" href={homeHref} aria-label="Východ Brothers – domov"><i>V</i>B</a>
           <p>{footerSlogan}</p>
         </div>
 
