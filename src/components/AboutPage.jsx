@@ -108,7 +108,14 @@ export default function AboutPage() {
         <p>Na začiatku nás tešilo niekoľko stoviek lajkov.</p><p>Dnes pre nás majú najväčšiu hodnotu úplne iné správy.</p><p>Za tie roky nám písali ľudia, ktorí prechádzali veľmi ťažkým obdobím. Ozvali sa nám aj ľudia bojujúci s vážnymi chorobami, ktorí nám povedali, že naše videá im aspoň na chvíľu pomohli vypnúť, zasmiať sa a myslieť na niečo iné.</p><p className="story-purpose-truth">A práve vtedy si človek uvedomí, že za každým číslom na obrazovke je skutočný človek.</p><p>Ak dokážeme niekomu po ťažkom dni zlepšiť náladu, rozosmiať rodinu pri jednom videu alebo aspoň na pár minút pomôcť zabudnúť na problémy, potom má to, čo robíme, zmysel.</p>
       </Chapter>
 
-      <Reveal as="footer" className="story-finale"><span>VÝCHOD BROTHERS</span><h2>Kým sa budete<br />smiať vy,<br /><em>budeme tvoriť my.</em></h2><p>Nie preto, že všetko vždy vyjde.<br />Nie preto, že cesta je jednoduchá.<br />Ale preto, že nás to stále baví.</p><strong>DAVID • IVAN • RIŠO</strong><CtaButton href="/videos" icon="play" label="POZRIEŤ NAŠE VIDEÁ" /></Reveal>
+      <Reveal as="footer" className="story-finale">
+        <span>VÝCHOD BROTHERS</span>
+        <h2>Kým sa budete<br />smiať vy,<br /><em>budeme<br />tvoriť my.</em></h2>
+        <i aria-hidden="true" />
+        <ul><li>Nie preto, že všetko vždy vyjde.</li><li>Nie preto, že cesta je jednoduchá.</li><li>Ale preto, že nás to stále baví.</li></ul>
+        <strong>DAVID <b>•</b> IVAN <b>•</b> RIŠO</strong>
+        <CtaButton href="/videos" icon="play" label="POZRIEŤ NAŠE VIDEÁ" />
+      </Reveal>
     </div>
   </article>
 }
