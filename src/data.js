@@ -79,11 +79,12 @@ export const contentCards = [
 ]
 
 export const navItems = ['DOMOV', 'VIDEÁ', 'O NÁS', 'ČLENSTVO', 'MERCH', 'KONTAKT']
+export const aboutPath = '/o-nas'
 
 export const footerNavigation = [
   { label: 'Domov', href: '/' },
   { label: 'Videá', href: '/videos' },
-  { label: 'O nás', href: '/o-nas' },
+  { label: 'O nás', href: aboutPath },
   { label: 'Členstvo', href: '/clenstvo' },
   { label: 'Merch', href: '/#merch' },
   { label: 'Kontakt', href: '/#kontakt' },

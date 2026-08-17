@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { activeSocialProfiles, media, navItems, socialProfiles, stats } from './data'
+import { aboutPath, activeSocialProfiles, media, navItems, socialProfiles, stats } from './data'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
 import { useProfile } from './context/profile-context'
@@ -46,11 +46,11 @@ function Header() {
   const isMember = isActiveClubMember(profile, session?.user?.app_metadata?.role === 'admin')
   const isVideosPage = window.location.pathname.startsWith('/videos')
   const isMembershipPage = window.location.pathname.startsWith('/clenstvo')
-  const isAboutPage = window.location.pathname.startsWith('/o-nas')
+  const isAboutPage = window.location.pathname === aboutPath || window.location.pathname === `${aboutPath}/`
   const isHomePage = window.location.pathname === '/'
   const hrefs = !isHomePage
-    ? ['/', '/videos', '/o-nas', '/clenstvo', '/#merch', '/#kontakt']
-    : ['#domov', '/videos', '/o-nas', '/clenstvo', '#merch', '#kontakt']
+    ? ['/', '/videos', aboutPath, '/clenstvo', '/#merch', '/#kontakt']
+    : ['#domov', '/videos', aboutPath, '/clenstvo', '#merch', '#kontakt']
   return (
     <header className="topbar">
       <Logo />
@@ -182,7 +182,7 @@ export default function App() {
       ? <AccountPage />
       : path === '/clenstvo' || path === '/clenstvo/'
         ? <MembershipPage />
-        : path === '/o-nas' || path === '/o-nas/'
+        : path === aboutPath || path === `${aboutPath}/`
           ? <AboutRoute />
         : path === '/spolupraca' || path === '/spolupraca/'
           ? <CollaborationPage />

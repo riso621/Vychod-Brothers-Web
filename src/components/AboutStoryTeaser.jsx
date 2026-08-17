@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import CtaButton from './CtaButton'
+import { aboutPath } from '../data'
 
 const reveal = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: .75, ease: [.2, .7, .2, 1] } } }
 
@@ -12,7 +13,7 @@ export default function AboutStoryTeaser() {
       <span>ODKIAĽ SME PRIŠLI</span>
       <h2 id="about-teaser-title">Začalo to<br /><em>jedným videom.</em></h2>
       <p>Bez scenára. Bez veľkého plánu. Jeden telefón, dedo, vnuk a nápad, ktorý mal byť iba pre zábavu. O pár hodín neskôr sme začínali chápať, že možno vzniká niečo väčšie.</p>
-      <CtaButton href="/o-nas" icon="play" label="SPOZNAJ NÁŠ PRÍBEH" />
+      <CtaButton href={aboutPath} icon="play" label="SPOZNAJ NÁŠ PRÍBEH" />
     </motion.div>
   </motion.section>
 }
