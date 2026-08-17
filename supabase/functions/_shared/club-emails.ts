@@ -14,6 +14,15 @@ export function assertWelcomeEmailCopy(html:string){
   if(headline!==welcomeThankYou||!text.includes(welcomeThankYou)||forbiddenWelcomeCopy.some((copy)=>text.includes(copy)))throw new Error('Welcome email copy validation failed')
 }
 
+export function assertNewVideoEmailPayload(html:string,input:TemplateInput){
+  const title=esc(input.title||'Nové členské video')
+  const videoUrl=esc(input.videoUrl||'')
+  const thumbnailUrl=input.thumbnailUrl?esc(input.thumbnailUrl):null
+  if(!html.includes(title)||!html.includes('NOVÉ VIDEO')||!html.includes('PRÁVE<br>PRISTÁLO.'))throw new Error('New video email content validation failed')
+  if(videoUrl&&!html.includes(videoUrl))throw new Error('New video email CTA validation failed')
+  if(thumbnailUrl&&!html.includes(thumbnailUrl))throw new Error('New video email thumbnail validation failed')
+}
+
 const socialLinks=[
   {label:'YouTube',short:'YT',url:'https://www.youtube.com/@Vychodbrothers1'},
   {label:'Instagram',short:'IG',url:'https://www.instagram.com/vychodbrothers/'},
@@ -45,6 +54,28 @@ const footer=(site:string)=>`<tr><td class="pad-x" style="padding:19px 34px 22px
   <p style="margin:8px 0 0"><a href="${esc(site)}/account" style="color:#dcd600;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
 </td></tr>`
 
+const newVideoHeader=()=>`<tr><td class="drop-pad" style="padding:18px 34px 11px">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>
+    <td width="25%" style="border-top:1px solid #8f8900;font-size:1px;line-height:1px">&nbsp;</td>
+    <td align="center" style="padding:0 13px;color:#f1f1ea;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;letter-spacing:3.8px;white-space:nowrap">VÝCHOD BROTHERS CLUB</td>
+    <td width="25%" style="border-top:1px solid #8f8900;font-size:1px;line-height:1px">&nbsp;</td>
+  </tr></table>
+  <div style="padding-top:10px;text-align:center;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:25px;font-weight:900;line-height:1;text-shadow:0 0 12px #8e8900">VB</div>
+</td></tr>`
+
+const newVideoCta=(url:string)=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td bgcolor="#f1e900" style="border:2px solid #fff72a;border-radius:7px;box-shadow:0 0 18px #8a8500">
+  <a href="${esc(url)}" style="display:block;padding:17px 18px;color:#050605;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;letter-spacing:2.2px;line-height:1.2;text-align:center;text-decoration:none">POZRIEŤ VIDEO &nbsp;→</a>
+</td></tr></table>`
+
+const newVideoSocialRow=()=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 6px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:38px;height:38px;border:1px solid #d8d100;border-radius:50%;box-shadow:0 0 9px #555100;color:#f1e900;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:900;line-height:38px;text-align:center;text-decoration:none">${item.short}</a></td>`).join('')}</tr></table>`
+
+const newVideoFooter=(site:string)=>`<tr><td class="drop-pad" style="padding:20px 34px 24px;border-top:1px solid #383600;text-align:center">
+  ${newVideoSocialRow()}
+  <div style="margin-top:15px;color:#a8a9a2;font-family:Arial,Helvetica,sans-serif;font-size:8px;letter-spacing:4px">VÝCHOD BROTHERS CLUB</div>
+  <p style="margin:9px 0 0;color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.5">Tento e-mail posiela Východ Brothers Club.<br>Obsahové notifikácie spravuješ v nastaveniach účtu.</p>
+  <p style="margin:7px 0 0"><a href="${esc(site)}/account" style="color:#e7e000;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
+</td></tr>`
+
 const benefits=[
   ['▷','VŠETKY ČLENSKÉ VIDEÁ','Exkluzívny obsah iba pre členov'],
   ['☆','ZÁKULISIE A BONUSY','Obsah, ktorý na YouTube nenájdeš'],
@@ -66,7 +97,9 @@ export function renderClubEmail(input:TemplateInput){
   const cleanedName=input.name?.trim()
   const hasNaturalName=Boolean(cleanedName&&!/^člen$/i.test(cleanedName))
   const greeting=hasNaturalName?`Ahoj, <span style="color:#f1e900">${esc(cleanedName!)}</span>.`:'Vitaj medzi nami.'
-  const responsive=`<style>@media only screen and (max-width:620px){.outer{padding:0!important}.shell{border-left:0!important;border-right:0!important}.pad-x{padding-left:20px!important;padding-right:20px!important}.hero-title{font-size:43px!important;letter-spacing:-2px!important}.watermark{font-size:62px!important}.benefit-wrap{padding:15px 10px 13px!important}.benefit-cell{padding-left:5px!important;padding-right:5px!important}.benefit-copy{display:none!important}.video-title{font-size:27px!important}.thank-title{font-size:21px!important}.cta-table{width:100%!important}.cta-table a{box-sizing:border-box!important;min-width:0!important;width:100%!important}}</style>`
+  const welcomeResponsive=`<style>@media only screen and (max-width:620px){.outer{padding:0!important}.shell{border-left:0!important;border-right:0!important}.pad-x{padding-left:20px!important;padding-right:20px!important}.hero-title{font-size:43px!important;letter-spacing:-2px!important}.watermark{font-size:62px!important}.benefit-wrap{padding:15px 10px 13px!important}.benefit-cell{padding-left:5px!important;padding-right:5px!important}.benefit-copy{display:none!important}.video-title{font-size:27px!important}.thank-title{font-size:21px!important}.cta-table{width:100%!important}.cta-table a{box-sizing:border-box!important;min-width:0!important;width:100%!important}}</style>`
+  const newVideoResponsive=`<style>@media only screen and (max-width:620px){.outer{padding:0!important}.shell{border-left:0!important;border-right:0!important}.video-title{font-size:27px!important}.drop-pad{padding-left:18px!important;padding-right:18px!important}.drop-title{font-size:43px!important;letter-spacing:-2px!important}.drop-meta{font-size:8px!important;letter-spacing:1.25px!important}.drop-shell{border-left:0!important;border-right:0!important}}</style>`
+  const responsive=isWelcome?welcomeResponsive:newVideoResponsive
   const welcomeContent=`
     <tr><td class="pad-x" style="padding:10px 34px 18px">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td valign="middle"><h1 class="hero-title" style="margin:0;color:#f5f4ed;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:56px;font-weight:900;letter-spacing:-2.5px;line-height:.86">VITAJ<br><span style="color:#f1e900">V CLUBE.</span></h1></td><td class="watermark" width="30%" align="right" valign="middle" style="color:#11120d;font-family:Arial Black,Arial,sans-serif;font-size:76px;font-weight:900;line-height:.72">VB</td></tr></table>
@@ -86,17 +119,23 @@ export function renderClubEmail(input:TemplateInput){
     </td></tr></table></td></tr>`
   const safeTitle=esc(input.title||'Nové členské video')
   const description=excerpt(input.description)
+  const supabaseUrl=(Deno.env.get('SUPABASE_URL')||'').replace(/\/$/,'')
+  const dropBackground=supabaseUrl?`${supabaseUrl}/functions/v1/club-email-assets`:''
   const newVideoContent=`
-    <tr><td class="pad-x" style="padding:16px 34px 8px"><div style="color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:2.2px">NOVÉ V CLUBE</div><h1 class="hero-title" style="margin:10px 0 0;color:#f5f4ed;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:45px;font-weight:900;letter-spacing:-2px;line-height:.9">NOVÉ VIDEO<br><span style="color:#f1e900">PRÁVE PRISTÁLO.</span></h1><div style="width:120px;height:3px;margin:14px 0 0;background:#f1e900"></div></td></tr>
-    <tr><td class="pad-x" style="padding:16px 34px 25px">
-      ${input.thumbnailUrl?`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #4b4900;border-radius:8px"><tr><td><img src="${esc(input.thumbnailUrl)}" width="596" alt="${safeTitle}" style="display:block;width:100%;height:auto;border:0;border-radius:7px"></td></tr></table>`:'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #34352f;background:#111210"><tr><td align="center" style="padding:58px 20px;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:38px">VB</td></tr></table>'}
-      <div style="margin-top:18px;color:#f1e900;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;letter-spacing:2px">ORIGINÁLNA TVORBA • BONUSY • PREMIÉRY</div>
-      <h2 class="video-title" style="margin:8px 0 0;color:#f5f4ed;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:31px;font-weight:900;line-height:1.06">${safeTitle}</h2>
-      ${description?`<p style="margin:10px 0 0;color:#b9bab2;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55">${esc(description)}</p>`:''}
-      <div style="padding-top:20px">${cta(ctaUrl,'POZRIEŤ VIDEO')}</div>
+    <tr><td class="drop-pad" style="padding:15px 34px 8px"><div style="color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:3px">NOVÉ V CLUBE</div><h1 class="drop-title" style="margin:10px 0 0;color:#f7f6ef;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:54px;font-weight:900;letter-spacing:-2.6px;line-height:.83">NOVÉ VIDEO<br><span style="color:#f1e900">PRÁVE<br>PRISTÁLO.</span></h1><div style="width:185px;height:3px;margin:16px 0 1px;background:#f1e900;box-shadow:0 0 10px #b6b000"></div></td></tr>
+    <tr><td class="drop-pad" style="padding:18px 34px 27px">
+      ${input.thumbnailUrl?`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#f1e900" style="border:2px solid #fff727;border-radius:9px;box-shadow:0 0 20px #8d8700"><tr><td style="padding:3px"><img src="${esc(input.thumbnailUrl)}" width="590" alt="${safeTitle}" style="display:block;width:100%;height:auto;border:0;border-radius:5px"></td></tr></table>`:'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid #f1e900;border-radius:9px;background:#111210;box-shadow:0 0 20px #6d6800"><tr><td align="center" style="padding:62px 20px;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:42px">VB</td></tr></table>'}
+      <div class="drop-meta" style="margin-top:19px;color:#f3f2eb;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;letter-spacing:2.1px;white-space:nowrap"><span style="color:#f1e900">ϟ</span>&nbsp; ORIGINÁLNA TVORBA &nbsp;|&nbsp; <span style="color:#f1e900">□</span>&nbsp; BONUSY &nbsp;|&nbsp; <span style="color:#f1e900">☆</span>&nbsp; PREMIÉRY</div>
+      <h2 class="video-title" style="margin:10px 0 0;color:#f8f7f0;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:32px;font-weight:900;line-height:1.06">${safeTitle}</h2>
+      ${description?`<p style="margin:9px 0 0;color:#d0d1c9;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55">${esc(description)}</p>`:''}
+      <div style="padding-top:21px">${newVideoCta(ctaUrl)}</div>
     </td></tr>`
-  const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">${responsive}</head><body style="margin:0;padding:0;background:#050605;color:#f6f5ef"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preview)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050605"><tr><td class="outer" align="center" style="padding:24px 10px"><table role="presentation" class="shell" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;border:1px solid #292a25;background:#090a09">${brandHeader()}${isWelcome?welcomeContent:newVideoContent}${footer(site)}</table></td></tr></table></body></html>`
+  const welcomeShell=`<table role="presentation" class="shell" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;border:1px solid #292a25;background:#090a09">${brandHeader()}${welcomeContent}${footer(site)}</table>`
+  const dropBackgroundAttrs=dropBackground?` background="${esc(dropBackground)}" style="max-width:680px;border:1px solid #514e00;background-color:#080908;background-image:url('${esc(dropBackground)}');background-position:top center;background-repeat:repeat-y;background-size:680px auto"`:' style="max-width:680px;border:1px solid #514e00;background:#080908"'
+  const newVideoShell=`<table role="presentation" class="shell drop-shell" width="100%" cellspacing="0" cellpadding="0"${dropBackgroundAttrs}>${newVideoHeader()}${newVideoContent}${newVideoFooter(site)}</table>`
+  const html=`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">${responsive}</head><body style="margin:0;padding:0;background:#050605;color:#f6f5ef"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preview)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050605"><tr><td class="outer" align="center" style="padding:24px 10px">${isWelcome?welcomeShell:newVideoShell}</td></tr></table></body></html>`
   if(isWelcome)assertWelcomeEmailCopy(html)
+  else assertNewVideoEmailPayload(html,input)
   const text=isWelcome?`VITAJ V CLUBE.\n\nTvoje členstvo je aktívne. Od tejto chvíle máš prístup ku všetkému členskému obsahu Východ Brothers.\n\nPozrieť členské videá: ${ctaUrl}\n\nĎakujeme, že nás podporuješ.\nVýchod Brothers`
     :`NOVÉ VIDEO PRÁVE PRISTÁLO.\n\n${input.title||'Nové členské video'}\n${excerpt(input.description)}\n\nPozrieť video: ${ctaUrl}`
   return {subject,preview,html,text}
