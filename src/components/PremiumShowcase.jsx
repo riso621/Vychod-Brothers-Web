@@ -113,6 +113,6 @@ export default function PremiumShowcase({ videos, thumbnailUrls, profile, sessio
         ? <InlineTrailerFeature video={selectedVideo} thumbnailUrl={selectedThumbnail} membershipHref={membershipHref} />
         : <FeaturedPoster video={selectedVideo} thumbnailUrl={selectedThumbnail} unlocked={unlocked} membershipHref={membershipHref} />}
     </div>
-    <MemberVideoRail videos={videos} selectedId={selectedVideo.id} thumbnailUrls={thumbnailUrls} onSelect={setSelectedId} />
+    <MemberVideoRail videos={videos.filter((video) => video.id !== selectedVideo.id)} selectedId={selectedVideo.id} thumbnailUrls={thumbnailUrls} onSelect={setSelectedId} />
   </section>
 }
