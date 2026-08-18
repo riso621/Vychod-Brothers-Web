@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { aboutPath, activeSocialProfiles, media, navItems, socialProfiles, stats } from './data'
+import { aboutPath, media, navItems, socialProfiles, stats } from './data'
 import NewsletterSection from './components/NewsletterSection'
 import Footer from './components/Footer'
 import { useProfile } from './context/profile-context'
@@ -63,10 +63,6 @@ function Header() {
       <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
     </header>
   )
-}
-
-function SideRail() {
-  return <aside className="side-rail" aria-label="Sociálne siete"><div className="socials">{activeSocialProfiles.map((profile) => <a href={profile.url} target="_blank" rel="noreferrer" aria-label={profile.label} title={profile.name} key={profile.id}>{profile.icon}</a>)}</div><span className="vertical">VÝCHOD BROTHERS</span><span className="plus">+</span><a className="scroll" href="#videa">↓ <small>SCROLL</small></a></aside>
 }
 
 function FilmStrip() {
@@ -138,7 +134,7 @@ function HomePage() {
   }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><Suspense fallback={null}><AboutStoryTeaser /></Suspense><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><main className="site-shell"><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><Suspense fallback={null}><AboutStoryTeaser /></Suspense><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {
