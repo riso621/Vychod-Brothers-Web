@@ -8,6 +8,7 @@ import { isActiveClubMember } from './lib/membership'
 import { useSiteContent } from './hooks/useSiteContent'
 import CtaButton from './components/CtaButton'
 import ClubCommunityCard from './components/ClubCommunityCard'
+import PublicCinematicBackground from './components/PublicCinematicBackground'
 import { getHomepageCounts } from './lib/homepage-counts'
 import { formatSocialCount } from './lib/social-stats'
 import { useSocialStats } from './hooks/useSocialStats'
@@ -137,7 +138,7 @@ function HomePage() {
   }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><div className="ambient-light one" /><div className="ambient-light two" /><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><Suspense fallback={null}><AboutStoryTeaser /></Suspense><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><SideRail /><main className="site-shell"><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><Suspense fallback={null}><AboutStoryTeaser /></Suspense><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
 function VideosPage({ slug }) {
@@ -191,5 +192,5 @@ export default function App() {
           : path === '/auth/callback' || path === '/auth/callback/'
             ? <AuthFlowPage type="callback" />
         : <HomePage />
-  return <Suspense fallback={null}><ProfileProvider><WatchHistoryProvider><AnalyticsTracker />{page}</WatchHistoryProvider></ProfileProvider></Suspense>
+  return <Suspense fallback={null}><PublicCinematicBackground /><ProfileProvider><WatchHistoryProvider><AnalyticsTracker />{page}</WatchHistoryProvider></ProfileProvider></Suspense>
 }
