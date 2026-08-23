@@ -676,6 +676,13 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 .cinematic-glow{position:absolute;width:48vw;height:74vh;border-radius:50%;filter:blur(42px);will-change:transform,opacity;background:radial-gradient(ellipse,rgba(255,192,12,.38),rgba(176,126,6,.16) 35%,transparent 70%);animation:cinematic-glow-breathe 23s ease-in-out infinite alternate}.cinematic-glow--left{left:-23vw;top:2vh}.cinematic-glow--right{right:-23vw;bottom:-3vh;animation-duration:29s;animation-direction:alternate-reverse}
 .cinematic-pulse{position:absolute;inset:-8%;opacity:.32;background:radial-gradient(circle at 8% 58%,rgba(255,200,26,.3),transparent 18%),radial-gradient(circle at 92% 31%,rgba(255,187,11,.27),transparent 19%),radial-gradient(ellipse at 50% 90%,rgba(133,118,34,.12),transparent 35%);animation:cinematic-light-pulse 17s ease-in-out infinite}
 .cinematic-backdrop~main,.cinematic-backdrop~div>main,#root>main{position:relative;z-index:10}
+.cinematic-backdrop~.site-shell,
+.cinematic-backdrop~.videos-page,
+.cinematic-backdrop~.membership-page,
+.cinematic-backdrop~.account-page,
+.cinematic-backdrop~.checkout-page,
+.cinematic-backdrop~.collaboration-page,
+.cinematic-backdrop~.about-page{position:relative;z-index:10}
 .cinematic-backdrop~.site-shell:has(> .hero){width:100%;max-width:none;margin-left:0;background:linear-gradient(180deg,rgba(5,7,6,.12),rgba(5,7,6,.035) 48%,rgba(6,8,7,.11));box-shadow:none}
 .cinematic-backdrop~.site-shell:has(> .hero)>.hero{background:transparent}
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-smoke,.cinematic-backdrop~.site-shell:has(> .hero) .hero:after,.cinematic-backdrop~.site-shell:has(> .hero) .neon-mark{display:none}
@@ -693,16 +700,16 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 @media(prefers-reduced-motion:reduce){.cinematic-haze,.cinematic-smoke,.cinematic-beams,.cinematic-glow,.cinematic-pulse{animation:none;will-change:auto}.cinematic-haze--left{transform:translate3d(7vmax,5vmax,0)}.cinematic-haze--right{transform:translate3d(-5vmax,-4vmax,0)}}
 
 /* Final reference-matched public atmosphere */
-.cinematic-backdrop{background:radial-gradient(ellipse at 53% 12%,rgba(70,42,0,.11),transparent 25%),radial-gradient(ellipse at 50% 91%,rgba(46,31,0,.07),transparent 32%),linear-gradient(145deg,#010101,#050504 48%,#010101)}
-.cinematic-backdrop:before{inset:-8%;background:radial-gradient(ellipse at -2% 31%,rgba(240,164,0,.22),transparent 15%),radial-gradient(ellipse at 102% 32%,rgba(235,150,0,.24),transparent 16%),radial-gradient(circle at 56% 15%,rgba(183,109,0,.1),transparent 16%),radial-gradient(ellipse at 49% 77%,rgba(64,43,3,.08),transparent 27%)}
+.cinematic-backdrop{background:radial-gradient(ellipse at 54% 13%,rgba(63,29,0,.075),transparent 23%),radial-gradient(ellipse at 50% 91%,rgba(43,20,0,.045),transparent 28%),linear-gradient(145deg,#010101,#050505 48%,#010101)}
+.cinematic-backdrop:before{inset:-8%;background:radial-gradient(ellipse at -2% 31%,rgba(235,118,0,.13),transparent 14%),radial-gradient(ellipse at 102% 32%,rgba(235,108,0,.15),transparent 15%),radial-gradient(circle at 57% 17%,rgba(205,101,0,.07),transparent 14%),radial-gradient(ellipse at 49% 77%,rgba(50,21,0,.045),transparent 24%)}
 .cinematic-atmosphere{opacity:1;mask-image:none}
-.cinematic-energy{opacity:1;filter:brightness(1.82) saturate(1.24) drop-shadow(0 0 10px rgba(255,177,0,.36));mask-image:none}
-.cinematic-haze{filter:blur(52px);background:radial-gradient(circle,rgba(232,151,2,.18),rgba(126,76,0,.1) 20%,rgba(42,30,3,.06) 38%,transparent 62%)}
+.cinematic-energy{opacity:1;filter:drop-shadow(0 0 12px rgba(255,136,0,.28));mask-image:none}
+.cinematic-haze{filter:blur(58px);background:radial-gradient(circle,rgba(232,117,0,.105),rgba(119,51,0,.055) 18%,rgba(36,15,0,.025) 34%,transparent 58%)}
 .cinematic-smoke{opacity:.88;filter:blur(56px);background:radial-gradient(ellipse at 13% 25%,rgba(108,104,91,.14),transparent 18%),radial-gradient(ellipse at 77% 17%,rgba(104,99,80,.14),transparent 21%),radial-gradient(ellipse at 51% 74%,rgba(91,86,70,.13),transparent 25%),radial-gradient(ellipse at 89% 69%,rgba(89,76,49,.1),transparent 20%)}
 .cinematic-beams{opacity:.48;background:linear-gradient(112deg,transparent 21%,rgba(255,199,44,.14) 36%,transparent 48%),linear-gradient(70deg,transparent 54%,rgba(255,187,28,.13) 65%,transparent 76%)}
-.cinematic-glow{width:34vw;height:58vh;filter:blur(58px);background:radial-gradient(ellipse,rgba(246,153,0,.31),rgba(139,81,0,.12) 29%,transparent 66%)}
+.cinematic-glow{width:30vw;height:51vh;filter:blur(62px);background:radial-gradient(ellipse,rgba(246,128,0,.17),rgba(122,50,0,.055) 27%,transparent 62%)}
 .cinematic-pulse{opacity:.37;background:radial-gradient(circle at 2% 57%,rgba(255,188,17,.38),transparent 12%),radial-gradient(circle at 98% 29%,rgba(255,170,2,.36),transparent 13%),radial-gradient(circle at 55% 15%,rgba(240,157,2,.18),transparent 14%),radial-gradient(ellipse at 50% 88%,rgba(118,78,5,.1),transparent 28%)}
-.cinematic-hero-halo{position:absolute;left:37%;top:6%;width:44%;height:48%;border-radius:48%;opacity:0;filter:blur(18px);background:radial-gradient(circle at 36% 25%,rgba(255,227,124,.72),rgba(245,166,5,.3) 10%,transparent 23%),radial-gradient(circle at 52% 21%,rgba(255,219,91,.78),rgba(236,148,0,.3) 11%,transparent 24%),radial-gradient(circle at 68% 28%,rgba(255,218,94,.7),rgba(232,142,0,.28) 10%,transparent 23%),radial-gradient(ellipse at 52% 43%,rgba(245,162,3,.25),rgba(122,70,0,.07) 32%,transparent 55%);animation:cinematic-halo-breathe 14s ease-in-out infinite;will-change:transform,opacity}
+.cinematic-hero-halo{position:absolute;left:38%;top:5%;width:42%;height:47%;border-radius:48%;opacity:0;filter:blur(16px);background:radial-gradient(circle at 34% 25%,rgba(255,238,157,.82),rgba(255,161,0,.34) 9%,transparent 20%),radial-gradient(circle at 52% 20%,rgba(255,228,119,.88),rgba(248,139,0,.38) 10%,transparent 21%),radial-gradient(circle at 70% 28%,rgba(255,226,119,.8),rgba(245,135,0,.34) 9%,transparent 20%),radial-gradient(circle at 44% 39%,rgba(255,175,8,.3),transparent 24%),radial-gradient(circle at 63% 42%,rgba(255,159,0,.27),transparent 23%),radial-gradient(ellipse at 52% 43%,rgba(230,119,0,.15),rgba(99,41,0,.04) 29%,transparent 49%);animation:cinematic-halo-breathe 14s ease-in-out infinite;will-change:transform,opacity}
 body:has(.site-shell>.hero) .cinematic-hero-halo{opacity:1}
 .cinematic-body-smoke{position:absolute;left:30%;top:42%;width:60%;height:38%;opacity:0;filter:blur(25px);background:radial-gradient(ellipse at 52% 62%,rgba(1,2,2,.92),rgba(4,4,3,.74) 34%,rgba(91,61,4,.11) 56%,transparent 72%);animation:cinematic-smoke-shift 31s ease-in-out infinite alternate}
 body:has(.site-shell>.hero) .cinematic-body-smoke{opacity:.9}
