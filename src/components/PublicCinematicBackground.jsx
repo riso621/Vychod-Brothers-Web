@@ -67,11 +67,11 @@ export default function PublicCinematicBackground() {
       canvas.style.height = `${height}px`
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
       bolts = [
-        ...Array.from({ length: mobile ? 4 : 7 }, (_, index) => createBolt(width, height, 'left', 1103 + index * 739)),
-        ...Array.from({ length: mobile ? 4 : 7 }, (_, index) => createBolt(width, height, 'right', 4909 + index * 887)),
+        ...Array.from({ length: mobile ? 3 : 4 }, (_, index) => createBolt(width, height, 'left', 1103 + index * 739)),
+        ...Array.from({ length: mobile ? 3 : 4 }, (_, index) => createBolt(width, height, 'right', 4909 + index * 887)),
       ]
       const random = randomFrom(27183)
-      particles = Array.from({ length: mobile ? 56 : 154 }, () => {
+      particles = Array.from({ length: mobile ? 42 : 112 }, () => {
         const spark = random() > .82
         return {
           x: random() * width,
@@ -100,13 +100,13 @@ export default function PublicCinematicBackground() {
         context.save()
         context.lineCap = 'round'
         context.lineJoin = 'round'
-        context.strokeStyle = `rgba(245, 197, 18, ${pulse * .84})`
-        context.lineWidth = 1.02
+        context.strokeStyle = `rgba(245, 197, 18, ${pulse * .48})`
+        context.lineWidth = .7
         context.shadowColor = 'rgba(255, 190, 8, .9)'
-        context.shadowBlur = 14 + pulse * 22
+        context.shadowBlur = 10 + pulse * 16
         strokePath(context, bolt.points)
-        context.strokeStyle = `rgba(255, 223, 82, ${pulse * .5})`
-        context.lineWidth = .66
+        context.strokeStyle = `rgba(255, 223, 82, ${pulse * .24})`
+        context.lineWidth = .45
         bolt.branches.forEach((branch) => strokePath(context, branch))
 
         if (!motionPreference.matches && index % 2 === 0) {
