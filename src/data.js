@@ -1,5 +1,5 @@
 export const media = {
-  hero: '/images/team/vychod-brothers-team-cutout.webp',
+  hero: '/images/team/vychod-brothers-team-cutout-clean.png',
   film: [
     '/images/team/vychod-brothers-team-evening.webp',
     '/images/team/vychod-brothers-team-day.webp',

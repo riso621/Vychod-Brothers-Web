@@ -814,4 +814,74 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
 @media(prefers-reduced-motion:reduce){
   .cinematic-smoke,.cinematic-hero-halo,.cinematic-body-smoke{animation:none;transform:none}
 }
+
+/* Homepage cinematic continuity and team integration. */
+.cinematic-backdrop~.site-shell:has(> .hero) .hero>.topbar{
+  background:none;
+  border-bottom-color:transparent;
+  backdrop-filter:none;
+  box-shadow:none;
+}
+.cinematic-hero-halo{
+  isolation:isolate;
+  background:
+    radial-gradient(ellipse at 29% 31%,rgba(255,211,86,.31),transparent 19%),
+    radial-gradient(ellipse at 50% 25%,rgba(255,188,31,.37),transparent 21%),
+    radial-gradient(ellipse at 72% 33%,rgba(255,202,61,.3),transparent 19%),
+    radial-gradient(ellipse at 51% 48%,rgba(224,117,0,.16),transparent 48%);
+}
+.cinematic-hero-halo::before,
+.cinematic-hero-halo::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  will-change:transform,opacity;
+}
+.cinematic-hero-halo::before{
+  inset:4% 2% 10%;
+  opacity:calc(.4 + var(--halo-energy));
+  background:
+    radial-gradient(ellipse at 25% 33%,rgba(255,191,42,.4),transparent 15%),
+    radial-gradient(ellipse at 47% 24%,rgba(255,224,119,.45),transparent 14%),
+    radial-gradient(ellipse at 69% 34%,rgba(255,181,29,.38),transparent 15%),
+    radial-gradient(ellipse at 36% 65%,rgba(182,83,0,.22),transparent 24%),
+    radial-gradient(ellipse at 67% 66%,rgba(203,102,0,.2),transparent 23%);
+  animation:cinematic-plasma-breathe 15s ease-in-out infinite alternate;
+}
+.cinematic-hero-halo::after{
+  inset:18% 7% 0;
+  opacity:calc(.3 + var(--halo-energy));
+  background:
+    radial-gradient(ellipse at 20% 43%,rgba(255,154,10,.28),transparent 21%),
+    radial-gradient(ellipse at 52% 51%,rgba(255,191,45,.23),transparent 27%),
+    radial-gradient(ellipse at 81% 42%,rgba(255,145,0,.25),transparent 20%);
+  animation:cinematic-plasma-breathe 19s ease-in-out infinite alternate-reverse;
+}
+.cinematic-body-smoke{
+  background:
+    radial-gradient(ellipse at 31% 35%,rgba(218,116,4,.16),transparent 25%),
+    radial-gradient(ellipse at 55% 39%,rgba(255,166,19,.13),transparent 30%),
+    radial-gradient(ellipse at 78% 36%,rgba(196,88,0,.15),transparent 24%),
+    radial-gradient(ellipse at 52% 68%,rgba(1,2,2,.94),rgba(3,3,3,.68) 40%,transparent 75%);
+}
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-photo{
+  right:4%;
+  filter:saturate(.9) contrast(1.08) brightness(.98) drop-shadow(0 0 9px rgba(255,168,17,.31)) drop-shadow(0 0 23px rgba(202,94,0,.17));
+}
+@keyframes cinematic-plasma-breathe{
+  0%{transform:translate3d(-1.5%,1%,0) scale(.985);opacity:.36}
+  48%{transform:translate3d(1%,-1.5%,0) scale(1.025);opacity:.51}
+  100%{transform:translate3d(2%,1%,0) scale(1.045);opacity:.41}
+}
+@media(max-width:720px){
+  .cinematic-backdrop~.site-shell:has(> .hero) .hero-photo{
+    inset:7% 1% -4% 3%;
+    background-position:52% bottom;
+    filter:saturate(.88) contrast(1.06) brightness(.93) drop-shadow(0 0 8px rgba(255,166,19,.28));
+  }
+  .cinematic-hero-halo{left:10%;width:88%}
+}
+@media(prefers-reduced-motion:reduce){
+  .cinematic-hero-halo::before,.cinematic-hero-halo::after{animation:none;transform:none}
+}
 .video-trailer-preview{display:grid;gap:1.2rem}.video-trailer-preview>header span,.video-trailer-cta span{color:var(--yellow);font-size:.72rem;font-weight:800;letter-spacing:.16em}.video-trailer-preview>header h2,.video-trailer-cta h2{margin:.35rem 0;font:800 clamp(1.35rem,2.4vw,2.2rem)/1 var(--display-font,inherit);text-transform:uppercase}.video-trailer-preview>header p{max-width:62ch;margin:0;color:#aaa}.video-trailer-cta{display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:clamp(1.25rem,3vw,2rem);border:1px solid rgba(227,220,0,.25);border-radius:18px;background:radial-gradient(circle at 85% 20%,rgba(227,220,0,.1),transparent 40%),#0d0e0e;box-shadow:0 16px 46px rgba(0,0,0,.32)}.video-trailer-cta p{margin:.4rem 0;color:#d8d6cd}.video-trailer-cta small{color:#8d8d86}.video-trailer-cta>a{flex:0 0 auto;padding:1rem 1.25rem;border-radius:10px;background:var(--yellow);color:#080808;font-weight:900;text-align:center;transition:transform .2s ease,filter .2s ease}.video-trailer-cta>a:hover,.video-trailer-cta>a:focus-visible{transform:translateY(-2px);filter:brightness(1.07)}@media(max-width:640px){.video-trailer-cta{align-items:stretch;flex-direction:column;gap:1rem}.video-trailer-cta>a{width:100%}}
