@@ -8,7 +8,7 @@ export default function AboutStoryTeaser() {
   const reduceMotion = useReducedMotion()
   return <motion.section className="about-teaser" aria-labelledby="about-teaser-title" initial={reduceMotion ? false : 'hidden'} whileInView="visible" viewport={{ once: true, amount: .22 }} transition={{ staggerChildren: .1 }}>
     <div className="about-teaser-watermark" aria-hidden="true">VÝCHOD<br />BROTHERS</div>
-    <motion.div className="about-teaser-image" variants={reveal} aria-hidden="true"><img src="/images/team/vychod-brothers-team-evening.webp" alt="" loading="lazy" decoding="async" /></motion.div>
+    <motion.div className="about-teaser-image" variants={reveal} aria-hidden="true"><img src="/images/team/vychod-brothers-team-authentic.webp" alt="" loading="lazy" decoding="async" /></motion.div>
     <motion.div className="about-teaser-copy" variants={reveal}>
       <span>ODKIAĽ SME PRIŠLI</span>
       <h2 id="about-teaser-title">Začalo to<br /><em>jedným videom.</em></h2>

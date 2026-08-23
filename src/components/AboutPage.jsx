@@ -45,7 +45,7 @@ export default function AboutPage() {
         <p>Humor bol medzi nami odjakživa. Rozprávali sme si príhody z domu, napodobňovali rodičov a starých rodičov a smiali sa na situáciách, ktoré podľa nás pozná skoro každá rodina na východe Slovenska.</p>
       </Chapter>
 
-      <section className="story-visual-break"><img src="/images/team/vychod-brothers-team-day.webp" alt="Východ Brothers počas spoločného dňa" loading="lazy" decoding="async" /><Reveal><span>DAVID • IVAN • RIŠO</span><strong>Najprv kamaráti.<br />Časom ako bratia.</strong></Reveal></section>
+      <section className="story-visual-break"><img src="/images/team/vychod-brothers-team-authentic.webp" alt="David, Ivan a Rišo – Východ Brothers" loading="lazy" decoding="async" /><Reveal><span>DAVID • IVAN • RIŠO</span><strong>Najprv kamaráti.<br />Časom ako bratia.</strong></Reveal></section>
 
       <Chapter number={2} eyebrow="JEDEN OBYČAJNÝ DEŇ" title={<>Poďme natočiť<br /><em>niečo spolu.</em></>}>
         <p>Počas jedného z úplne obyčajných dní vznikol nápad skúsiť spoločné video.</p><p>Zavreli sme sa s telefónom do izby a začali improvizovať.</p><p>Rišo sa zahral na deda. David na vnuka.</p><p>Nápad bol jednoduchý a veľmi náš – vnuk má frajerku a dedo samozrejme potrebuje vedieť to najdôležitejšie:</p>
@@ -96,7 +96,7 @@ export default function AboutPage() {
 
       <Chapter number={7} eyebrow="KTO SME DNES" title={<>Sme<br /><em>Východ Brothers.</em></>} className="is-identity">
         <strong className="story-names">DAVID • IVAN • RIŠO</strong>
-        <figure className="story-today-portrait"><img src="/images/team/vychod-brothers-team-evening.webp" alt="David, Ivan a Rišo – Východ Brothers dnes" width="1536" height="2048" loading="lazy" decoding="async" /><figcaption><span>VÝCHOD BROTHERS • DNES</span><strong>DAVID • IVAN • RIŠO</strong></figcaption></figure>
+        <figure className="story-today-portrait"><img src="/images/team/vychod-brothers-team-authentic.webp" alt="David, Ivan a Rišo – Východ Brothers dnes" width="1920" height="2880" loading="lazy" decoding="async" /><figcaption><span>VÝCHOD BROTHERS • DNES</span><strong>DAVID • IVAN • RIŠO</strong></figcaption></figure>
         <p>Traja chalani, ktorých spojilo kamarátstvo, humor a východ Slovenska.</p><p>Za tie roky nebolo všetko dokonalé.</p><p>Pohádali sme sa. Urobili sme chyby. Niektoré videá uspeli, iné vôbec. Stretli sme ľudí, ktorí nám pomohli, ale aj takých, ktorí sa nás snažili oklamať. Boli chvíle, keď veci nešli podľa predstáv.</p><p>Jedna vec sa však nezmenila:</p><strong className="story-statement">NEVZDALI SME SA.</strong>
       </Chapter>
 
