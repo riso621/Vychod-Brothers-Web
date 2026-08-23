@@ -11,7 +11,7 @@ function randomFrom(seed) {
   }
 }
 
-function displaceLine(start, end, depth, roughness, random) {
+function displacedLine(start, end, depth, roughness, random) {
   if (depth === 0) return [start, end]
   const dx = end.x - start.x
   const dy = end.y - start.y
@@ -20,71 +20,134 @@ function displaceLine(start, end, depth, roughness, random) {
     x: (start.x + end.x) / 2 - dy / length * (random() - .5) * roughness,
     y: (start.y + end.y) / 2 + dx / length * (random() - .5) * roughness,
   }
-  const left = displaceLine(start, midpoint, depth - 1, roughness * .55, random)
-  const right = displaceLine(midpoint, end, depth - 1, roughness * .55, random)
+  const left = displacedLine(start, midpoint, depth - 1, roughness * .53, random)
+  const right = displacedLine(midpoint, end, depth - 1, roughness * .53, random)
   return [...left.slice(0, -1), ...right]
 }
 
-function createLightning(width, height, position, seed) {
+function createBolt(width, height, placement, seed) {
   const random = randomFrom(seed)
   let start
   let end
-  if (position === 'left') {
-    start = { x: width * (-.015 + random() * .075), y: height * (-.04 + random() * .18) }
-    end = { x: width * (.015 + random() * .12), y: height * (.58 + random() * .46) }
-  } else if (position === 'right') {
-    start = { x: width * (1.015 - random() * .075), y: height * (-.04 + random() * .18) }
-    end = { x: width * (.985 - random() * .12), y: height * (.58 + random() * .46) }
+  if (placement === 'left') {
+    start = { x: width * (-.01 + random() * .06), y: height * (-.02 + random() * .12) }
+    end = { x: width * (.035 + random() * .09), y: height * (.67 + random() * .3) }
+  } else if (placement === 'right') {
+    start = { x: width * (1.01 - random() * .06), y: height * (-.02 + random() * .12) }
+    end = { x: width * (.965 - random() * .09), y: height * (.67 + random() * .3) }
   } else {
     const direction = random() > .5 ? 1 : -1
-    start = { x: width * (.54 + random() * .17), y: height * (.08 + random() * .29) }
-    end = { x: start.x + direction * width * (.055 + random() * .14), y: start.y + height * ((random() - .34) * .2) }
+    start = { x: width * (.53 + random() * .2), y: height * (.08 + random() * .27) }
+    end = {
+      x: start.x + direction * width * (.05 + random() * .13),
+      y: start.y + height * ((random() - .35) * .2),
+    }
   }
-  const points = displaceLine(start, end, position === 'center' ? 6 : 7, width * (position === 'center' ? .028 : .046), random)
+  const depth = placement === 'team' ? 6 : 7
+  const points = displacedLine(start, end, depth, width * (placement === 'team' ? .026 : .043), random)
   const branches = []
-  const branchCount = position === 'center' ? 4 : 7
+  const branchCount = placement === 'team' ? 4 : 6
   for (let index = 0; index < branchCount; index += 1) {
-    const pointIndex = 3 + Math.floor(random() * Math.max(2, points.length - 7))
+    const pointIndex = 4 + Math.floor(random() * Math.max(2, points.length - 9))
     const origin = points[pointIndex]
-    const parentNext = points[Math.min(pointIndex + 1, points.length - 1)]
-    const angle = Math.atan2(parentNext.y - origin.y, parentNext.x - origin.x) + (random() > .5 ? 1 : -1) * (.55 + random() * .8)
-    const length = width * (.018 + random() * (position === 'center' ? .045 : .075))
-    const branchEnd = { x: origin.x + Math.cos(angle) * length, y: origin.y + Math.sin(angle) * length }
-    branches.push(displaceLine(origin, branchEnd, 4, width * .018, random))
+    const next = points[Math.min(pointIndex + 1, points.length - 1)]
+    const angle = Math.atan2(next.y - origin.y, next.x - origin.x)
+      + (random() > .5 ? 1 : -1) * (.62 + random() * .72)
+    const branchLength = width * (.018 + random() * (placement === 'team' ? .04 : .065))
+    const branchEnd = {
+      x: origin.x + Math.cos(angle) * branchLength,
+      y: origin.y + Math.sin(angle) * branchLength,
+    }
+    branches.push(displacedLine(origin, branchEnd, 4, width * .014, random))
   }
-  return { points, branches, phase: random() * Math.PI * 2, speed: .000055 + random() * .00007 }
+  return { points, branches, alpha: .52 + random() * .42, phase: random() * Math.PI * 2 }
 }
 
-function strokePolyline(context, points) {
+function strokePath(context, points) {
   context.beginPath()
   context.moveTo(points[0].x, points[0].y)
   for (let index = 1; index < points.length; index += 1) context.lineTo(points[index].x, points[index].y)
   context.stroke()
 }
 
-function drawLightning(context, lightning, intensity) {
-  const paths = [lightning.points, ...lightning.branches]
+function drawBolt(context, bolt, intensity) {
+  const paths = [bolt.points, ...bolt.branches]
   context.save()
   context.lineCap = 'round'
   context.lineJoin = 'round'
-  context.globalCompositeOperation = 'screen'
   paths.forEach((points, index) => {
-    const branchScale = index === 0 ? 1 : .56
-    context.shadowColor = 'rgba(255, 137, 0, .96)'
-    context.shadowBlur = 48 * intensity * branchScale
-    context.strokeStyle = `rgba(255, 126, 0, ${.1 * intensity * branchScale})`
-    context.lineWidth = 22 * branchScale
-    strokePolyline(context, points)
-    context.shadowBlur = 22 * intensity * branchScale
-    context.strokeStyle = `rgba(255, 166, 0, ${.5 * intensity * branchScale})`
-    context.lineWidth = 4.8 * branchScale
-    strokePolyline(context, points)
-    context.shadowBlur = 7 * intensity * branchScale
-    context.strokeStyle = `rgba(255, 246, 199, ${.95 * intensity * branchScale})`
-    context.lineWidth = 1.18 * branchScale
-    strokePolyline(context, points)
+    const scale = index === 0 ? 1 : .5
+    context.shadowColor = 'rgba(255, 132, 0, .8)'
+    context.shadowBlur = 26 * intensity * scale
+    context.strokeStyle = `rgba(255, 118, 0, ${.14 * intensity * scale})`
+    context.lineWidth = 16 * scale
+    strokePath(context, points)
+    context.shadowBlur = 12 * intensity * scale
+    context.strokeStyle = `rgba(255, 175, 8, ${.54 * intensity * scale})`
+    context.lineWidth = 3.2 * scale
+    strokePath(context, points)
+    context.shadowBlur = 4 * intensity * scale
+    context.strokeStyle = `rgba(255, 248, 205, ${.92 * intensity * scale})`
+    context.lineWidth = .85 * scale
+    strokePath(context, points)
   })
   context.restore()
+}
+
+function makeLayer(width, height) {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  return { canvas, context: canvas.getContext('2d', { alpha: true }) }
+}
+
+function createDustLayer(width, height, mobile, seed) {
+  const layer = makeLayer(width, height)
+  const random = randomFrom(seed)
+  const count = mobile ? 360 : 1320
+  for (let index = 0; index < count; index += 1) {
+    const x = random() * width
+    const y = random() * height
+    const size = .3 + random() * 1.2
+    const alpha = .13 + random() * .55
+    layer.context.fillStyle = `rgba(255, 171, 10, ${alpha})`
+    layer.context.fillRect(x, y, size, size)
+  }
+  return layer.canvas
+}
+
+function createPlasmaLayer(width, height, mobile) {
+  const layer = makeLayer(width, height)
+  const random = randomFrom(61873)
+  const count = mobile ? 24 : 58
+  layer.context.globalCompositeOperation = 'screen'
+  for (let index = 0; index < count; index += 1) {
+    const teamCloud = index < count * .78
+    const x = teamCloud ? width * (.4 + random() * .42) : random() * width
+    const y = teamCloud ? height * (.04 + random() * .5) : random() * height
+    const radius = width * (.018 + random() * .082)
+    const alpha = .025 + random() * .095
+    const gradient = layer.context.createRadialGradient(x, y, 0, x, y, radius)
+    gradient.addColorStop(0, `rgba(255, 209, 72, ${alpha})`)
+    gradient.addColorStop(.18, `rgba(255, 133, 0, ${alpha * .75})`)
+    gradient.addColorStop(.48, `rgba(111, 43, 0, ${alpha * .26})`)
+    gradient.addColorStop(1, 'rgba(0,0,0,0)')
+    layer.context.fillStyle = gradient
+    layer.context.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+  }
+  const nodeCount = mobile ? 12 : 38
+  for (let index = 0; index < nodeCount; index += 1) {
+    const x = index < nodeCount * .7 ? width * (.38 + random() * .48) : random() * width
+    const y = random() * height * .72
+    const radius = 3 + random() * 10
+    const glow = layer.context.createRadialGradient(x, y, 0, x, y, radius)
+    glow.addColorStop(0, `rgba(255, 250, 208, ${.45 + random() * .42})`)
+    glow.addColorStop(.15, `rgba(255, 179, 8, ${.32 + random() * .3})`)
+    glow.addColorStop(1, 'rgba(255, 118, 0, 0)')
+    layer.context.fillStyle = glow
+    layer.context.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+  }
+  return layer.canvas
 }
 
 export default function PublicCinematicBackground() {
@@ -94,125 +157,113 @@ export default function PublicCinematicBackground() {
     const canvas = canvasRef.current
     if (!canvas) return undefined
     const context = canvas.getContext('2d', { alpha: true })
-    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     let animationFrame = 0
     let width = 0
     let height = 0
-    let lastFrame = 0
-    let lightnings = []
-    let clouds = []
-    let particles = []
+    let dustFar
+    let dustNear
+    let plasma
+    let lightningLayer
+    let bolts = []
+    let activeSparks = []
+    let lastLightningDraw = 0
+
+    const rebuildBolts = (mobile) => {
+      bolts = [
+        ...Array.from({ length: mobile ? 1 : 3 }, (_, index) => createBolt(width, height, 'left', 1301 + index * 977)),
+        ...Array.from({ length: mobile ? 1 : 3 }, (_, index) => createBolt(width, height, 'right', 4603 + index * 1061)),
+        ...Array.from({ length: mobile ? 2 : 6 }, (_, index) => createBolt(width, height, 'team', 8101 + index * 1217)),
+      ]
+    }
 
     const resize = () => {
-      width = window.innerWidth
-      height = window.innerHeight
-      const mobile = width < 720
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.3)
-      canvas.width = Math.round(width * pixelRatio)
-      canvas.height = Math.round(height * pixelRatio)
-      canvas.style.width = `${width}px`
-      canvas.style.height = `${height}px`
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
-      lightnings = [
-        ...Array.from({ length: mobile ? 2 : 4 }, (_, index) => createLightning(width, height, 'left', 1301 + index * 977)),
-        ...Array.from({ length: mobile ? 2 : 4 }, (_, index) => createLightning(width, height, 'right', 4603 + index * 1061)),
-        ...Array.from({ length: mobile ? 3 : 9 }, (_, index) => createLightning(width, height, 'center', 8101 + index * 1217)),
-      ]
-      const random = randomFrom(29713)
-      clouds = Array.from({ length: mobile ? 25 : 70 }, (_, index) => ({
-        x: index < (mobile ? 18 : 54) ? width * (.37 + random() * .46) : random() * width,
-        y: index < (mobile ? 18 : 54) ? height * (.035 + random() * .53) : random() * height,
-        radius: width * (.018 + random() * .09),
-        alpha: .022 + random() * .09,
+      const mobile = window.innerWidth < 720
+      const renderScale = mobile ? .72 : window.innerWidth > 2200 ? .7 : .82
+      width = Math.max(1, Math.round(window.innerWidth * renderScale))
+      height = Math.max(1, Math.round(window.innerHeight * renderScale))
+      canvas.width = width
+      canvas.height = height
+      canvas.style.width = `${window.innerWidth}px`
+      canvas.style.height = `${window.innerHeight}px`
+      dustFar = createDustLayer(width, height, mobile, 19111)
+      dustNear = createDustLayer(width, height, mobile, 38921)
+      plasma = createPlasmaLayer(width, height, mobile)
+      lightningLayer = makeLayer(width, height)
+      rebuildBolts(mobile)
+      const random = randomFrom(92717)
+      activeSparks = Array.from({ length: mobile ? 26 : 78 }, (_, index) => ({
+        x: random() * width,
+        y: random() * height,
+        size: index < (mobile ? 4 : 14) ? 1.4 + random() * 1.8 : .55 + random() * 1.25,
+        alpha: .42 + random() * .55,
+        speed: .7 + random() * 2.8,
+        drift: (random() - .5) * 1.8,
         phase: random() * Math.PI * 2,
-        driftX: (random() - .5) * 13,
-        driftY: (random() - .5) * 9,
       }))
-      const dustCount = mobile ? 500 : 2300
-      const sparkCount = mobile ? 68 : 280
-      const bokehCount = mobile ? 18 : 68
-      particles = Array.from({ length: dustCount + sparkCount + bokehCount }, (_, index) => {
-        const type = index < dustCount ? 'dust' : index < dustCount + sparkCount ? 'spark' : 'bokeh'
-        return {
-          type,
-          x: random() * width,
-          y: random() * height,
-          size: type === 'dust' ? .35 + random() * .95 : type === 'spark' ? .9 + random() * 2.35 : 2.5 + random() * 6,
-          alpha: type === 'dust' ? .18 + random() * .52 : type === 'spark' ? .58 + random() * .4 : .07 + random() * .16,
-          speed: type === 'dust' ? .7 + random() * 3.2 : type === 'spark' ? 2 + random() * 8 : .2 + random() * 1.2,
-          drift: (random() - .5) * (type === 'spark' ? 7 : 3),
-          phase: random() * Math.PI * 2,
-        }
+    }
+
+    const renderLightning = (time) => {
+      const lightningContext = lightningLayer.context
+      lightningContext.clearRect(0, 0, width, height)
+      lightningContext.globalCompositeOperation = 'screen'
+      bolts.forEach((bolt, index) => {
+        const slowPulse = .5 + Math.sin(time * (.00006 + index * .000002) + bolt.phase) * .5
+        const flash = Math.pow(Math.max(0, Math.sin(time * .000021 + bolt.phase * 1.73)), 14)
+        drawBolt(lightningContext, bolt, bolt.alpha * (.34 + slowPulse * .64 + flash * .66))
       })
     }
 
     const draw = (time = 0) => {
-      const frameInterval = width < 720 ? 40 : 32
-      if (!motionPreference.matches && time - lastFrame < frameInterval) {
-        animationFrame = requestAnimationFrame(draw)
-        return
+      if (time - lastLightningDraw > 90 || !lastLightningDraw) {
+        renderLightning(time)
+        lastLightningDraw = time
       }
-      const delta = lastFrame ? Math.min((time - lastFrame) / 1000, .08) : 0
-      lastFrame = time
+      const subtleMotion = reducedMotion.matches ? 0 : 1
+      const driftA = Math.sin(time * .000026) * 6 * subtleMotion
+      const driftB = Math.cos(time * .000019) * 8 * subtleMotion
+      const plasmaBreath = reducedMotion.matches ? .76 : .7 + Math.sin(time * .00011) * .1
+      const lightningBreath = reducedMotion.matches ? .82 : .84 + Math.sin(time * .00017) * .1
       context.clearRect(0, 0, width, height)
-      context.save()
+      context.globalCompositeOperation = 'source-over'
+      context.globalAlpha = .55
+      context.drawImage(dustFar, driftA, driftB)
+      context.drawImage(dustFar, driftA - width, driftB)
       context.globalCompositeOperation = 'screen'
-      clouds.forEach((cloud) => {
-        const breathe = motionPreference.matches ? .72 : .68 + Math.sin(time * .00012 + cloud.phase) * .22
-        const x = cloud.x + Math.sin(time * .000035 + cloud.phase) * cloud.driftX
-        const y = cloud.y + Math.cos(time * .000028 + cloud.phase) * cloud.driftY
-        const gradient = context.createRadialGradient(x, y, 0, x, y, cloud.radius)
-        gradient.addColorStop(0, `rgba(255, 187, 22, ${cloud.alpha * breathe})`)
-        gradient.addColorStop(.24, `rgba(231, 118, 0, ${cloud.alpha * .58 * breathe})`)
-        gradient.addColorStop(.62, `rgba(96, 42, 0, ${cloud.alpha * .16 * breathe})`)
-        gradient.addColorStop(1, 'rgba(0,0,0,0)')
-        context.fillStyle = gradient
-        context.fillRect(x - cloud.radius, y - cloud.radius, cloud.radius * 2, cloud.radius * 2)
-      })
-      context.restore()
+      context.globalAlpha = plasmaBreath
+      context.drawImage(plasma, driftB * .35, driftA * .28)
+      context.globalAlpha = lightningBreath
+      context.drawImage(lightningLayer.canvas, 0, 0)
+      context.globalAlpha = .72
+      context.drawImage(dustNear, driftB * .45, -driftA * .45)
+      context.drawImage(dustNear, driftB * .45, -driftA * .45 - height)
 
-      lightnings.forEach((lightning) => {
-        const wave = .5 + Math.sin(time * lightning.speed + lightning.phase) * .5
-        const occasionalPulse = Math.pow(Math.max(0, Math.sin(time * lightning.speed * .37 + lightning.phase * 1.7)), 12)
-        const intensity = motionPreference.matches ? .68 : .34 + wave * .58 + occasionalPulse * .78
-        drawLightning(context, lightning, intensity)
-      })
-
-      particles.forEach((particle) => {
-        if (!motionPreference.matches) {
-          particle.y -= particle.speed * delta
-          particle.x += particle.drift * delta
-          if (particle.y < -12) particle.y = height + 12
-          if (particle.x < -12) particle.x = width + 12
-          if (particle.x > width + 12) particle.x = -12
+      activeSparks.forEach((spark) => {
+        if (!reducedMotion.matches) {
+          spark.y -= spark.speed * .32
+          spark.x += spark.drift * .18
+          if (spark.y < -8) spark.y = height + 8
+          if (spark.x < -8) spark.x = width + 8
+          if (spark.x > width + 8) spark.x = -8
         }
-        const shimmer = motionPreference.matches ? .65 : .62 + Math.sin(time * .0007 + particle.phase) * .36
-        context.save()
-        context.globalCompositeOperation = 'screen'
-        context.fillStyle = `rgba(255, 174, 9, ${particle.alpha * shimmer})`
-        context.shadowColor = 'rgba(255, 139, 0, .95)'
-        context.shadowBlur = particle.type === 'spark' ? 15 : particle.type === 'bokeh' ? 22 : 3
-        context.beginPath()
-        context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-        context.fill()
-        if (particle.type === 'spark' && particle.size > 2.25) {
-          context.strokeStyle = `rgba(255, 239, 164, ${particle.alpha * shimmer * .78})`
-          context.lineWidth = .55
-          context.beginPath()
-          context.moveTo(particle.x - 6, particle.y)
-          context.lineTo(particle.x + 6, particle.y)
-          context.moveTo(particle.x, particle.y - 6)
-          context.lineTo(particle.x, particle.y + 6)
-          context.stroke()
+        const shimmer = reducedMotion.matches ? .7 : .62 + Math.sin(time * .00065 + spark.phase) * .35
+        context.globalAlpha = spark.alpha * shimmer
+        context.fillStyle = spark.size > 1.4 ? '#fff0b5' : '#ffb20c'
+        context.fillRect(spark.x, spark.y, spark.size, spark.size)
+        if (spark.size > 1.4) {
+          context.globalAlpha *= .5
+          context.fillRect(spark.x - 4, spark.y + spark.size / 2, spark.size + 8, .65)
+          context.fillRect(spark.x + spark.size / 2, spark.y - 4, .65, spark.size + 8)
         }
-        context.restore()
       })
-      if (!motionPreference.matches && !document.hidden) animationFrame = requestAnimationFrame(draw)
+      context.globalAlpha = 1
+      context.globalCompositeOperation = 'source-over'
+      if (!reducedMotion.matches && !document.hidden) animationFrame = requestAnimationFrame(draw)
     }
 
     const restart = () => {
       cancelAnimationFrame(animationFrame)
-      lastFrame = 0
+      lastLightningDraw = 0
       draw()
     }
     const handleVisibility = () => {
@@ -223,12 +274,12 @@ export default function PublicCinematicBackground() {
     draw()
     window.addEventListener('resize', resize, { passive: true })
     document.addEventListener('visibilitychange', handleVisibility)
-    motionPreference.addEventListener('change', restart)
+    reducedMotion.addEventListener('change', restart)
     return () => {
       cancelAnimationFrame(animationFrame)
       window.removeEventListener('resize', resize)
       document.removeEventListener('visibilitychange', handleVisibility)
-      motionPreference.removeEventListener('change', restart)
+      reducedMotion.removeEventListener('change', restart)
     }
   }, [])
 

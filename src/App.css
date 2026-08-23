@@ -702,8 +702,8 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 /* Final reference-matched public atmosphere */
 .cinematic-backdrop{background:radial-gradient(ellipse at 54% 13%,rgba(63,29,0,.075),transparent 23%),radial-gradient(ellipse at 50% 91%,rgba(43,20,0,.045),transparent 28%),linear-gradient(145deg,#010101,#050505 48%,#010101)}
 .cinematic-backdrop:before{inset:-8%;background:radial-gradient(ellipse at -2% 31%,rgba(235,118,0,.13),transparent 14%),radial-gradient(ellipse at 102% 32%,rgba(235,108,0,.15),transparent 15%),radial-gradient(circle at 57% 17%,rgba(205,101,0,.07),transparent 14%),radial-gradient(ellipse at 49% 77%,rgba(50,21,0,.045),transparent 24%)}
-.cinematic-atmosphere{opacity:1;mask-image:none}
-.cinematic-energy{opacity:1;filter:drop-shadow(0 0 12px rgba(255,136,0,.28));mask-image:none}
+.cinematic-atmosphere{opacity:1;mix-blend-mode:normal;mask-image:none}
+.cinematic-energy{opacity:1;mix-blend-mode:normal;filter:none;mask-image:none}
 .cinematic-haze{filter:blur(58px);background:radial-gradient(circle,rgba(232,117,0,.105),rgba(119,51,0,.055) 18%,rgba(36,15,0,.025) 34%,transparent 58%)}
 .cinematic-smoke{opacity:.88;filter:blur(56px);background:radial-gradient(ellipse at 13% 25%,rgba(108,104,91,.14),transparent 18%),radial-gradient(ellipse at 77% 17%,rgba(104,99,80,.14),transparent 21%),radial-gradient(ellipse at 51% 74%,rgba(91,86,70,.13),transparent 25%),radial-gradient(ellipse at 89% 69%,rgba(89,76,49,.1),transparent 20%)}
 .cinematic-beams{opacity:.48;background:linear-gradient(112deg,transparent 21%,rgba(255,199,44,.14) 36%,transparent 48%),linear-gradient(70deg,transparent 54%,rgba(255,187,28,.13) 65%,transparent 76%)}
@@ -713,7 +713,7 @@ body:has(.videos-page):before{display:none}.videos-page{min-height:100vh;padding
 body:has(.site-shell>.hero) .cinematic-hero-halo{opacity:1}
 .cinematic-body-smoke{position:absolute;left:30%;top:42%;width:60%;height:38%;opacity:0;filter:blur(25px);background:radial-gradient(ellipse at 52% 62%,rgba(1,2,2,.92),rgba(4,4,3,.74) 34%,rgba(91,61,4,.11) 56%,transparent 72%);animation:cinematic-smoke-shift 31s ease-in-out infinite alternate}
 body:has(.site-shell>.hero) .cinematic-body-smoke{opacity:.9}
-@keyframes cinematic-halo-breathe{0%,100%{transform:scale(.96);filter:blur(36px)}48%{transform:scale(1.08);filter:blur(30px)}}
+@keyframes cinematic-halo-breathe{0%,100%{transform:scale(.96);opacity:.8}48%{transform:scale(1.06);opacity:1}}
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-photo{inset:-2% -6% -41% -2%;background-size:contain;background-position:center bottom;filter:saturate(.82) contrast(1.12) brightness(.96) drop-shadow(0 0 15px rgba(239,163,7,.17));-webkit-mask-image:linear-gradient(0deg,transparent 0%,rgba(0,0,0,.08) 35%,rgba(0,0,0,.38) 49%,#000 65%,#000 100%);mask-image:linear-gradient(0deg,transparent 0%,rgba(0,0,0,.08) 35%,rgba(0,0,0,.38) 49%,#000 65%,#000 100%)}
 .cinematic-backdrop~.site-shell:has(> .hero) .hero:before{z-index:0;background:linear-gradient(90deg,rgba(1,2,2,.76) 0%,rgba(1,2,2,.58) 20%,rgba(1,2,2,.16) 38%,transparent 62%),linear-gradient(0deg,rgba(1,2,2,.62) 0%,transparent 34%);box-shadow:none}
 .cinematic-backdrop~.site-shell:has(> .hero)>.club-community{border-color:rgba(228,220,0,.34);background:radial-gradient(circle at 50% 100%,rgba(228,185,0,.07),transparent 52%),rgba(4,5,4,.67);backdrop-filter:blur(6px)}
