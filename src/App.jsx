@@ -80,6 +80,7 @@ function Hero() {
   return (
     <section className="hero" id="domov">
       <Header />
+      <motion.div className="hero-team-aura" aria-hidden="true" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} />
       <motion.div className="hero-photo" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} animate={reduceMotion ? undefined : { scale: [1.015, 1.055] }} transition={{ duration: 18, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }} />
       <div className="hero-smoke" aria-hidden="true" />
       <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}>{String(siteContent['homepage.hero.headline'] || 'VÝCHOD BROTHERS').split(' ').map((word)=><span key={word}>{word}</span>)}</motion.h1><motion.p variants={reveal}>{siteContent['homepage.hero.subtitle'] || <>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</>}</motion.p><motion.div variants={reveal}><CtaButton className="hero-main-cta" href={socialProfiles.youtube.url} external icon="play" label="POZRIEŤ NAJNOVŠIE VIDEO" /></motion.div></motion.div>

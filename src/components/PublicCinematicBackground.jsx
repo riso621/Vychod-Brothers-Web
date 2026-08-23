@@ -199,6 +199,7 @@ export default function PublicCinematicBackground() {
 
       haloEnergy *= Math.pow(.9, delta / 16.7)
       halo.style.setProperty('--halo-energy', haloEnergy.toFixed(3))
+      document.documentElement.style.setProperty('--cinematic-energy', haloEnergy.toFixed(3))
       context.globalAlpha = 1
       context.globalCompositeOperation = 'source-over'
       if (!document.hidden) frame = requestAnimationFrame(draw)
@@ -225,6 +226,7 @@ export default function PublicCinematicBackground() {
       window.removeEventListener('resize', resize)
       document.removeEventListener('visibilitychange', handleVisibility)
       motionQuery.removeEventListener('change', restart)
+      document.documentElement.style.removeProperty('--cinematic-energy')
     }
   }, [])
 
