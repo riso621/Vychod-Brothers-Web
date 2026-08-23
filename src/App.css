@@ -731,6 +731,7 @@ body:has(.site-shell>.hero) .cinematic-body-smoke{opacity:.9}
   background-repeat:no-repeat;
   background-size:cover;
 }
+@media(min-width:2200px){.cinematic-backdrop{background-image:url('/images/backgrounds/vb-cinematic-energy-4k.webp')}}
 .cinematic-backdrop:before{
   content:"";
   position:absolute;
