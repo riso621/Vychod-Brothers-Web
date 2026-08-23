@@ -9,13 +9,13 @@ function createVein(width, height, side, seed) {
   const random = seeded(seed)
   const direction = side === 'left' ? 1 : -1
   const origin = side === 'left' ? -10 : width + 10
-  const points = [{ x: origin, y: height * (.08 + random() * .18) }]
-  for (let index = 1; index <= 8; index += 1) {
-    points.push({ x: origin + direction * width * (.035 * index + random() * .035), y: points[index - 1].y + height * (.075 + random() * .075) })
+  const points = [{ x: origin, y: height * (.03 + random() * .12) }]
+  for (let index = 1; index <= 14; index += 1) {
+    points.push({ x: origin + direction * width * (.012 * index + random() * .026), y: points[index - 1].y + height * (.045 + random() * .038) })
   }
-  const branches = points.slice(2, -1).filter((_, index) => index % 2 === 0).map((point) => {
+  const branches = points.slice(2, -1).filter((_, index) => index % 3 === 0).map((point) => {
     const branchDirection = random() > .5 ? 1 : -1
-    return [point, { x: point.x + direction * width * (.045 + random() * .055), y: point.y + branchDirection * height * (.035 + random() * .07) }, { x: point.x + direction * width * (.075 + random() * .07), y: point.y + branchDirection * height * (.07 + random() * .08) }]
+    return [point, { x: point.x + direction * width * (.022 + random() * .035), y: point.y + branchDirection * height * (.018 + random() * .035) }, { x: point.x + direction * width * (.045 + random() * .04), y: point.y + branchDirection * height * (.045 + random() * .045) }]
   })
   return { points, branches, phase: random() * Math.PI * 2 }
 }
@@ -53,7 +53,10 @@ export default function PublicCinematicBackground() {
       context.setTransform(dpr, 0, 0, dpr, 0, 0)
       veins = [createVein(width, height, 'left', 9271), createVein(width, height, 'right', 4813)]
       const random = seeded(71237)
-      particles = Array.from({ length: width < 720 ? 24 : 58 }, () => ({ x: random() * width, y: random() * height, radius: .35 + random() * 1.15, speed: 2 + random() * 7, drift: (random() - .5) * 4, alpha: .22 + random() * .58, phase: random() * Math.PI * 2 }))
+      particles = Array.from({ length: width < 720 ? 34 : 88 }, () => {
+        const bright = random() > .84
+        return { x: random() * width, y: random() * height, radius: bright ? 1.35 + random() * 1.15 : .45 + random() * 1.15, speed: 2 + random() * 8, drift: (random() - .5) * 5, alpha: bright ? .62 + random() * .32 : .24 + random() * .48, phase: random() * Math.PI * 2, bright }
+      })
     }
 
     const render = (time = 0) => {
@@ -69,20 +72,27 @@ export default function PublicCinematicBackground() {
         context.save()
         context.lineCap = 'round'
         context.lineJoin = 'round'
-        context.strokeStyle = `rgba(242, 199, 24, ${pulse * .34})`
-        context.lineWidth = 1.05
-        context.shadowColor = 'rgba(255, 204, 25, .75)'
-        context.shadowBlur = 7 + pulse * 8
+        context.strokeStyle = `rgba(242, 199, 24, ${pulse * .48})`
+        context.lineWidth = .9
+        context.shadowColor = 'rgba(255, 204, 25, .9)'
+        context.shadowBlur = 9 + pulse * 11
         drawPath(context, vein.points)
         context.strokeStyle = `rgba(255, 225, 92, ${pulse * .24})`
         context.lineWidth = .65
         vein.branches.forEach((branch) => drawPath(context, branch))
         if (!reducedMotion.matches) {
           const segment = Math.floor((time * .00024 + index * .43) % .78 * (vein.points.length - 1))
-          context.strokeStyle = 'rgba(255, 236, 139, .78)'
-          context.lineWidth = 1.45
-          context.shadowBlur = 15
+          context.strokeStyle = 'rgba(255, 239, 153, .9)'
+          context.lineWidth = 1.25
+          context.shadowBlur = 19
           drawPath(context, vein.points.slice(segment, Math.min(segment + 3, vein.points.length)))
+          const flare = vein.points[Math.min(segment + 1, vein.points.length - 1)]
+          context.fillStyle = 'rgba(255, 244, 181, .94)'
+          context.shadowColor = 'rgba(255, 205, 28, .96)'
+          context.shadowBlur = 24
+          context.beginPath()
+          context.arc(flare.x, flare.y, 1.75, 0, Math.PI * 2)
+          context.fill()
         }
         context.restore()
       })
@@ -98,7 +108,7 @@ export default function PublicCinematicBackground() {
         context.beginPath()
         context.fillStyle = `rgba(255, 205, 51, ${particle.alpha * shimmer})`
         context.shadowColor = 'rgba(255, 190, 21, .8)'
-        context.shadowBlur = particle.radius * 5
+        context.shadowBlur = particle.bright ? particle.radius * 8 : particle.radius * 5
         context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2)
         context.fill()
       })
@@ -122,13 +132,21 @@ export default function PublicCinematicBackground() {
     }
   }, [])
 
-  return <div className="public-cinematic-background" aria-hidden="true">
-    <span className="public-cinematic-haze is-one" />
-    <span className="public-cinematic-haze is-two" />
-    <span className="public-cinematic-smoke" />
-    <span className="public-cinematic-beams" />
-    <span className="public-cinematic-pulse" />
-    <canvas ref={canvasRef} className="public-cinematic-energy" />
-    <span className="public-cinematic-grain" />
-  </div>
+  return <>
+    <div className="public-cinematic-background public-cinematic-back" aria-hidden="true">
+      <span className="public-cinematic-haze is-one" />
+      <span className="public-cinematic-haze is-two" />
+      <span className="public-cinematic-pulse" />
+      <span className="public-cinematic-grain" />
+    </div>
+    <div className="public-cinematic-atmosphere" aria-hidden="true">
+      <span className="public-cinematic-smoke" />
+      <span className="public-cinematic-beams" />
+      <span className="public-cinematic-atmosphere-glow is-left" />
+      <span className="public-cinematic-atmosphere-glow is-right" />
+    </div>
+    <div className="public-cinematic-edge" aria-hidden="true">
+      <canvas ref={canvasRef} className="public-cinematic-energy" />
+    </div>
+  </>
 }
