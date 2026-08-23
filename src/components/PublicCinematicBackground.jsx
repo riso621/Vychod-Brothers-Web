@@ -11,47 +11,49 @@ function randomFrom(seed) {
   }
 }
 
-function createBolt(width, height, side, seed) {
+function createVein(width, height, side, seed) {
   const random = randomFrom(seed)
-  const direction = side === 'left' ? 1 : -1
-  const startX = side === 'left' ? -18 : width + 18
-  const startY = height * (.06 + random() * .82)
-  const reach = width * (.22 + random() * .19)
-  const verticalDrift = height * ((random() - .5) * .42)
-  const pointCount = 19
-  let previousNoise = 0
-  const points = Array.from({ length: pointCount }, (_, index) => {
-    const progress = index / (pointCount - 1)
-    const taper = Math.sin(progress * Math.PI)
-    previousNoise = previousNoise * .42 + (random() - .5) * .58
-    return {
-      x: startX + direction * reach * progress + previousNoise * width * .028 * taper,
-      y: startY + verticalDrift * progress + (random() - .5) * height * .045 * taper,
+  const origin = {
+    x: side === 'left' ? width * (-.015 + random() * .08) : width * (1.015 - random() * .08),
+    y: height * (.08 + random() * .78),
+  }
+  const makePath = (start, length, angle, segments) => {
+    const points = [start]
+    let current = start
+    let currentAngle = angle
+    for (let index = 0; index < segments; index += 1) {
+      currentAngle += (random() - .5) * .92
+      const step = length / segments * (.64 + random() * .72)
+      current = {
+        x: current.x + Math.cos(currentAngle) * step,
+        y: current.y + Math.sin(currentAngle) * step,
+      }
+      points.push(current)
+    }
+    return points
+  }
+  const trunk = makePath(origin, width * (.1 + random() * .12), (side === 'left' ? 0 : Math.PI) + (random() - .5) * 1.25, 8 + Math.floor(random() * 5))
+  const branches = []
+  trunk.slice(1, -1).forEach((point, index) => {
+    if (random() < .43) return
+    const parent = trunk[index + 1]
+    const previous = trunk[index]
+    const parentAngle = Math.atan2(parent.y - previous.y, parent.x - previous.x)
+    const branchAngle = parentAngle + (random() > .5 ? 1 : -1) * (.48 + random() * .78)
+    const branch = makePath(point, width * (.025 + random() * .065), branchAngle, 4 + Math.floor(random() * 4))
+    branches.push(branch)
+    if (random() > .64 && branch.length > 4) {
+      const twigOrigin = branch[2 + Math.floor(random() * (branch.length - 3))]
+      branches.push(makePath(twigOrigin, width * (.012 + random() * .028), branchAngle + (random() - .5) * 1.7, 3 + Math.floor(random() * 3)))
     }
   })
-  const branches = points.slice(3, -3).filter(() => random() > .62).map((point) => {
-    const length = width * (.035 + random() * .07)
-    const rise = height * ((random() - .5) * .12)
-    return Array.from({ length: 6 }, (_, index) => {
-      const progress = index / 5
-      return {
-        x: point.x + direction * length * progress + (random() - .5) * width * .008,
-        y: point.y + rise * progress + (random() - .5) * height * .016,
-      }
-    })
-  })
-  return { points, branches, phase: random() * Math.PI * 2, speed: .00009 + random() * .00008 }
+  return { points: trunk, branches, phase: random() * Math.PI * 2, speed: .00007 + random() * .00007 }
 }
 
 function strokePath(context, points) {
   context.beginPath()
   context.moveTo(points[0].x, points[0].y)
-  for (let index = 1; index < points.length - 1; index += 1) {
-    const midpointX = (points[index].x + points[index + 1].x) / 2
-    const midpointY = (points[index].y + points[index + 1].y) / 2
-    context.quadraticCurveTo(points[index].x, points[index].y, midpointX, midpointY)
-  }
-  context.lineTo(points.at(-1).x, points.at(-1).y)
+  for (let index = 1; index < points.length; index += 1) context.lineTo(points[index].x, points[index].y)
   context.stroke()
 }
 
@@ -66,7 +68,7 @@ export default function PublicCinematicBackground() {
     let animationFrame = 0
     let width = 0
     let height = 0
-    let bolts = []
+    let veins = []
     let particles = []
     let lastFrame = 0
 
@@ -80,22 +82,26 @@ export default function PublicCinematicBackground() {
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
-      bolts = [
-        ...Array.from({ length: mobile ? 3 : 5 }, (_, index) => createBolt(width, height, 'left', 1103 + index * 739)),
-        ...Array.from({ length: mobile ? 3 : 5 }, (_, index) => createBolt(width, height, 'right', 4909 + index * 887)),
+      veins = [
+        ...Array.from({ length: mobile ? 4 : 11 }, (_, index) => createVein(width, height, 'left', 1103 + index * 739)),
+        ...Array.from({ length: mobile ? 4 : 11 }, (_, index) => createVein(width, height, 'right', 4909 + index * 887)),
       ]
       const random = randomFrom(27183)
-      particles = Array.from({ length: mobile ? 68 : 230 }, () => {
-        const spark = random() > .78
+      particles = Array.from({ length: mobile ? 120 : 560 }, () => {
+        const depth = random()
+        const spark = depth > .83
+        const flare = depth > .96
         return {
           x: random() * width,
           y: random() * height,
-          size: spark ? 1.35 + random() * 2.15 : .4 + random() * 1.05,
-          velocity: 3 + random() * 12,
-          drift: (random() - .5) * 10,
-          alpha: spark ? .7 + random() * .28 : .3 + random() * .52,
+          size: flare ? 2.4 + random() * 2.1 : spark ? 1.05 + random() * 1.7 : .42 + random() * 1.02,
+          velocity: 1.5 + depth * 13,
+          drift: (random() - .5) * (4 + depth * 10),
+          alpha: flare ? .96 : spark ? .64 + random() * .34 : .32 + random() * .5,
           phase: random() * Math.PI * 2,
           spark,
+          flare,
+          depth,
         }
       })
     }
@@ -109,28 +115,37 @@ export default function PublicCinematicBackground() {
       lastFrame = time
       context.clearRect(0, 0, width, height)
 
-      bolts.forEach((bolt, index) => {
-        const pulse = motionPreference.matches ? .42 : .3 + (.5 + Math.sin(time * bolt.speed + bolt.phase) * .5) * .36
+      veins.forEach((vein, index) => {
+        const pulse = motionPreference.matches ? .42 : .16 + (.5 + Math.sin(time * vein.speed + vein.phase) * .5) * .7
         context.save()
         context.lineCap = 'round'
         context.lineJoin = 'round'
-        context.strokeStyle = `rgba(245, 184, 10, ${pulse * .88})`
-        context.lineWidth = 1.15
+        context.strokeStyle = `rgba(242, 171, 4, ${pulse * .88})`
+        context.lineWidth = 1.15 + (index % 3) * .27
         context.shadowColor = 'rgba(255, 190, 8, .9)'
-        context.shadowBlur = 12 + pulse * 24
-        strokePath(context, bolt.points)
-        context.strokeStyle = `rgba(255, 224, 91, ${pulse * .48})`
-        context.lineWidth = .62
-        bolt.branches.forEach((branch) => strokePath(context, branch))
+        context.shadowBlur = 11 + pulse * 27
+        strokePath(context, vein.points)
+        context.strokeStyle = `rgba(255, 225, 104, ${pulse * .62})`
+        context.lineWidth = .58 + (index % 2) * .22
+        vein.branches.forEach((branch) => strokePath(context, branch))
+        vein.branches.forEach((branch, branchIndex) => {
+          if ((branchIndex + index) % 3 !== 0) return
+          const node = branch.at(-1)
+          context.fillStyle = `rgba(255, 229, 124, ${pulse * .72})`
+          context.shadowBlur = 18 + pulse * 18
+          context.beginPath()
+          context.arc(node.x, node.y, .8 + pulse * 1.25, 0, Math.PI * 2)
+          context.fill()
+        })
 
         if (!motionPreference.matches && index % 2 === 0) {
-          const progress = (time * bolt.speed * .72 + bolt.phase) % 1
-          const segment = Math.min(Math.floor(progress * (bolt.points.length - 2)), bolt.points.length - 3)
+          const progress = (time * vein.speed * .46 + vein.phase) % 1
+          const segment = Math.min(Math.floor(progress * (vein.points.length - 2)), vein.points.length - 3)
           context.strokeStyle = 'rgba(255, 245, 186, .9)'
-          context.lineWidth = 1.15
+          context.lineWidth = 1.35
           context.shadowBlur = 30
-          strokePath(context, bolt.points.slice(segment, segment + 3))
-          const flare = bolt.points[segment + 1]
+          strokePath(context, vein.points.slice(segment, segment + 3))
+          const flare = vein.points[segment + 1]
           context.fillStyle = 'rgba(255, 249, 205, .96)'
           context.beginPath()
           context.arc(flare.x, flare.y, 1.6, 0, Math.PI * 2)
@@ -150,10 +165,20 @@ export default function PublicCinematicBackground() {
         const shimmer = motionPreference.matches ? .55 : .48 + Math.sin(time * .0013 + particle.phase) * .4
         context.fillStyle = `rgba(255, 198, 28, ${Math.min(1, particle.alpha * shimmer * 1.32)})`
         context.shadowColor = 'rgba(255, 181, 6, .92)'
-        context.shadowBlur = particle.spark ? 17 : 6
+        context.shadowBlur = particle.flare ? 28 : particle.spark ? 15 : 4
         context.beginPath()
         context.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
         context.fill()
+        if (particle.flare) {
+          context.strokeStyle = `rgba(255, 225, 101, ${Math.max(0, shimmer * .7)})`
+          context.lineWidth = .65
+          context.beginPath()
+          context.moveTo(particle.x - 8, particle.y)
+          context.lineTo(particle.x + 8, particle.y)
+          context.moveTo(particle.x, particle.y - 8)
+          context.lineTo(particle.x, particle.y + 8)
+          context.stroke()
+        }
       })
       context.shadowBlur = 0
       if (!motionPreference.matches && !document.hidden) animationFrame = requestAnimationFrame(draw)
@@ -193,6 +218,7 @@ export default function PublicCinematicBackground() {
       <span className="cinematic-glow cinematic-glow--left" />
       <span className="cinematic-glow cinematic-glow--right" />
       <span className="cinematic-hero-halo" />
+      <span className="cinematic-body-smoke" />
       <span className="cinematic-pulse" />
     </div>
     <div className="cinematic-energy" aria-hidden="true">
