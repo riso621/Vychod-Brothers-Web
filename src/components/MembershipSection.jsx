@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useProfile } from '../context/profile-context'
 import { canAccessMembership, clubPlan, isActiveClubMember } from '../lib/membership'
 import { getSignedStorageUrls } from '../lib/storage'
@@ -18,9 +18,17 @@ const benefits = [
   { icon: 'community', title: 'Komunita', text: 'Hlasuj o ďalšom videu a buď súčasťou rozhodnutí Východ Brothers.' },
 ]
 
+const planBenefits = [
+  'Všetky exkluzívne videá',
+  'Zákulisie a bonusový obsah',
+  'Skorší prístup',
+  'Súťaže a členské výhody',
+  'Všetok budúci členský obsah',
+]
+
 const faqs = [
   ['Kedy získam prístup po zaplatení?', 'Prístup sa aktivuje automaticky po úspešnom potvrdení platby. Zvyčajne to trvá len niekoľko sekúnd.'],
-  ['Čo členstvo odomkne?', 'Jedno členstvo odomkne všetky aktuálne aj budúce členské videá, komentáre, interakcie a históriu sledovania.'],
+  ['Čo členstvo odomkne?', 'Jedno členstvo odomkne všetky aktuálne aj budúce členské videá, zákulisie, bonusový obsah a skorší prístup k vybraným premiéram.'],
   ['Môžem členstvo kedykoľvek zrušiť?', 'Áno. Predplatné zrušíš kedykoľvek v Mojom účte. Prístup zostane aktívny až do konca už zaplateného obdobia.'],
   ['Obnovuje sa členstvo automaticky?', 'Áno. Východ Brothers Club sa obnovuje každý mesiac, kým predplatné nezrušíš.'],
   ['Funguje členstvo aj na mobile?', 'Áno. Členský obsah je dostupný na mobile, tablete aj desktope cez rovnaký účet.'],
@@ -43,7 +51,8 @@ function Icon({ name }) {
 }
 
 function Reveal({ children, className = '', delay = 0 }) {
-  return <motion.div className={className} initial={{ opacity: 0, y: 26 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .7, delay }}>{children}</motion.div>
+  const reduceMotion = useReducedMotion()
+  return <motion.div className={className} initial={reduceMotion ? false : { opacity: 0, y: 22 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .6, delay }}>{children}</motion.div>
 }
 
 export default function MembershipSection() {
@@ -53,12 +62,14 @@ export default function MembershipSection() {
   const [checkoutError, setCheckoutError] = useState('')
   const [openFaq, setOpenFaq] = useState(-1)
   const [premiumVideos, setPremiumVideos] = useState([])
+  const [previewStatus, setPreviewStatus] = useState('loading')
   const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
   const closeButtonRef = useRef(null)
   const checkoutLockRef = useRef(false)
   const { profile, session } = useProfile()
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const isMember = isActiveClubMember(profile, isAdmin)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     let active = true
@@ -68,10 +79,11 @@ export default function MembershipSection() {
         const videos = (await getPublishedVideos()).filter((video) => ['member', 'vip'].includes(video.accessLevel)).slice(0, 6)
         if (!active) return
         setPremiumVideos(videos)
+        setPreviewStatus('ready')
         const signed = await getSignedStorageUrls('thumbnails', videos.map((video) => video.thumbnail), force)
         if (active) setThumbnailUrls(signed)
       } catch {
-        if (active) setPremiumVideos([])
+        if (active) { setPremiumVideos([]); setPreviewStatus('error') }
       }
     }
     loadPreviews()
@@ -105,6 +117,9 @@ export default function MembershipSection() {
   const imageFor = (video, index) => video
     ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail)) || fallbackImages[index % fallbackImages.length]
     : fallbackImages[index % fallbackImages.length]
+  const previewImageFor = (video) => video
+    ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail)) || ''
+    : ''
   const checkoutCancelled = new URLSearchParams(window.location.search).get('checkout') === 'cancelled'
 
   return (
@@ -124,7 +139,7 @@ export default function MembershipSection() {
         <motion.div className="membership-collage" initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: .12 }} aria-label="Ukážka prémiových videí">
           {[0, 1, 2, 3].map((index) => {
             const video = collageVideos[index]
-            return <motion.article className={`membership-collage-card collage-${index + 1}`} animate={{ y: index % 2 ? [0, -7, 0] : [0, 6, 0] }} transition={{ duration: 7 + index, repeat: Infinity, ease: 'easeInOut' }} key={video?.id || index}>
+            return <motion.article className={`membership-collage-card collage-${index + 1}`} animate={reduceMotion ? undefined : { y: index % 2 ? [0, -7, 0] : [0, 6, 0] }} transition={{ duration: 7 + index, repeat: Infinity, ease: 'easeInOut' }} key={video?.id || index}>
               <img src={imageFor(video, index)} alt="" decoding="async" fetchPriority={index < 2 ? 'high' : 'auto'} />
               <div><span>ČLENSKÉ</span><strong>{video?.title || ['Iba pre našich členov', 'Zákulisie bez filtra', 'Exkluzívna premiéra', 'Bonusový príbeh'][index]}</strong></div>
             </motion.article>
@@ -141,35 +156,38 @@ export default function MembershipSection() {
 
       <section className="membership-preview">
         <Reveal className="membership-preview-heading"><div><span>ORIGINÁLY VÝCHOD BROTHERS</span><h2>OBSAH, KTORÝ INDE <em>NEUVIDÍŠ.</em></h2></div><p>Členská knižnica plná premiér, bonusov a zákulisia. Posúvaj horizontálne a objav, čo ťa čaká.</p></Reveal>
-        <div className={`membership-preview-rail items-${previewVideos.length || 2}`}>
-          {(previewVideos.length ? previewVideos : [null, null]).map((video, index) => {
-            const accessLevel = video?.accessLevel || (index % 3 === 0 ? 'vip' : 'member')
-            const unlocked = video ? canAccessMembership(accessLevel, profile, isAdmin) : false
+        {previewStatus === 'loading' ? <div className="membership-preview-loading" aria-label="Načítavam členské videá">{[0, 1, 2].map((item) => <span key={item}/>)}</div> : previewVideos.length ? <div className={`membership-preview-rail items-${previewVideos.length}`}>
+          {previewVideos.map((video) => {
+            const accessLevel = video.accessLevel
+            const unlocked = canAccessMembership(accessLevel, profile, isAdmin)
+            const thumbnail = previewImageFor(video)
+            const accessLabel = accessLevel === 'vip' ? 'BONUS' : 'MEMBER'
             const card = <article className={`membership-preview-card${unlocked ? ' is-unlocked' : ' is-locked'}`}>
-              <img src={imageFor(video, index)} alt={video?.title || 'Ukážka členského videa'} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.src = fallbackImages[index % fallbackImages.length] }} />
+              {thumbnail && <img src={thumbnail} alt={`Ukážka videa ${video.title}`} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.hidden = true }} />}
               <div className="membership-preview-shade" />
               {!unlocked && <div className="membership-preview-lock"><Icon name="lock"/></div>}
               {unlocked && <div className="membership-preview-play"><Icon name="play"/></div>}
               <span className="membership-preview-action">{unlocked ? 'POZRIEŤ VIDEO' : 'ODOMKNÚŤ VIDEO'} <i aria-hidden="true">→</i></span>
               <div className="membership-preview-meta">
-                <span className={`membership-preview-badge is-${accessLevel}`}>{accessLevel.toUpperCase()}</span>
-                <strong>{video?.title || ['Exkluzívny minifilm', 'Bonus zo zákulisia', 'Premiéra pre členov', 'Nevydané scény'][index]}</strong>
-                <small>{video?.duration || 'Už čoskoro'}</small>
+                <span className={`membership-preview-badge is-${accessLevel}`}>{accessLabel}</span>
+                <strong>{video.title}</strong>
+                <small>{video.duration || '—'}</small>
               </div>
             </article>
-            return unlocked && video ? <a href={`/videos/${video.slug}`} key={video.id}>{card}</a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal} key={video?.id || index}>{card}</button>
+            return unlocked ? <a href={`/videos/${video.slug}`} key={video.id}>{card}</a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal} key={video.id}>{card}</button>
           })}
-        </div>
+        </div> : <div className="membership-preview-empty" role="status"><strong>{previewStatus === 'error' ? 'Knižnicu sa nepodarilo načítať.' : 'Prvé členské videá pripravujeme.'}</strong><span>{previewStatus === 'error' ? 'Skús stránku obnoviť o chvíľu.' : 'Nový obsah sa tu zobrazí hneď po publikovaní.'}</span></div>}
       </section>
 
       <section className="membership-plans-v4" id="plany">
         <Reveal className="membership-section-heading is-centered"><span>JEDNO ČLENSTVO · VŠETOK OBSAH</span><h2>VÝCHOD BROTHERS<br/><em>CLUB.</em></h2><p>Jednoduchý prístup ku všetkému členskému obsahu bez úrovní a doplatkov.</p></Reveal>
-        <div className="membership-plan-grid"><motion.article className={`membership-plan-card is-vip is-recommended${isMember ? ' is-current' : ''}`} whileHover={{ y: -8 }}>
+        <div className="membership-plan-grid"><motion.article className={`membership-plan-card is-vip is-recommended${isMember ? ' is-current' : ''}`} whileHover={reduceMotion ? undefined : { y: -3 }}>
           <span className="membership-plan-recommended">JEDINÝ PLÁN</span>{isMember && <span className="membership-plan-current">TVOJE AKTÍVNE ČLENSTVO</span>}
           <header><span>VÝCHOD BROTHERS</span><h3>{clubPlan.name}</h3><p>Všetky členské videá a funkcie v jednom predplatnom.</p></header>
           <div className="membership-plan-price"><strong>{planMeta.club.price}</strong><span>{planMeta.club.note}</span></div>
-          <ul>{clubPlan.perks.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
-          {isMember ? <a href="/videos">Pozrieť členské videá <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'}<span>→</span></button>}
+          <ul>{planBenefits.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
+          <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'}<span>→</span></button>}<small>Zrušíš kedykoľvek.</small></div>
+          <p className="membership-trust-note">Tvoríme pre komunitu Východ Brothers naprieč YouTube, TikTok a Instagram.</p>
         </motion.article></div>
       </section>
 
@@ -185,7 +203,7 @@ export default function MembershipSection() {
 
       <section className="membership-final-cta">
         <div className="membership-final-orbit" aria-hidden="true">VB</div>
-        <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{isMember ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{isMember ? 'Všetok členský obsah je pripravený v tvojom katalógu.' : 'Odomkni celý svet Východ Brothers a buď pri každej premiére od prvej sekundy.'}</p>{isMember ? <a className="membership-final-link" href="/videos">Pozrieť členské videá <b>→</b></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'} <b>→</b></button>}</Reveal>
+        <Reveal><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{isMember ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{isMember ? 'Všetok členský obsah je pripravený v tvojom katalógu.' : '5,99 € / mesiac'}</p>{isMember ? <a className="membership-final-link" href="/videos">Prejsť na členský obsah <b>→</b></a> : <><button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <b>→</b></button><small className="membership-final-note">Zrušíš kedykoľvek.</small></>}</Reveal>
       </section>
 
       <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Checkout sa nepodarilo spustiť</h2><p role="alert">{checkoutError || 'Platobná služba momentálne nie je dostupná.'}</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>
