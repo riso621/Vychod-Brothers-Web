@@ -18,13 +18,6 @@ const benefits = [
   { icon: 'community', title: 'Komunita', text: 'Hlasuj o ďalšom videu a buď súčasťou rozhodnutí Východ Brothers.' },
 ]
 
-const unlocks = [
-  ['BONUSOVÉ VIDEÁ', 'Príbehy, ktoré sa do verejného vydania nezmestili.'],
-  ['ZA KAMEROU', 'Nepublikované momenty a skutočná atmosféra natáčania.'],
-  ['PRÉMIOVÉ SÉRIE', 'Originálne formáty vytvorené iba pre našich členov.'],
-  ['PREDČASNÝ PRÍSTUP', 'Premiéry bez čakania — vždy medzi prvými.'],
-]
-
 const faqs = [
   ['Kedy získam prístup po zaplatení?', 'Prístup sa aktivuje automaticky po úspešnom potvrdení platby. Zvyčajne to trvá len niekoľko sekúnd.'],
   ['Čo členstvo odomkne?', 'Jedno členstvo odomkne všetky aktuálne aj budúce členské videá, komentáre, interakcie a históriu sledovania.'],
@@ -58,7 +51,7 @@ export default function MembershipSection() {
   const [selectedPlan, setSelectedPlan] = useState('club')
   const [checkoutPlan, setCheckoutPlan] = useState('')
   const [checkoutError, setCheckoutError] = useState('')
-  const [openFaq, setOpenFaq] = useState(0)
+  const [openFaq, setOpenFaq] = useState(-1)
   const [premiumVideos, setPremiumVideos] = useState([])
   const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
   const closeButtonRef = useRef(null)
@@ -107,7 +100,7 @@ export default function MembershipSection() {
     window.location.assign('/checkout/club')
   }
   const collageVideos = useMemo(() => premiumVideos.slice(0, 4), [premiumVideos])
-  const previewVideos = useMemo(() => premiumVideos.slice(0, 6), [premiumVideos])
+  const previewVideos = useMemo(() => premiumVideos.slice(0, 3), [premiumVideos])
   const fallbackImages = ['/images/team/vychod-brothers-team-day.webp', '/images/team/vychod-brothers-team-evening.webp']
   const imageFor = (video, index) => video
     ? (/^https?:\/\//i.test(video.thumbnail) ? video.thumbnail : thumbnailUrls.get(video.thumbnail)) || fallbackImages[index % fallbackImages.length]
@@ -122,6 +115,7 @@ export default function MembershipSection() {
           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .6 }}>VÝCHOD BROTHERS · MEMBERSHIP</motion.span>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08 }}>STAŇ SA ČLENOM<br/><em>VÝCHOD BROTHERS</em></motion.h1>
           <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .18 }}>Exkluzívne videá, bonusový obsah, premiéry, zákulisie a množstvo ďalšieho obsahu, ktorý na YouTube nikdy neuvidíš.</motion.p>
+          <motion.div className="membership-hero-price" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .23 }}><strong>5,99 €</strong><span>/ MESIAC</span></motion.div>
           <motion.div className="membership-hero-actions" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .28 }}>
             {isMember ? <a href="/videos">POZRIEŤ ČLENSKÉ VIDEÁ <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'} <span>→</span></button>}
           </motion.div>
@@ -147,8 +141,8 @@ export default function MembershipSection() {
 
       <section className="membership-preview">
         <Reveal className="membership-preview-heading"><div><span>ORIGINÁLY VÝCHOD BROTHERS</span><h2>OBSAH, KTORÝ INDE <em>NEUVIDÍŠ.</em></h2></div><p>Členská knižnica plná premiér, bonusov a zákulisia. Posúvaj horizontálne a objav, čo ťa čaká.</p></Reveal>
-        <div className={`membership-preview-rail items-${previewVideos.length || 4}`}>
-          {(previewVideos.length ? previewVideos : [null, null, null, null]).map((video, index) => {
+        <div className={`membership-preview-rail items-${previewVideos.length || 2}`}>
+          {(previewVideos.length ? previewVideos : [null, null]).map((video, index) => {
             const accessLevel = video?.accessLevel || (index % 3 === 0 ? 'vip' : 'member')
             const unlocked = video ? canAccessMembership(accessLevel, profile, isAdmin) : false
             const card = <article className={`membership-preview-card${unlocked ? ' is-unlocked' : ' is-locked'}`}>
@@ -177,14 +171,6 @@ export default function MembershipSection() {
           <ul>{clubPlan.perks.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
           {isMember ? <a href="/videos">Pozrieť členské videá <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'}<span>→</span></button>}
         </motion.article></div>
-      </section>
-
-      <section className="membership-unlocks">
-        <Reveal className="membership-section-heading"><span>CELÝ PRÍBEH BEZ STRIHU</span><h2>ČO VŠETKO<br/><em>ODOMKNEŠ?</em></h2></Reveal>
-        <div className="membership-unlock-grid">{unlocks.map(([title, text], index) => {
-          const video = premiumVideos[index % Math.max(premiumVideos.length, 1)]
-          return <Reveal className={`membership-unlock-card unlock-${index + 1}`} delay={index * .05} key={title}><img src={imageFor(video, index)} alt="" loading="lazy" decoding="async"/><div><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></div></Reveal>
-        })}</div>
       </section>
 
       <section className="membership-how">
