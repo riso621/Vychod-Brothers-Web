@@ -148,7 +148,7 @@ function AccountPage() {
 }
 
 function MembershipPage() {
-  return <main className="membership-page"><Header /><MembershipSection standalone /><Footer /></main>
+  return <main className="membership-page"><Header /><MembershipSection standalone /><Footer variant="membership" /></main>
 }
 
 function AuthFlowPage({ type }) {
