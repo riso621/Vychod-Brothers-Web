@@ -80,6 +80,7 @@ function Hero() {
   return (
     <section className="hero" id="domov">
       <Header />
+      <motion.div className="hero-team-volumetric" aria-hidden="true" style={{ y: photoY }} />
       <motion.div className="hero-team-aura" aria-hidden="true" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} />
       <motion.div className="hero-photo" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} animate={reduceMotion ? undefined : { scale: [1.015, 1.055] }} transition={{ duration: 18, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }} />
       <div className="hero-smoke" aria-hidden="true" />

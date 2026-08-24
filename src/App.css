@@ -885,7 +885,8 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
   .cinematic-hero-halo::before,.cinematic-hero-halo::after{animation:none;transform:none}
 }
 
-/* Authentic team cutout and alpha-derived plasma aura. */
+/* Authentic team cutout and soft, layered backlight integration. */
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric,
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura,
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-photo{
   position:absolute;
@@ -894,17 +895,42 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
   background-position:center bottom;
   background-repeat:no-repeat;
 }
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric{
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 22% 33% at 28% 20%,rgba(255,184,42,.48),rgba(190,79,0,.17) 41%,transparent 73%),
+    radial-gradient(ellipse 24% 36% at 51% 17%,rgba(255,202,66,.54),rgba(206,91,0,.19) 43%,transparent 75%),
+    radial-gradient(ellipse 22% 33% at 75% 21%,rgba(255,168,28,.46),rgba(177,67,0,.16) 42%,transparent 72%),
+    radial-gradient(ellipse 61% 47% at 51% 40%,rgba(224,107,3,.2),rgba(111,36,0,.08) 49%,transparent 78%);
+  opacity:calc(.42 + (var(--cinematic-energy,0) * .85));
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.95) 46%,rgba(0,0,0,.36) 68%,transparent 91%);
+  mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.95) 46%,rgba(0,0,0,.36) 68%,transparent 91%);
+  mix-blend-mode:screen;
+  contain:paint;
+}
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric::before,
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric::after{
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  border-radius:50%;
+  will-change:transform,opacity;
+}
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric::before{inset:3% 5% 46%;background:radial-gradient(ellipse at 50% 50%,rgba(255,168,23,.19),rgba(161,58,0,.08) 48%,transparent 73%);animation:team-volumetric-drift 28.7s cubic-bezier(.42,.04,.36,.98) infinite alternate}
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric::after{inset:20% 11% 34%;background:radial-gradient(ellipse at 44% 38%,rgba(239,129,8,.13),transparent 66%);animation:team-volumetric-drift 34.1s cubic-bezier(.38,.03,.4,.97) infinite alternate-reverse}
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura{
   z-index:1;
   pointer-events:none;
-  opacity:calc(.14 + (var(--cinematic-energy,0) * .22));
-  filter:brightness(0) saturate(100%) invert(50%) sepia(88%) saturate(1150%) hue-rotate(357deg) brightness(86%) contrast(92%) blur(19px);
-  transform:scale(1.075);
-  transform-origin:50% 33%;
-  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.94) 42%,rgba(0,0,0,.45) 67%,transparent 94%);
-  mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.94) 42%,rgba(0,0,0,.45) 67%,transparent 94%);
-  animation:team-plasma-aura 13.7s ease-in-out infinite alternate;
+  opacity:calc(.145 + (var(--cinematic-energy,0) * .34));
+  filter:brightness(0) saturate(100%) invert(43%) sepia(92%) saturate(980%) hue-rotate(356deg) brightness(82%) contrast(89%) blur(34px);
+  transform:translate3d(0,-.25%,0) scale(1.155);
+  transform-origin:50% 29%;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.98) 39%,rgba(0,0,0,.58) 58%,rgba(0,0,0,.13) 76%,transparent 93%);
+  mask-image:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.98) 39%,rgba(0,0,0,.58) 58%,rgba(0,0,0,.13) 76%,transparent 93%);
+  animation:team-plasma-aura 22.7s cubic-bezier(.45,.05,.42,.96) infinite alternate;
   will-change:transform,opacity;
+  contain:paint;
 }
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::before,
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::after{
@@ -913,8 +939,8 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
   pointer-events:none;
   border-radius:48% 52% 44% 56%;
 }
-.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::before{inset:0 7% 57%;background:radial-gradient(ellipse at 24% 48%,rgba(255,155,22,.2),transparent 42%),radial-gradient(ellipse at 52% 34%,rgba(229,113,5,.22),transparent 45%),radial-gradient(ellipse at 79% 52%,rgba(255,163,24,.18),transparent 40%);animation:team-plasma-flow 17.3s ease-in-out infinite alternate}
-.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::after{inset:13% 4% 42%;background:radial-gradient(ellipse at 50% 38%,rgba(183,73,0,.16),transparent 68%);opacity:.5;animation:team-plasma-flow 21.1s ease-in-out infinite alternate-reverse}
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::before{inset:-3% -2% 51%;background:radial-gradient(ellipse at 19% 48%,rgba(255,153,18,.3),rgba(176,69,0,.11) 34%,transparent 68%),radial-gradient(ellipse at 51% 31%,rgba(255,190,47,.31),rgba(191,82,0,.1) 37%,transparent 70%),radial-gradient(ellipse at 82% 49%,rgba(244,137,9,.27),rgba(151,53,0,.1) 35%,transparent 66%);opacity:calc(.5 + (var(--cinematic-energy,0) * .55));animation:team-plasma-flow 26.3s cubic-bezier(.42,.06,.38,.98) infinite alternate}
+.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::after{inset:19% -3% 31%;background:radial-gradient(ellipse at 24% 32%,rgba(195,82,0,.14),transparent 57%),radial-gradient(ellipse at 53% 25%,rgba(236,128,8,.16),transparent 61%),radial-gradient(ellipse at 81% 35%,rgba(183,72,0,.13),transparent 56%);opacity:calc(.32 + (var(--cinematic-energy,0) * .42));animation:team-plasma-drift 31.9s cubic-bezier(.4,.03,.36,.98) infinite alternate-reverse}
 .cinematic-backdrop~.site-shell:has(> .hero) .hero-photo{
   z-index:2;
   right:4%;
@@ -923,15 +949,20 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
   mask-image:none;
 }
 @keyframes team-plasma-aura{
-  0%{opacity:calc(.12 + (var(--cinematic-energy,0) * .2));transform:translate3d(-.45%,.3%,0) scale(1.065)}
-  43%{opacity:calc(.18 + (var(--cinematic-energy,0) * .24));transform:translate3d(.55%,-.35%,0) scale(1.085)}
-  100%{opacity:calc(.145 + (var(--cinematic-energy,0) * .21));transform:translate3d(-.2%,-.1%,0) scale(1.074)}
+  0%{opacity:calc(.125 + (var(--cinematic-energy,0) * .34));transform:translate3d(-.55%,.45%,0) scale(1.145)}
+  29%{opacity:calc(.17 + (var(--cinematic-energy,0) * .37));transform:translate3d(.2%,-.38%,0) scale(1.165)}
+  61%{opacity:calc(.145 + (var(--cinematic-energy,0) * .35));transform:translate3d(.68%,.08%,0) scale(1.153)}
+  100%{opacity:calc(.185 + (var(--cinematic-energy,0) * .39));transform:translate3d(-.18%,-.48%,0) scale(1.172)}
 }
-@keyframes team-plasma-flow{from{transform:translate3d(-3%,2%,0) scale(.96);opacity:.34}to{transform:translate3d(4%,-2%,0) scale(1.08);opacity:.62}}
+@keyframes team-plasma-flow{0%{transform:translate3d(-4%,2%,0) scale(.96)}38%{transform:translate3d(2%,-3%,0) scale(1.07)}71%{transform:translate3d(4%,1%,0) scale(1.02)}100%{transform:translate3d(-1%,-2%,0) scale(1.1)}}
+@keyframes team-plasma-drift{0%{transform:translate3d(3%,1%,0) scale(1.03)}46%{transform:translate3d(-2%,-2%,0) scale(.97)}100%{transform:translate3d(1%,2%,0) scale(1.08)}}
+@keyframes team-volumetric-drift{0%{transform:translate3d(-2%,2%,0) scale(.96);opacity:.42}31%{transform:translate3d(2%,-1%,0) scale(1.045);opacity:.65}67%{transform:translate3d(-1%,-2%,0) scale(1.02);opacity:.5}100%{transform:translate3d(3%,1%,0) scale(1.075);opacity:.61}}
 @media(max-width:720px){
+  .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric,
   .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura,
   .cinematic-backdrop~.site-shell:has(> .hero) .hero-photo{inset:13% 1% 4% 25%;background-position:center bottom}
-  .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura{filter:brightness(0) saturate(100%) invert(50%) sepia(88%) saturate(1100%) hue-rotate(357deg) brightness(84%) contrast(92%) blur(12px);opacity:calc(.11 + (var(--cinematic-energy,0) * .18))}
+  .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric{opacity:calc(.3 + (var(--cinematic-energy,0) * .55))}
+  .cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura{filter:brightness(0) saturate(100%) invert(43%) sepia(92%) saturate(930%) hue-rotate(356deg) brightness(81%) contrast(88%) blur(21px);opacity:calc(.12 + (var(--cinematic-energy,0) * .26));transform-origin:50% 27%}
 }
-@media(prefers-reduced-motion:reduce){.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura{animation:none;transform:scale(1.075)}.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::before,.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::after{animation:none}}
+@media(prefers-reduced-motion:reduce){.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura{animation:none;transform:scale(1.075)}.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::before,.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-aura::after,.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric::before,.cinematic-backdrop~.site-shell:has(> .hero) .hero-team-volumetric::after{animation:none}}
 .video-trailer-preview{display:grid;gap:1.2rem}.video-trailer-preview>header span,.video-trailer-cta span{color:var(--yellow);font-size:.72rem;font-weight:800;letter-spacing:.16em}.video-trailer-preview>header h2,.video-trailer-cta h2{margin:.35rem 0;font:800 clamp(1.35rem,2.4vw,2.2rem)/1 var(--display-font,inherit);text-transform:uppercase}.video-trailer-preview>header p{max-width:62ch;margin:0;color:#aaa}.video-trailer-cta{display:flex;align-items:center;justify-content:space-between;gap:2rem;padding:clamp(1.25rem,3vw,2rem);border:1px solid rgba(227,220,0,.25);border-radius:18px;background:radial-gradient(circle at 85% 20%,rgba(227,220,0,.1),transparent 40%),#0d0e0e;box-shadow:0 16px 46px rgba(0,0,0,.32)}.video-trailer-cta p{margin:.4rem 0;color:#d8d6cd}.video-trailer-cta small{color:#8d8d86}.video-trailer-cta>a{flex:0 0 auto;padding:1rem 1.25rem;border-radius:10px;background:var(--yellow);color:#080808;font-weight:900;text-align:center;transition:transform .2s ease,filter .2s ease}.video-trailer-cta>a:hover,.video-trailer-cta>a:focus-visible{transform:translateY(-2px);filter:brightness(1.07)}@media(max-width:640px){.video-trailer-cta{align-items:stretch;flex-direction:column;gap:1rem}.video-trailer-cta>a{width:100%}}
