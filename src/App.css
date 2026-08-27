@@ -1107,3 +1107,23 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
   .membership-footer__legal a{color:#a5aaa4}
   .membership-footer__base{align-items:start;padding-bottom:max(8px,env(safe-area-inset-bottom))}
 }
+
+/* Final desktop density pass; mobile and tablet composition remain frozen. */
+@media(min-width:1024px){
+  .membership-page .membership-landing-hero{padding-bottom:42px}
+  .membership-page .membership-benefits{padding-block:36px}
+  .membership-page .membership-sales,.membership-page .membership-plans-v4{padding-block:31px}
+  .membership-page .membership-how,.membership-page .membership-faq{padding-block:28px}
+  .membership-page .membership-final-cta{margin-top:36px;margin-bottom:4px}
+  .membership-page>.membership-footer.site-footer{padding-top:24px}
+  .membership-page .membership-benefit-card p{font-size:clamp(12px,.62vw,13px)}
+  .membership-page .membership-sales-copy p{font-size:13px}
+  .membership-page .membership-plan-card header p{font-size:13px}
+  .membership-page .membership-plan-card li{font-size:12px}
+  .membership-page .membership-how-step p{font-size:clamp(12px,.62vw,13px)}
+  .membership-page .membership-trust-note{font-size:11px}
+  .membership-page .membership-sales-layout{grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:26px}
+  .membership-page .membership-plan-card header h3{font-size:37px}
+  .membership-page .membership-plan-price strong{font-size:42px}
+  .membership-page .membership-final-content{grid-template-columns:minmax(0,1fr) minmax(340px,.78fr);gap:32px}
+}
