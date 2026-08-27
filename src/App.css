@@ -1092,3 +1092,18 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
 @media(max-width:760px){.membership-page .membership-landing::before{inset:0;opacity:.25;animation:none}.membership-page .membership-benefit-card{height:104px;padding:11px 12px}.membership-page .membership-benefit-card h3{margin-top:8px;line-height:1.05}.membership-page .membership-benefit-card p{font-size:9.25px;line-height:1.32}.membership-page .membership-how-steps{position:relative}.membership-page .membership-how-step{border-color:rgba(255,255,255,.08);border-left-color:rgba(228,220,0,.27);background:linear-gradient(110deg,rgba(18,21,19,.8),rgba(7,9,8,.62))}.membership-page .membership-faq-item>button{padding-inline:11px}.membership-page .membership-faq-item p{padding-left:11px}.membership-page .membership-preview-lock::before{animation-duration:3.5s}.membership-footer__card>a>svg,.membership-footer__contact>svg{color:#adb1ac}}
 @media(max-width:360px){.membership-page .membership-landing-hero{padding-inline:14px}.membership-page .membership-hero-copy h1{font-size:clamp(36px,11.8vw,43px)}.membership-page .membership-hero-copy p{font-size:11px}.membership-page .membership-hero-actions>a,.membership-page .membership-hero-actions>button{padding-inline:14px;font-size:10.5px}.membership-page .membership-benefit-card{height:108px;padding-inline:10px}.membership-page .membership-benefit-card h3{font-size:13px}.membership-page .membership-benefit-card p{font-size:8.75px}.membership-footer__card>a{font-size:10.5px}}
 @media(prefers-reduced-motion:reduce){.membership-page .membership-landing::before,.membership-page .membership-preview-lock::before,.membership-page .membership-plan-card.is-vip::after,.membership-page .membership-how-step>i .membership-arrow-icon{animation:none!important}.membership-page .membership-landing::before{transform:none;opacity:.48}.membership-page :is(.membership-hero-actions,.membership-plan-action,.membership-final-action)>:is(a,button):active{transform:none}}
+
+/* Surgical final pass: mobile readability and compact footer finish. */
+@media(max-width:760px){
+  .membership-page .membership-hero-copy>small{color:#a6aba5}
+  .membership-page .membership-benefit-card>span{color:rgba(228,220,0,.46);opacity:.72}
+  .membership-page .membership-benefit-card p{color:#b4b8b2;line-height:1.38}
+  .membership-page .membership-how-step p{color:#afb4ae;line-height:1.42}
+  .membership-page .membership-plan-card li{color:#cbd0c9}
+  .membership-page .membership-plan-action>small,.membership-page .membership-final-note{color:#b1b6b0!important}
+  .membership-page .membership-faq-item p{color:#b2b7b1}
+  .membership-footer__brand p{color:#a0a59f}
+  .membership-footer__legal>span{color:#969b95}
+  .membership-footer__legal a{color:#a5aaa4}
+  .membership-footer__base{align-items:start;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+}

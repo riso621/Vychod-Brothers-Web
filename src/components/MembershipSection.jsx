@@ -189,7 +189,7 @@ export default function MembershipSection() {
       <section className="membership-plans-v4" id="plany">
         <Reveal className="membership-section-heading is-centered"><span>JEDNO ČLENSTVO · VŠETOK OBSAH</span><h2>VÝCHOD BROTHERS<br/><em>CLUB.</em></h2><p>Jednoduchý prístup ku všetkému členskému obsahu bez úrovní a doplatkov.</p></Reveal>
         <div className="membership-plan-grid"><motion.article className={`membership-plan-card is-vip is-recommended${isMember ? ' is-current' : ''}`} whileHover={reduceMotion ? undefined : { y: -3 }}>
-          <span className="membership-plan-recommended">JEDINÝ PLÁN</span>{isMember && <span className="membership-plan-current">TVOJE AKTÍVNE ČLENSTVO</span>}
+          {isMember && <span className="membership-plan-current">TVOJE AKTÍVNE ČLENSTVO</span>}
           <header><span>VÝCHOD BROTHERS</span><h3>{clubPlan.name}</h3><p>Všetky členské videá a funkcie v jednom predplatnom.</p></header>
           <div className="membership-plan-price"><strong>{planMeta.club.price}</strong><span>{planMeta.club.note}</span></div>
           <ul>{planBenefits.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
