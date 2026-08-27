@@ -50,6 +50,10 @@ function Icon({ name }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
 
+function ArrowIcon() {
+  return <svg className="membership-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M14 7l5 5-5 5"/></svg>
+}
+
 function Reveal({ children, className = '', delay = 0 }) {
   const reduceMotion = useReducedMotion()
   return <motion.div className={className} initial={reduceMotion ? false : { opacity: 0, y: 22 }} whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: .15 }} transition={{ duration: .6, delay }}>{children}</motion.div>
@@ -132,7 +136,7 @@ export default function MembershipSection() {
           <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .18 }}>Exkluzívne videá, bonusový obsah, premiéry, zákulisie a množstvo ďalšieho obsahu, ktorý na YouTube nikdy neuvidíš.</motion.p>
           <motion.div className="membership-hero-price" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .23 }}><strong>5,99 €</strong><span>/ MESIAC</span></motion.div>
           <motion.div className="membership-hero-actions" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .28 }}>
-            {isMember ? <a href="/videos">POZRIEŤ ČLENSKÉ VIDEÁ <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <span>→</span></button>}
+            {isMember ? <a href="/videos">POZRIEŤ ČLENSKÉ VIDEÁ <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <ArrowIcon/></button>}
           </motion.div>
           <motion.small initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .55 }}>Zrušíš kedykoľvek • okamžitý prístup</motion.small>
         </div>
@@ -168,7 +172,7 @@ export default function MembershipSection() {
               <div className="membership-preview-shade" />
               {!unlocked && <div className="membership-preview-lock"><Icon name="lock"/></div>}
               {unlocked && <div className="membership-preview-play"><Icon name="play"/></div>}
-              <span className="membership-preview-action">{unlocked ? 'POZRIEŤ VIDEO' : 'ODOMKNÚŤ VIDEO'} <i aria-hidden="true">→</i></span>
+              <span className="membership-preview-action">{unlocked ? 'POZRIEŤ VIDEO' : 'ODOMKNÚŤ VIDEO'} <ArrowIcon/></span>
               <div className="membership-preview-meta">
                 <span className={`membership-preview-badge is-${accessLevel}`}>{accessLabel}</span>
                 <strong>{video.title}</strong>
@@ -178,7 +182,7 @@ export default function MembershipSection() {
             return unlocked ? <a href={`/videos/${video.slug}`} key={video.id}>{card}</a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal} key={video.id}>{card}</button>
           })}
         </div> : <div className="membership-preview-empty membership-sales-media" role="status"><strong>{previewStatus === 'error' ? 'Knižnicu sa nepodarilo načítať.' : 'Prvé členské videá pripravujeme.'}</strong><span>{previewStatus === 'error' ? 'Skús stránku obnoviť o chvíľu.' : 'Nový obsah sa tu zobrazí hneď po publikovaní.'}</span></div>}
-          <Reveal className="membership-sales-copy"><p>Za jedno mesačné členstvo získaš celý Club bez ďalších úrovní a doplatkov.</p><ul><li><Icon name="check"/>Exkluzívne videá</li><li><Icon name="check"/>Zákulisie a bonusový obsah</li><li><Icon name="check"/>Skorší prístup k novému obsahu</li></ul>{isMember ? <a href="/videos">PREJSŤ NA ČLENSKÝ OBSAH <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'ODOMKNÚŤ CELÝ OBSAH'} <span>→</span></button>}</Reveal>
+          <Reveal className="membership-sales-copy"><p>Za jedno mesačné členstvo získaš celý Club bez ďalších úrovní a doplatkov.</p><ul><li><Icon name="check"/>Exkluzívne videá</li><li><Icon name="check"/>Zákulisie a bonusový obsah</li><li><Icon name="check"/>Skorší prístup k novému obsahu</li></ul>{isMember ? <a href="/videos">PREJSŤ NA ČLENSKÝ OBSAH <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'ODOMKNÚŤ CELÝ OBSAH'} <ArrowIcon/></button>}</Reveal>
         </div>
       </section>
 
@@ -189,24 +193,24 @@ export default function MembershipSection() {
           <header><span>VÝCHOD BROTHERS</span><h3>{clubPlan.name}</h3><p>Všetky členské videá a funkcie v jednom predplatnom.</p></header>
           <div className="membership-plan-price"><strong>{planMeta.club.price}</strong><span>{planMeta.club.note}</span></div>
           <ul>{planBenefits.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
-          <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <span>→</span></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'}<span>→</span></button>}<small>Zrušíš kedykoľvek.</small></div>
+          <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'}<ArrowIcon/></button>}<small>Zrušíš kedykoľvek.</small></div>
           <p className="membership-trust-note">Tvoríme pre komunitu Východ Brothers naprieč YouTube, TikTok a Instagram.</p>
         </motion.article></div>
       </section>
 
       <section className="membership-how">
         <Reveal className="membership-section-heading is-centered"><span>JEDNODUCHÉ OD PRVEJ SEKUNDY</span><h2>TRI KROKY.<br/><em>A IDEŠ.</em></h2></Reveal>
-        <div className="membership-how-steps">{[['01', 'Aktivuj členstvo', 'Vytvor účet alebo sa prihlás a pokračuj k bezpečnej platbe.'], ['02', 'Zaplať', 'Dokonči bezpečnú mesačnú platbu cez Stripe.'], ['03', 'Pozeraj okamžite', 'Po potvrdení platby sa odomkne všetok členský obsah.']].map(([number, title, text], index) => <Reveal className="membership-how-step" delay={index * .1} key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div>{index < 2 && <i aria-hidden="true">→</i>}</Reveal>)}</div>
+        <div className="membership-how-steps">{[['01', 'Aktivuj členstvo', 'Vytvor účet alebo sa prihlás a pokračuj k bezpečnej platbe.'], ['02', 'Zaplať', 'Dokonči bezpečnú mesačnú platbu cez Stripe.'], ['03', 'Pozeraj okamžite', 'Po potvrdení platby sa odomkne všetok členský obsah.']].map(([number, title, text], index) => <Reveal className="membership-how-step" delay={index * .1} key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div>{index < 2 && <i aria-hidden="true"><ArrowIcon/></i>}</Reveal>)}</div>
       </section>
 
       <section className="membership-faq">
         <Reveal className="membership-section-heading"><span>VŠETKO PODSTATNÉ</span><h2>ČASTÉ<br/><em>OTÁZKY.</em></h2></Reveal>
-        <div className="membership-faq-list">{faqs.map(([question, answer], index) => <div className={`membership-faq-item${openFaq === index ? ' is-open' : ''}`} key={question}><button type="button" aria-expanded={openFaq === index} onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><i>{openFaq === index ? '−' : '+'}</i></button><AnimatePresence initial={false}>{openFaq === index && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .28 }}><p>{answer}</p></motion.div>}</AnimatePresence></div>)}</div>
+        <div className="membership-faq-list">{faqs.map(([question, answer], index) => <div className={`membership-faq-item${openFaq === index ? ' is-open' : ''}`} key={question}><button type="button" aria-expanded={openFaq === index} onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><i aria-hidden="true">+</i></button><AnimatePresence initial={false}>{openFaq === index && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .28 }}><p>{answer}</p></motion.div>}</AnimatePresence></div>)}</div>
       </section>
 
       <section className="membership-final-cta">
         <div className="membership-final-orbit" aria-hidden="true">VB</div>
-        <Reveal className="membership-final-content"><div className="membership-final-copy"><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{isMember ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{isMember ? 'Všetok členský obsah je pripravený v tvojom katalógu.' : '5,99 € / mesiac'}</p></div><div className="membership-final-action">{isMember ? <a className="membership-final-link" href="/videos">Prejsť na členský obsah <b>→</b></a> : <><button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <b>→</b></button><small className="membership-final-note">Zrušíš kedykoľvek.</small></>}</div></Reveal>
+        <Reveal className="membership-final-content"><div className="membership-final-copy"><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{isMember ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{isMember ? 'Všetok členský obsah je pripravený v tvojom katalógu.' : '5,99 € / mesiac'}</p></div><div className="membership-final-action">{isMember ? <a className="membership-final-link" href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <><button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <ArrowIcon/></button><small className="membership-final-note">Zrušíš kedykoľvek.</small></>}</div></Reveal>
       </section>
 
       <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Checkout sa nepodarilo spustiť</h2><p role="alert">{checkoutError || 'Platobná služba momentálne nie je dostupná.'}</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>
