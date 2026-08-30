@@ -1127,3 +1127,8 @@ body:not(:has(.site-shell>.hero)) .cinematic-hero-halo{opacity:.16}
   .membership-page .membership-plan-price strong{font-size:42px}
   .membership-page .membership-final-content{grid-template-columns:minmax(0,1fr) minmax(340px,.78fr);gap:32px}
 }
+
+@media(min-width:1440px){
+  .membership-page .membership-benefits{max-width:1280px}
+  .membership-page .membership-how{max-width:1180px}
+}
