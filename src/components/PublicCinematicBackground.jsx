@@ -133,13 +133,13 @@ export default function PublicCinematicBackground() {
         const pathGrowth = Math.max(0, Math.min(1, (growth - path.delay) / Math.max(.2, 1 - path.delay)))
         if (!pathGrowth) return
         const intensity = pulse * path.strength
-        context.strokeStyle = `rgba(255,126,0,${.16 * intensity})`
+        context.strokeStyle = `rgba(229,9,20,${.16 * intensity})`
         context.lineWidth = (mobile ? 4 : 8) * path.strength
         drawPartialPath(context, path.points, pathGrowth)
-        context.strokeStyle = `rgba(255,211,66,${.56 * intensity})`
+        context.strokeStyle = `rgba(229,9,20,${.56 * intensity})`
         context.lineWidth = (mobile ? 1 : 1.7) * path.strength
         drawPartialPath(context, path.points, pathGrowth)
-        context.strokeStyle = `rgba(255,253,226,${.82 * intensity})`
+        context.strokeStyle = `rgba(255,255,255,${.82 * intensity})`
         context.lineWidth = Math.max(.35, .55 * path.strength)
         drawPartialPath(context, path.points, pathGrowth)
       })
@@ -166,7 +166,7 @@ export default function PublicCinematicBackground() {
         if (particle.x > width + 4) particle.x = -4
         const shimmer = .72 + Math.sin(time * .00065 + particle.phase) * .28
         context.globalAlpha = particle.alpha * shimmer
-        context.fillStyle = particle.depth === 2 ? '#fff0b0' : '#ffb20c'
+        context.fillStyle = particle.depth === 2 ? '#fff0b0' : '#e50914'
         if (particle.depth === 2) {
           context.beginPath()
           context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2)
@@ -193,7 +193,7 @@ export default function PublicCinematicBackground() {
         spark.y += spark.vy * delta
         const life = Math.min(1, age / spark.lifetime)
         context.globalAlpha = Math.sin(life * Math.PI) * .86
-        context.fillStyle = spark.radius > 1.25 ? '#fff5d0' : '#ffc22e'
+        context.fillStyle = spark.radius > 1.25 ? '#fff5d0' : '#b20710'
         context.fillRect(spark.x, spark.y, spark.radius, spark.radius)
       })
 

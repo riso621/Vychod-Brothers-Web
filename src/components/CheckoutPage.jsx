@@ -15,15 +15,15 @@ const planDetails = {
 const appearance = {
   theme: 'night',
   variables: {
-    colorPrimary: '#e3dc00', colorBackground: '#111212', colorText: '#f3f1e8',
+    colorPrimary: '#e50914', colorBackground: '#111212', colorText: '#f3f1e8',
     colorTextSecondary: '#aaa99f', colorDanger: '#ff8f86',
     fontFamily: 'Inter, system-ui, sans-serif', borderRadius: '12px', spacingUnit: '4px',
   },
   rules: {
     '.Input': { border: '1px solid rgba(255,255,255,.14)', boxShadow: 'none', padding: '14px' },
-    '.Input:focus': { borderColor: '#e3dc00', boxShadow: '0 0 0 1px #e3dc00' },
+    '.Input:focus': { borderColor: '#e50914', boxShadow: '0 0 0 1px #e50914' },
     '.Tab': { border: '1px solid rgba(255,255,255,.14)', boxShadow: 'none' },
-    '.Tab--selected': { borderColor: '#e3dc00', boxShadow: '0 0 0 1px #e3dc00' },
+    '.Tab--selected': { borderColor: '#e50914', boxShadow: '0 0 0 1px #e50914' },
     '.Label': { fontWeight: '600' },
   },
 }

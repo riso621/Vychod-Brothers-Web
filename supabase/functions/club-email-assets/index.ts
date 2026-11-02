@@ -1,6 +1,6 @@
 const assets: Record<string, { file: string; contentType: string }> = {
-  '': { file: 'new-video-electric-bg.jpg', contentType: 'image/jpeg' },
-  'background': { file: 'new-video-electric-bg.jpg', contentType: 'image/jpeg' },
+  '': { file: 'new-video-electric-bg.png', contentType: 'image/png' },
+  'background': { file: 'new-video-electric-bg.png', contentType: 'image/png' },
   'thumbnail-frame': { file: 'new-video-thumbnail-electric.png', contentType: 'image/png' },
   'cta-frame': { file: 'new-video-cta-electric.png', contentType: 'image/png' },
   'icon-youtube': { file: 'icon-youtube.png', contentType: 'image/png' },

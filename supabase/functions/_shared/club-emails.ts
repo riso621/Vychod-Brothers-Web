@@ -32,50 +32,50 @@ const socialLinks=[
 
 const brandHeader=()=>`<tr><td class="pad-x" style="padding:19px 34px 13px">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>
-    <td width="34%" style="border-top:1px solid #6f6b00;font-size:1px;line-height:1px">&nbsp;</td>
+    <td width="34%" style="border-top:1px solid #7a1118;font-size:1px;line-height:1px">&nbsp;</td>
     <td align="center" style="padding:0 12px;color:#d7d7d0;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;letter-spacing:3.2px;white-space:nowrap">VÝCHOD BROTHERS CLUB</td>
-    <td width="34%" style="border-top:1px solid #6f6b00;font-size:1px;line-height:1px">&nbsp;</td>
+    <td width="34%" style="border-top:1px solid #7a1118;font-size:1px;line-height:1px">&nbsp;</td>
   </tr></table>
-  <div style="padding-top:10px;text-align:center;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:18px;font-weight:900;line-height:1">VB</div>
+  <div style="padding-top:10px;text-align:center;color:#e50914;font-family:Arial Black,Arial,sans-serif;font-size:18px;font-weight:900;line-height:1">VB</div>
 </td></tr>`
 
 const cta=(url:string,label:string)=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:0 0 8px">
-  <table role="presentation" class="cta-table" cellspacing="0" cellpadding="0"><tr><td bgcolor="#f1e900" style="border:1px solid #fff700;border-radius:7px;box-shadow:0 0 18px rgba(241,233,0,.16)">
+  <table role="presentation" class="cta-table" cellspacing="0" cellpadding="0"><tr><td bgcolor="#e50914" style="border:1px solid #b20710;border-radius:7px;box-shadow:0 0 18px rgba(229,9,20,.16)">
     <a href="${esc(url)}" style="display:inline-block;min-width:240px;padding:15px 25px;color:#090a09;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:13px;font-weight:900;letter-spacing:1.1px;line-height:1.2;text-align:center;text-decoration:none">${label} &nbsp;→</a>
   </td></tr></table>
 </td></tr></table>`
 
-const socialRow=()=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 5px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:32px;height:32px;border:1px solid #666300;border-radius:50%;color:#e6e5de;font-family:Arial,Helvetica,sans-serif;font-size:8px;font-weight:900;line-height:32px;text-align:center;text-decoration:none">${item.short}</a></td>`).join('')}</tr></table>`
+const socialRow=()=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 5px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:32px;height:32px;border:1px solid #651016;border-radius:50%;color:#e6e5de;font-family:Arial,Helvetica,sans-serif;font-size:8px;font-weight:900;line-height:32px;text-align:center;text-decoration:none">${item.short}</a></td>`).join('')}</tr></table>`
 
 const footer=(site:string)=>`<tr><td class="pad-x" style="padding:19px 34px 22px;border-top:1px solid #242520;text-align:center">
   ${socialRow()}
   <div style="margin-top:15px;color:#999a92;font-family:Arial,Helvetica,sans-serif;font-size:8px;letter-spacing:3px">VÝCHOD BROTHERS CLUB</div>
   <p style="margin:10px 0 0;color:#74756e;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.5">Tento e-mail posiela Východ Brothers Club.<br>Obsahové notifikácie spravuješ v nastaveniach účtu.</p>
-  <p style="margin:8px 0 0"><a href="${esc(site)}/account" style="color:#dcd600;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
+  <p style="margin:8px 0 0"><a href="${esc(site)}/account" style="color:#e50914;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
 </td></tr>`
 
 const newVideoHeader=()=>`<tr><td class="drop-pad" style="padding:18px 34px 11px">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>
-    <td width="25%" style="border-top:1px solid #8f8900;font-size:1px;line-height:1px">&nbsp;</td>
+    <td width="25%" style="border-top:1px solid #8b1018;font-size:1px;line-height:1px">&nbsp;</td>
     <td align="center" style="padding:0 13px;color:#f1f1ea;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;letter-spacing:3.8px;white-space:nowrap">VÝCHOD BROTHERS CLUB</td>
-    <td width="25%" style="border-top:1px solid #8f8900;font-size:1px;line-height:1px">&nbsp;</td>
+    <td width="25%" style="border-top:1px solid #8b1018;font-size:1px;line-height:1px">&nbsp;</td>
   </tr></table>
-  <div style="padding-top:10px;text-align:center;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:25px;font-weight:900;line-height:1;text-shadow:0 0 12px #8e8900">VB</div>
+  <div style="padding-top:10px;text-align:center;color:#e50914;font-family:Arial Black,Arial,sans-serif;font-size:25px;font-weight:900;line-height:1;text-shadow:0 0 12px #b20710">VB</div>
 </td></tr>`
 
 const newVideoCta=(url:string,assetBase:string)=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"${assetBase?` background="${esc(assetBase)}/cta-frame"`:''} style="background-position:center;background-repeat:no-repeat;background-size:100% 100%"><tr><td style="padding:12px 15px">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td bgcolor="#f1e900" style="border:1px solid #fff72a;border-radius:5px;box-shadow:0 0 14px #8a8500">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td bgcolor="#e50914" style="border:1px solid #b20710;border-radius:5px;box-shadow:0 0 14px #8b1018">
     <a href="${esc(url)}" style="display:block;padding:15px 18px;color:#050605;font-family:Arial Black,Arial,Helvetica,sans-serif;font-size:16px;font-weight:900;letter-spacing:2.2px;line-height:1.2;text-align:center;text-decoration:none">POZRIEŤ VIDEO &nbsp;→</a>
   </td></tr></table>
 </td></tr></table>`
 
-const newVideoSocialRow=(assetBase:string)=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 6px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:42px;height:42px;border:1px solid #f1e900;border-radius:50%;box-shadow:0 0 11px #8d8700;text-align:center;text-decoration:none"><img src="${esc(assetBase)}/icon-${item.label.toLowerCase()}" width="22" height="22" alt="${item.label}" style="display:block;width:22px;height:22px;margin:10px;border:0"></a></td>`).join('')}</tr></table>`
+const newVideoSocialRow=(assetBase:string)=>`<table role="presentation" align="center" cellspacing="0" cellpadding="0"><tr>${socialLinks.map((item)=>`<td style="padding:0 6px"><a href="${item.url}" aria-label="${item.label}" style="display:block;width:42px;height:42px;border:1px solid #e50914;border-radius:50%;box-shadow:0 0 11px #8b1018;text-align:center;text-decoration:none"><img src="${esc(assetBase)}/icon-${item.label.toLowerCase()}" width="22" height="22" alt="${item.label}" style="display:block;width:22px;height:22px;margin:10px;border:0"></a></td>`).join('')}</tr></table>`
 
 const newVideoFooter=(site:string,assetBase:string)=>`<tr><td class="drop-pad" style="padding:20px 34px 24px;border-top:1px solid #383600;text-align:center">
   ${newVideoSocialRow(assetBase)}
   <div style="margin-top:15px;color:#a8a9a2;font-family:Arial,Helvetica,sans-serif;font-size:8px;letter-spacing:4px">VÝCHOD BROTHERS CLUB</div>
   <p style="margin:9px 0 0;color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.5">Tento e-mail posiela Východ Brothers Club.<br>Obsahové notifikácie spravuješ v nastaveniach účtu.</p>
-  <p style="margin:7px 0 0"><a href="${esc(site)}/account" style="color:#e7e000;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
+  <p style="margin:7px 0 0"><a href="${esc(site)}/account" style="color:#e50914;font-family:Arial,Helvetica,sans-serif;font-size:10px;text-decoration:underline">Môj účet a nastavenia</a></p>
 </td></tr>`
 
 const benefits=[
@@ -85,8 +85,8 @@ const benefits=[
 ]
 
 const benefitsBlock=()=>`<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #5e5b00;border-radius:8px;background:#0b0c0b"><tr><td class="benefit-wrap" style="padding:18px 14px 16px">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td colspan="3" align="center" style="padding:0 0 14px;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:11px;font-weight:900;letter-spacing:2px">— &nbsp; ČO TERAZ ZÍSKAVAŠ &nbsp; —</td></tr><tr>
-  ${benefits.map(([icon,title,copy],index)=>`<td class="benefit-cell" width="33.33%" valign="top" align="center" style="padding:0 8px;${index?'border-left:1px solid #292a26':''}"><div style="color:#f1e900;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1">${icon}</div><div style="margin-top:8px;color:#f5f4ed;font-family:Arial Narrow,Arial,Helvetica,sans-serif;font-size:10px;font-weight:900;line-height:1.25">${title}</div><div class="benefit-copy" style="margin-top:5px;color:#95968e;font-family:Arial,Helvetica,sans-serif;font-size:9px;line-height:1.35">${copy}</div></td>`).join('')}
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td colspan="3" align="center" style="padding:0 0 14px;color:#e50914;font-family:Arial Black,Arial,sans-serif;font-size:11px;font-weight:900;letter-spacing:2px">— &nbsp; ČO TERAZ ZÍSKAVAŠ &nbsp; —</td></tr><tr>
+  ${benefits.map(([icon,title,copy],index)=>`<td class="benefit-cell" width="33.33%" valign="top" align="center" style="padding:0 8px;${index?'border-left:1px solid #292a26':''}"><div style="color:#e50914;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1">${icon}</div><div style="margin-top:8px;color:#f5f4ed;font-family:Arial Narrow,Arial,Helvetica,sans-serif;font-size:10px;font-weight:900;line-height:1.25">${title}</div><div class="benefit-copy" style="margin-top:5px;color:#95968e;font-family:Arial,Helvetica,sans-serif;font-size:9px;line-height:1.35">${copy}</div></td>`).join('')}
   </tr></table>
 </td></tr></table>`
 
@@ -98,26 +98,26 @@ export function renderClubEmail(input:TemplateInput){
   const ctaUrl=input.videoUrl||`${site}/videos`
   const cleanedName=input.name?.trim()
   const hasNaturalName=Boolean(cleanedName&&!/^člen$/i.test(cleanedName))
-  const greeting=hasNaturalName?`Ahoj, <span style="color:#f1e900">${esc(cleanedName!)}</span>.`:'Vitaj medzi nami.'
+  const greeting=hasNaturalName?`Ahoj, <span style="color:#e50914">${esc(cleanedName!)}</span>.`:'Vitaj medzi nami.'
   const welcomeResponsive=`<style>@media only screen and (max-width:620px){.outer{padding:0!important}.shell{border-left:0!important;border-right:0!important}.pad-x{padding-left:20px!important;padding-right:20px!important}.hero-title{font-size:43px!important;letter-spacing:-2px!important}.watermark{font-size:62px!important}.benefit-wrap{padding:15px 10px 13px!important}.benefit-cell{padding-left:5px!important;padding-right:5px!important}.benefit-copy{display:none!important}.video-title{font-size:27px!important}.thank-title{font-size:21px!important}.cta-table{width:100%!important}.cta-table a{box-sizing:border-box!important;min-width:0!important;width:100%!important}}</style>`
   const newVideoResponsive=`<style>@media only screen and (max-width:620px){.outer{padding:0!important}.shell{border-left:0!important;border-right:0!important}.video-title{font-size:27px!important}.drop-pad{padding-left:18px!important;padding-right:18px!important}.drop-title{font-size:43px!important;letter-spacing:-2px!important}.drop-meta{font-size:8px!important;letter-spacing:1.25px!important}.drop-shell{border-left:0!important;border-right:0!important}}</style>`
   const responsive=isWelcome?welcomeResponsive:newVideoResponsive
   const welcomeContent=`
     <tr><td class="pad-x" style="padding:10px 34px 18px">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td valign="middle"><h1 class="hero-title" style="margin:0;color:#f5f4ed;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:56px;font-weight:900;letter-spacing:-2.5px;line-height:.86">VITAJ<br><span style="color:#f1e900">V CLUBE.</span></h1></td><td class="watermark" width="30%" align="right" valign="middle" style="color:#11120d;font-family:Arial Black,Arial,sans-serif;font-size:76px;font-weight:900;line-height:.72">VB</td></tr></table>
-      <div style="width:145px;height:3px;margin:15px 0 22px;background:#f1e900"></div>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td valign="middle"><h1 class="hero-title" style="margin:0;color:#f5f4ed;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:56px;font-weight:900;letter-spacing:-2.5px;line-height:.86">VITAJ<br><span style="color:#e50914">V CLUBE.</span></h1></td><td class="watermark" width="30%" align="right" valign="middle" style="color:#11120d;font-family:Arial Black,Arial,sans-serif;font-size:76px;font-weight:900;line-height:.72">VB</td></tr></table>
+      <div style="width:145px;height:3px;margin:15px 0 22px;background:#e50914"></div>
       <p style="margin:0 0 11px;color:#f4f3ed;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;line-height:1.4">${greeting}</p>
-      <p style="margin:0 0 19px;color:#c7c7c0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6">Tvoje členstvo je aktívne. Od tejto chvíle máš prístup ku všetkému <span style="color:#f1e900;font-weight:700">členskému obsahu</span> Východ Brothers.</p>
+      <p style="margin:0 0 19px;color:#c7c7c0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6">Tvoje členstvo je aktívne. Od tejto chvíle máš prístup ku všetkému <span style="color:#e50914;font-weight:700">členskému obsahu</span> Východ Brothers.</p>
       ${benefitsBlock()}
     </td></tr>
     <tr><td class="pad-x" style="padding:0 34px 22px">${cta(ctaUrl,'POZRIEŤ ČLENSKÉ VIDEÁ')}</td></tr>
     <tr><td class="pad-x" style="padding:0 34px 24px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #30312d;border-radius:8px;background:#0a0b0a"><tr><td align="center" style="padding:22px 18px">
-      <div class="thank-title" style="color:#f1e900;font-family:'Comic Sans MS','Segoe Print',cursive;font-size:25px;font-style:normal;font-weight:700;line-height:1.25">${welcomeThankYou}</div>
-      <div style="width:65%;height:1px;margin:9px auto 13px;background:#726e00"></div>
+      <div class="thank-title" style="color:#e50914;font-family:'Comic Sans MS','Segoe Print',cursive;font-size:25px;font-style:normal;font-weight:700;line-height:1.25">${welcomeThankYou}</div>
+      <div style="width:65%;height:1px;margin:9px auto 13px;background:#7a1118"></div>
       <p style="margin:0;color:#c5c6be;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55">Vďaka ľuďom ako ty môžeme robiť viac videí, väčšie projekty<br>a obsah, ktorý by na YouTube nevznikol.</p>
-      <div style="margin:12px 0 7px;color:#f1e900;font-family:Georgia,serif;font-size:23px;line-height:1">♡</div>
+      <div style="margin:12px 0 7px;color:#e50914;font-family:Georgia,serif;font-size:23px;line-height:1">♡</div>
       <div style="color:#f5f4ed;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:800">Východ Brothers</div>
-      <div style="margin-top:5px;color:#f1e900;font-family:Arial,Helvetica,sans-serif;font-size:8px;font-weight:700;letter-spacing:3px">DAVID &nbsp;•&nbsp; IVAN &nbsp;•&nbsp; RIŠO</div>
+      <div style="margin-top:5px;color:#e50914;font-family:Arial,Helvetica,sans-serif;font-size:8px;font-weight:700;letter-spacing:3px">DAVID &nbsp;•&nbsp; IVAN &nbsp;•&nbsp; RIŠO</div>
     </td></tr></table></td></tr>`
   const safeTitle=esc(input.title||'Nové členské video')
   const description=excerpt(input.description)
@@ -125,10 +125,10 @@ export function renderClubEmail(input:TemplateInput){
   const dropAssetBase=supabaseUrl?`${supabaseUrl}/functions/v1/club-email-assets`:''
   const dropBackground=dropAssetBase?`${dropAssetBase}/background`:''
   const newVideoContent=`
-    <tr><td class="drop-pad" style="padding:15px 34px 8px"><div style="color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:3px">NOVÉ V CLUBE</div><h1 class="drop-title" style="margin:10px 0 0;color:#f7f6ef;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:54px;font-weight:900;letter-spacing:-2.6px;line-height:.83">NOVÉ VIDEO<br><span style="color:#f1e900">PRÁVE<br>PRISTÁLO.</span></h1><div style="width:185px;height:3px;margin:16px 0 1px;background:#f1e900;box-shadow:0 0 10px #b6b000"></div></td></tr>
+    <tr><td class="drop-pad" style="padding:15px 34px 8px"><div style="color:#e50914;font-family:Arial Black,Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:3px">NOVÉ V CLUBE</div><h1 class="drop-title" style="margin:10px 0 0;color:#f7f6ef;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:54px;font-weight:900;letter-spacing:-2.6px;line-height:.83">NOVÉ VIDEO<br><span style="color:#e50914">PRÁVE<br>PRISTÁLO.</span></h1><div style="width:185px;height:3px;margin:16px 0 1px;background:#e50914;box-shadow:0 0 10px #b20710"></div></td></tr>
     <tr><td class="drop-pad" style="padding:18px 34px 27px">
-      ${input.thumbnailUrl?`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"${dropAssetBase?` background="${esc(dropAssetBase)}/thumbnail-frame"`:''} style="background-position:center;background-repeat:no-repeat;background-size:100% 100%"><tr><td style="padding:12px"><img src="${esc(input.thumbnailUrl)}" width="572" alt="${safeTitle}" style="display:block;width:100%;height:auto;border:0;border-radius:5px"></td></tr></table>`:'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid #f1e900;border-radius:9px;background:#111210;box-shadow:0 0 20px #6d6800"><tr><td align="center" style="padding:62px 20px;color:#f1e900;font-family:Arial Black,Arial,sans-serif;font-size:42px">VB</td></tr></table>'}
-      <div class="drop-meta" style="margin-top:19px;color:#f3f2eb;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;letter-spacing:2.1px;white-space:nowrap"><span style="color:#f1e900">ϟ</span>&nbsp; ORIGINÁLNA TVORBA &nbsp;|&nbsp; <span style="color:#f1e900">□</span>&nbsp; BONUSY &nbsp;|&nbsp; <span style="color:#f1e900">☆</span>&nbsp; PREMIÉRY</div>
+      ${input.thumbnailUrl?`<table role="presentation" width="100%" cellspacing="0" cellpadding="0"${dropAssetBase?` background="${esc(dropAssetBase)}/thumbnail-frame"`:''} style="background-position:center;background-repeat:no-repeat;background-size:100% 100%"><tr><td style="padding:12px"><img src="${esc(input.thumbnailUrl)}" width="572" alt="${safeTitle}" style="display:block;width:100%;height:auto;border:0;border-radius:5px"></td></tr></table>`:'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid #e50914;border-radius:9px;background:#111210;box-shadow:0 0 20px #651016"><tr><td align="center" style="padding:62px 20px;color:#e50914;font-family:Arial Black,Arial,sans-serif;font-size:42px">VB</td></tr></table>'}
+      <div class="drop-meta" style="margin-top:19px;color:#f3f2eb;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:800;letter-spacing:2.1px;white-space:nowrap"><span style="color:#e50914">ϟ</span>&nbsp; ORIGINÁLNA TVORBA &nbsp;|&nbsp; <span style="color:#e50914">□</span>&nbsp; BONUSY &nbsp;|&nbsp; <span style="color:#e50914">☆</span>&nbsp; PREMIÉRY</div>
       <h2 class="video-title" style="margin:10px 0 0;color:#f8f7f0;font-family:Arial Black,Arial Narrow,Arial,sans-serif;font-size:32px;font-weight:900;line-height:1.06">${safeTitle}</h2>
       ${description?`<p style="margin:9px 0 0;color:#d0d1c9;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55">${esc(description)}</p>`:''}
       <div style="padding-top:21px">${newVideoCta(ctaUrl,dropAssetBase)}</div>
