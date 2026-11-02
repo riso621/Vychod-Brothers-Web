@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import '../public-offer.css'
 
 const checkoutHref = '/?auth=register&next=%2Fcheckout%2Fclub'
 const fallbackImages = ['/images/team/vychod-brothers-team-evening.webp', '/images/team/vychod-brothers-team-day.webp', '/images/backgrounds/vb-cinematic-energy.webp']
@@ -46,8 +47,16 @@ export default function PublicStreamingLanding({ videos, urls }) {
         <span>VÝCHOD BROTHERS ORIGINAL</span>
         <h1>FILMY A SERIÁLY,<br/>KTORÉ INDE NENÁJDEŠ.</h1>
         <p>Originálne mini filmy, seriály a exkluzívny obsah od Východ Brothers.</p>
-        <strong>Štartovacia cena 6,99 € mesačne. <small>Alebo 59,99 € ročne · zrušíš kedykoľvek.</small></strong>
-        <div><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a><a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a></div>
+        <aside className="public-hero-offer" aria-label="Štartovacia ponuka členstva">
+          <span>ŠTARTOVACIA PONUKA</span>
+          <div className="public-hero-offer-prices">
+            <div className="public-hero-planned-price"><small>Plánovaná bežná cena</small><s>9,99 €</s></div>
+            <div className="public-hero-main-price"><strong>6,99 €</strong><small>/ mesiac</small></div>
+            <b>O 3 € MENEJ MESAČNE</b>
+          </div>
+          <p>Alebo 59,99 € ročne – ušetríš 23,89 € oproti mesačnej platbe.</p>
+        </aside>
+        <div className="public-hero-actions"><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a><a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a></div>
       </div>
     </section>
 

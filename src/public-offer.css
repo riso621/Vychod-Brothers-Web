@@ -1,0 +1,201 @@
+.public-hero-offer {
+  width: min(610px, 100%);
+  margin: 20px auto 0;
+  padding: 16px 18px 14px;
+  border: 1px solid rgba(229, 9, 20, .48);
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(25, 25, 25, .94), rgba(10, 10, 10, .96));
+  box-shadow: 0 16px 42px rgba(0, 0, 0, .36), 0 0 28px rgba(229, 9, 20, .07);
+  text-align: left;
+  text-shadow: none;
+}
+
+.public-hero-offer > span {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 3px;
+  background: #e50914;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.public-hero-offer-prices {
+  margin-top: 11px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+}
+
+.public-hero-planned-price {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 2px;
+}
+
+.public-hero-planned-price small {
+  color: #9b9b9b;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.public-hero-planned-price s {
+  color: #aaa;
+  font-size: 19px;
+  font-weight: 750;
+  text-decoration-color: #e50914;
+  text-decoration-thickness: 2px;
+}
+
+.public-hero-main-price {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.public-hero-main-price strong {
+  color: #fff;
+  font: 900 clamp(38px, 4vw, 50px)/.86 "Barlow Condensed", sans-serif;
+  letter-spacing: -.025em;
+}
+
+.public-hero-main-price small {
+  color: #c3c3c3;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.public-hero-offer-prices > b {
+  align-self: center;
+  padding: 6px 8px;
+  border: 1px solid rgba(229, 9, 20, .68);
+  border-radius: 3px;
+  color: #ff4b54;
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.public-hero-offer > p {
+  max-width: none;
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .09);
+  color: #aaa;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.public-hero-content > .public-hero-actions {
+  margin-top: 18px;
+}
+
+@media (max-width: 680px) {
+  .public-hero {
+    min-height: 650px;
+    height: min(100svh, 760px);
+  }
+
+  .public-hero-content {
+    width: min(100% - 30px, 520px);
+    padding-top: 58px;
+  }
+
+  .public-hero-content h1 {
+    margin: 13px 0;
+    font-size: clamp(40px, 12.4vw, 50px);
+  }
+
+  .public-hero-content > p {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .public-hero-offer {
+    margin-top: 13px;
+    padding: 13px 13px 12px;
+    border-radius: 8px;
+  }
+
+  .public-hero-offer-prices {
+    margin-top: 9px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 5px 14px;
+    align-items: end;
+  }
+
+  .public-hero-planned-price,
+  .public-hero-main-price {
+    grid-row: 1;
+  }
+
+  .public-hero-main-price {
+    justify-self: end;
+  }
+
+  .public-hero-main-price strong {
+    font-size: 39px;
+  }
+
+  .public-hero-main-price small {
+    font-size: 9px;
+  }
+
+  .public-hero-offer-prices > b {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 2px;
+  }
+
+  .public-hero-offer > p {
+    margin-top: 9px;
+    padding-top: 8px;
+    font-size: 9px;
+  }
+
+  .public-hero-content > .public-hero-actions {
+    gap: 9px;
+    margin-top: 14px;
+  }
+
+  .public-hero-content > .public-hero-actions > a:first-child {
+    min-height: 50px;
+  }
+
+  .public-member-link {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .public-hero-content {
+    width: calc(100% - 22px);
+  }
+
+  .public-hero-content h1 {
+    font-size: 39px;
+  }
+
+  .public-hero-offer {
+    padding-inline: 11px;
+  }
+
+  .public-hero-main-price strong {
+    font-size: 36px;
+  }
+
+  .public-hero-planned-price small {
+    max-width: 92px;
+  }
+
+  .public-hero-offer-prices {
+    gap-inline: 8px;
+  }
+}
