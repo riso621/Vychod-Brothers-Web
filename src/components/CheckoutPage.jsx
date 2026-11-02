@@ -13,8 +13,8 @@ const planDetails = {
 }
 
 const clubBilling = {
-  monthly: { ...planDetails.club, price: '6,99 €', interval: 'mesiac', renewal: 'každý mesiac', label: 'Mesačné', badge: 'ŠTARTOVACIA CENA' },
-  annual: { ...planDetails.club, price: '59,99 €', interval: 'rok', renewal: 'každý rok', label: 'Ročné', badge: 'NAJVÝHODNEJŠIE' },
+  monthly: { ...planDetails.club, price: '6,99 €', interval: 'mesiac', renewal: 'každý mesiac', label: 'Mesačné členstvo', badge: 'ŠTARTOVACIA PONUKA' },
+  annual: { ...planDetails.club, price: '59,99 €', interval: 'rok', renewal: 'každý rok', label: 'Ročné členstvo', badge: 'NAJVÝHODNEJŠIE' },
 }
 
 const appearance = {
@@ -511,7 +511,7 @@ export default function CheckoutPage({ plan }) {
                   {cycle === 'monthly' && <><div className="club-price-planned"><small>Plánovaná bežná cena</small><s>9,99 €</s></div><i aria-hidden="true">→</i></>}
                   <div className="club-price-current"><b>{option.price}</b><small>/ {option.interval}</small></div>
                 </div>
-                <footer>{cycle === 'monthly' ? 'ROZDIEL 3 € MESAČNE' : 'UŠETRÍŠ 23,89 € OPROTI 12 MESAČNÝM PLATBÁM'}</footer>
+                {cycle === 'annual' && <div className="club-price-savings">Ušetríš 23,89 € oproti mesačnému členstvu</div>}
               </button>)}
             </div>
             <button className="payment-checkout-submit" type="button" onClick={() => setBillingConfirmed(true)}>POKRAČOVAŤ NA BEZPEČNÚ PLATBU</button>
