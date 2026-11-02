@@ -1,3 +1,28 @@
+[auth]
+site_url = "https://vychodbrothersclub.sk"
+additional_redirect_urls = [
+  "https://vychodbrothersclub.sk/auth/callback",
+  "https://vychodbrothersclub.sk/reset-hesla",
+  "http://localhost:5173/auth/callback",
+  "http://localhost:5173/reset-hesla",
+  "http://127.0.0.1:5173/auth/callback",
+  "http://127.0.0.1:5173/reset-hesla",
+]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+max_frequency = "1m"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[storage.vector]
+enabled = false
+
 [functions.cloudflare-stream-upload-url]
 verify_jwt = false
 

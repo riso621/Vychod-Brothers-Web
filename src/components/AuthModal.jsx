@@ -7,13 +7,20 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function authErrorMessage(error, mode) {
   const code = error?.code || ''
+  const message = String(error?.message || '').toLowerCase()
+  if (message.includes('failed to fetch') || message.includes('network')) return 'Nepodarilo sa spojiť s prihlasovacou službou. Skontroluj internetové pripojenie a skús to znova.'
   if (code === 'invalid_credentials') return 'E-mail alebo heslo nie sú správne.'
   if (code === 'email_not_confirmed') return 'Najprv potvrď svoj e-mail cez odkaz, ktorý sme ti poslali.'
+  if (code === 'email_address_invalid') return 'Táto e-mailová adresa nie je platná.'
   if (['user_already_exists', 'email_exists', 'user_already_registered'].includes(code)) return 'Účet s týmto e-mailom už existuje.'
   if (code === 'weak_password') return 'Heslo je príliš slabé. Použi aspoň 8 znakov.'
-  if (code === 'over_email_send_rate_limit') return 'Odoslali sme už viac e-mailov. Skús to znova o chvíľu.'
+  if (['over_email_send_rate_limit', 'over_request_rate_limit'].includes(code)) return 'Prebehlo príliš veľa pokusov. Počkaj chvíľu a skús to znova.'
+  if (code === 'captcha_failed') return 'Bezpečnostné overenie zlyhalo. Obnov stránku a skús to znova.'
+  if (code === 'email_provider_disabled') return 'Prihlasovanie e-mailom momentálne nie je dostupné.'
+  if (code === 'otp_expired') return 'Potvrdzovací odkaz už vypršal. Vyžiadaj si nový e-mail.'
   if (code === 'signup_disabled') return 'Registrácia je momentálne vypnutá.'
-  if (code === 'validation_failed') return 'Skontroluj zadané údaje.'
+  if (code === 'validation_failed') return message.includes('email') ? 'Zadaj platnú e-mailovú adresu.' : 'Skontroluj zadané údaje.'
+  if (['unexpected_failure', 'database_error'].includes(code)) return 'Prihlasovacia služba má dočasný problém. Skús to, prosím, neskôr.'
   return mode === 'register'
     ? 'Registráciu sa nepodarilo dokončiť. Skús to znova.'
     : mode === 'forgot'
