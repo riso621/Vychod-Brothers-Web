@@ -40,8 +40,8 @@ function validateCredentials({ email, password, confirmPassword, mode }) {
   return ''
 }
 
-function AuthModal({ mode, onModeChange, onClose }) {
-  const [email, setEmail] = useState('')
+function AuthModal({ mode, onModeChange, onClose, initialEmail = '', nextPathOverride = '' }) {
+  const [email, setEmail] = useState(initialEmail)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [status, setStatus] = useState({ type: '', message: '' })
@@ -51,9 +51,13 @@ function AuthModal({ mode, onModeChange, onClose }) {
   const [resendCooldown, setResendCooldown] = useState(0)
   const emailRef = useRef(null)
 
-  const nextPath = new URLSearchParams(window.location.search).get('next')
+  const nextPath = nextPathOverride || new URLSearchParams(window.location.search).get('next')
   const safeNextPath = safeInternalReturnPath(nextPath)
   const confirmationRedirect = `${window.location.origin}/auth/callback${safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ''}`
+
+  useEffect(() => {
+    setEmail(initialEmail)
+  }, [initialEmail])
 
   useEffect(() => {
     emailRef.current?.focus()
@@ -213,8 +217,22 @@ export default function AuthControl() {
   const initialMode = params.get('auth') === 'register' ? 'register' : 'login'
   const [open, setOpen] = useState(() => ['login', 'register'].includes(params.get('auth')))
   const [mode, setMode] = useState(initialMode)
+  const [prefillEmail, setPrefillEmail] = useState('')
+  const [nextPathOverride, setNextPathOverride] = useState('')
   const [logoutError, setLogoutError] = useState('')
   const { session, profile, authLoading, profileLoading, profileError, signOut } = useProfile()
+
+  useEffect(() => {
+    const openAuth = (event) => {
+      const detail = event.detail || {}
+      setMode(detail.mode === 'login' ? 'login' : 'register')
+      setPrefillEmail(typeof detail.email === 'string' ? detail.email : '')
+      setNextPathOverride(typeof detail.next === 'string' ? safeInternalReturnPath(detail.next) : '')
+      setOpen(true)
+    }
+    window.addEventListener('vb:open-auth', openAuth)
+    return () => window.removeEventListener('vb:open-auth', openAuth)
+  }, [])
 
   const handleSignOut = async () => {
     setLogoutError('')
@@ -239,8 +257,8 @@ export default function AuthControl() {
 
   return (
     <>
-      <button className="auth-trigger" type="button" onClick={() => { setMode('login'); setOpen(true) }} disabled={!isSupabaseConfigured}>Prihlásiť sa</button>
-      {open && <AuthModal mode={mode} onModeChange={setMode} onClose={() => setOpen(false)} />}
+      <button className="auth-trigger" type="button" onClick={() => { setMode('login'); setPrefillEmail(''); setNextPathOverride(''); setOpen(true) }} disabled={!isSupabaseConfigured}>Prihlásiť sa</button>
+      {open && <AuthModal mode={mode} onModeChange={setMode} onClose={() => setOpen(false)} initialEmail={prefillEmail} nextPathOverride={nextPathOverride} />}
     </>
   )
 }

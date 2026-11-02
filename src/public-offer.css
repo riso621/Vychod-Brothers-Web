@@ -1,29 +1,24 @@
-.public-hero-offer {
-  position: relative;
-  width: min(640px, 100%);
-  margin: 21px auto 0;
-  padding: 17px 20px 15px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .12);
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 78% 28%, rgba(229, 9, 20, .15), transparent 36%),
-    linear-gradient(135deg, rgba(33, 33, 36, .97), rgba(13, 13, 15, .98));
-  box-shadow:
-    0 22px 55px rgba(0, 0, 0, .5),
-    0 0 34px rgba(229, 9, 20, .09),
-    inset 0 1px rgba(255, 255, 255, .06);
-  text-align: left;
-  text-shadow: none;
+.public-hero-content {
+  width: min(920px, 92vw);
+  padding-top: 64px;
 }
 
-.public-hero-offer::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: linear-gradient(180deg, transparent, #e50914 28%, #e50914 72%, transparent);
-  box-shadow: 0 0 18px rgba(229, 9, 20, .55);
+.public-hero-content h1 {
+  margin: 15px 0 16px;
+  font-size: clamp(54px, 6.5vw, 94px);
+  line-height: .86;
+}
+
+.public-hero-content > p:not(.public-hero-ready) {
+  margin-bottom: 14px;
+}
+
+.public-hero-content > .public-hero-offer {
+  width: min(490px, 100%);
+  margin: 18px auto 0;
+  display: block;
+  text-align: center;
+  text-shadow: 0 3px 20px rgba(0, 0, 0, .7);
 }
 
 .public-hero-offer-badge {
@@ -37,39 +32,38 @@
   font-size: 8px;
   font-weight: 900;
   letter-spacing: .12em;
+  box-shadow: 0 7px 22px rgba(229, 9, 20, .18);
 }
 
 .public-hero-offer-prices {
-  margin-top: 12px;
-  display: grid;
-  grid-template-columns: minmax(145px, .72fr) minmax(260px, 1.28fr);
-  align-items: end;
-  gap: clamp(20px, 4vw, 42px);
+  margin-top: 10px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 24px;
 }
 
 .public-hero-planned-price {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 7px;
-  padding: 9px 11px 10px;
-  border: 1px solid rgba(255, 255, 255, .13);
-  border-radius: 9px;
-  background: linear-gradient(145deg, rgba(8, 8, 10, .84), rgba(25, 25, 28, .72));
-  box-shadow: inset 0 1px rgba(255, 255, 255, .04), 0 8px 24px rgba(0, 0, 0, .2);
+  gap: 2px;
+  padding-bottom: 2px;
 }
 
 .public-hero-planned-price small {
-  color: #a9a9ae;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1.25;
+  max-width: 142px;
+  color: #b2b2b5;
+  font-size: 8px;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: left;
 }
 
 .public-hero-struck-price {
   position: relative;
   width: max-content;
-  height: 34px;
+  height: 31px;
   display: flex;
   align-items: center;
 }
@@ -77,20 +71,19 @@
 .public-hero-struck-price strong {
   position: relative;
   z-index: 1;
-  color: #ededf0;
-  font: 850 29px/.9 Inter, sans-serif;
-  letter-spacing: -.025em;
+  color: #dedee1;
+  font: 800 27px/.9 Inter, sans-serif;
+  letter-spacing: -.03em;
   white-space: nowrap;
 }
 
 .public-hero-struck-price svg {
   position: absolute;
   z-index: 2;
-  left: -5px;
-  right: -7px;
+  left: -4px;
   bottom: -1px;
-  width: calc(100% + 12px);
-  height: 34px;
+  width: calc(100% + 9px);
+  height: 31px;
   overflow: visible;
   pointer-events: none;
 }
@@ -100,61 +93,119 @@
   stroke: #e50914;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 4.2;
+  stroke-width: 3.7;
   vector-effect: non-scaling-stroke;
 }
 
 .public-hero-struck-price path + path {
-  stroke: rgba(255, 57, 67, .5);
-  stroke-width: 1.7;
+  stroke: rgba(255, 75, 84, .45);
+  stroke-width: 1.4;
 }
 
 .public-hero-main-price {
   display: flex;
   align-items: baseline;
-  gap: 9px;
+  gap: 7px;
   white-space: nowrap;
 }
 
 .public-hero-main-price strong {
   color: #fff;
-  font: 900 clamp(52px, 5vw, 66px)/.78 "Barlow Condensed", sans-serif;
+  font: 900 clamp(47px, 4.7vw, 60px)/.8 "Barlow Condensed", sans-serif;
   letter-spacing: -.035em;
-  filter: drop-shadow(0 5px 18px rgba(0, 0, 0, .38));
+  filter: drop-shadow(0 5px 16px rgba(0, 0, 0, .45));
 }
 
 .public-hero-main-price small {
-  color: #d4d4d6;
-  font-size: 11px;
+  color: #ddd;
+  font-size: 10px;
   font-weight: 700;
 }
 
-.public-hero-saving {
+.public-hero-offer > p {
+  margin: 8px 0 0;
+  color: #c2c2c4;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.public-hero-content > .public-hero-ready {
+  max-width: none;
+  margin: 16px auto 8px;
+  color: #f1f1f1;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.public-hero-content > .public-hero-signup {
+  width: min(570px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+}
+
+.public-hero-signup input {
+  min-width: 0;
+  height: 54px;
+  padding: 0 17px;
+  border: 1px solid rgba(255, 255, 255, .42);
+  border-radius: 4px;
+  background: rgba(16, 16, 18, .8);
+  color: #fff;
+  font: 500 14px Inter, sans-serif;
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .035);
+}
+
+.public-hero-signup input::placeholder {
+  color: #b7b7ba;
+}
+
+.public-hero-signup input:focus {
+  border-color: #fff;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.public-hero-signup button {
+  min-width: 168px;
+  height: 54px;
+  padding: 0 21px;
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  margin-top: 13px;
-  padding: 0 10px;
-  border: 1px solid rgba(229, 9, 20, .62);
-  border-radius: 999px;
-  background: rgba(229, 9, 20, .1);
-  color: #ff5b63;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .1em;
+  justify-content: center;
+  gap: 17px;
+  border: 0;
+  border-radius: 4px;
+  background: #e50914;
+  color: #fff;
+  font: 900 12px Inter, sans-serif;
+  letter-spacing: .055em;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(229, 9, 20, .2);
+  transition: background .2s, transform .2s;
 }
 
-.public-hero-offer > p {
-  max-width: none;
-  margin: 10px 0 0;
-  color: #9d9da1;
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1.4;
+.public-hero-signup button b {
+  font-size: 20px;
+  line-height: 1;
 }
 
-.public-hero-content > .public-hero-actions {
-  margin-top: 18px;
+.public-hero-signup button:hover {
+  background: #b20710;
+  transform: translateY(-1px);
+}
+
+.public-hero-signup button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.public-hero-content > .public-member-link {
+  display: inline-block;
+  margin-top: 10px;
 }
 
 @media (max-width: 680px) {
@@ -164,108 +215,102 @@
   }
 
   .public-hero-content {
-    width: min(100% - 30px, 520px);
-    padding-top: 58px;
+    width: min(100% - 28px, 520px);
+    padding-top: 56px;
   }
 
   .public-hero-content h1 {
-    margin: 13px 0;
-    font-size: clamp(40px, 12.4vw, 50px);
+    margin: 12px 0;
+    font-size: clamp(39px, 11.8vw, 48px);
   }
 
-  .public-hero-content > p {
-    margin-bottom: 12px;
+  .public-hero-content > p:not(.public-hero-ready) {
+    margin-bottom: 9px;
     font-size: 14px;
     line-height: 1.4;
   }
 
-  .public-hero-offer {
-    margin-top: 13px;
-    padding: 14px 14px 13px 16px;
-    border-radius: 11px;
+  .public-hero-content > .public-hero-offer {
+    margin-top: 12px;
   }
 
   .public-hero-offer-prices {
-    margin-top: 11px;
-    grid-template-columns: minmax(105px, .78fr) minmax(165px, 1.22fr);
-    gap: 12px;
+    margin-top: 8px;
+    gap: 17px;
   }
 
   .public-hero-planned-price small {
-    max-width: 112px;
-    font-size: 8px;
-  }
-
-  .public-hero-planned-price {
-    padding: 8px 9px 9px;
+    max-width: 120px;
+    font-size: 7.5px;
   }
 
   .public-hero-struck-price {
-    height: 32px;
+    height: 28px;
   }
 
   .public-hero-struck-price strong {
-    font-size: 26px;
+    font-size: 24px;
   }
 
-  .public-hero-main-price {
-    gap: 6px;
+  .public-hero-struck-price svg {
+    height: 28px;
   }
 
   .public-hero-main-price strong {
-    font-size: clamp(42px, 13vw, 50px);
+    font-size: 45px;
   }
 
   .public-hero-main-price small {
-    font-size: 9px;
-  }
-
-  .public-hero-saving {
-    margin-top: 11px;
+    font-size: 8px;
   }
 
   .public-hero-offer > p {
-    margin-top: 8px;
+    margin-top: 6px;
     font-size: 9px;
   }
 
-  .public-hero-content > .public-hero-actions {
-    gap: 9px;
-    margin-top: 14px;
-  }
-
-  .public-hero-content > .public-hero-actions > a:first-child {
-    min-height: 50px;
-  }
-
-  .public-member-link {
+  .public-hero-content > .public-hero-ready {
+    margin-top: 13px;
+    margin-bottom: 7px;
     font-size: 11px;
+  }
+
+  .public-hero-content > .public-hero-signup {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .public-hero-signup input,
+  .public-hero-signup button {
+    width: 100%;
+    height: 48px;
+  }
+
+  .public-hero-content > .public-member-link {
+    margin-top: 8px;
+    font-size: 10px;
   }
 }
 
 @media (max-width: 360px) {
+  .public-hero {
+    min-height: 620px;
+  }
+
   .public-hero-content {
     width: calc(100% - 22px);
+    padding-top: 52px;
   }
 
   .public-hero-content h1 {
-    font-size: 39px;
-  }
-
-  .public-hero-offer {
-    padding-inline: 14px 10px;
+    font-size: 37px;
   }
 
   .public-hero-offer-prices {
-    grid-template-columns: minmax(96px, .72fr) minmax(156px, 1.28fr);
-    gap: 8px;
+    gap: 10px;
   }
 
   .public-hero-main-price strong {
-    font-size: 43px;
-  }
-
-  .public-hero-main-price small {
-    font-size: 8px;
+    font-size: 41px;
   }
 }

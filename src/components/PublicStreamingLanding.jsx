@@ -37,7 +37,13 @@ function imageFor(video, urls, index) {
 
 export default function PublicStreamingLanding({ videos, urls }) {
   const [openFaq, setOpenFaq] = useState(-1)
+  const [signupEmail, setSignupEmail] = useState('')
   const posters = videos.length ? videos.slice(0, 12) : fallbackImages.map((thumbnail, index) => ({ id: `fallback-${index}`, thumbnail, title: 'Východ Brothers' }))
+
+  const startRegistration = (event) => {
+    event.preventDefault()
+    window.dispatchEvent(new CustomEvent('vb:open-auth', { detail: { mode: 'register', email: signupEmail.trim(), next: '/checkout/club' } }))
+  }
 
   return <div className="public-stream">
     <section className="public-hero">
@@ -47,7 +53,7 @@ export default function PublicStreamingLanding({ videos, urls }) {
         <span>VÝCHOD BROTHERS ORIGINAL</span>
         <h1>FILMY A SERIÁLY,<br/>KTORÉ INDE NENÁJDEŠ.</h1>
         <p>Originálne mini filmy, seriály a exkluzívny obsah od Východ Brothers.</p>
-        <aside className="public-hero-offer" aria-label="Štartovacia ponuka členstva">
+        <div className="public-hero-offer" aria-label="Štartovacia ponuka členstva">
           <span className="public-hero-offer-badge">ŠTARTOVACIA PONUKA</span>
           <div className="public-hero-offer-prices">
             <div className="public-hero-planned-price">
@@ -59,10 +65,15 @@ export default function PublicStreamingLanding({ videos, urls }) {
             </div>
             <div className="public-hero-main-price"><strong>6,99 €</strong><small>/ mesiac</small></div>
           </div>
-          <strong className="public-hero-saving">UŠETRÍŠ 3 € MESAČNE</strong>
-          <p>Ročné členstvo 59,99 € – úspora 23,89 € oproti mesačnej platbe.</p>
-        </aside>
-        <div className="public-hero-actions"><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a><a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a></div>
+          <p>Alebo 59,99 € ročne. Zrušíš kedykoľvek.</p>
+        </div>
+        <p className="public-hero-ready">Si pripravený sledovať? Zadaj svoj e-mail a začni.</p>
+        <form className="public-hero-signup" onSubmit={startRegistration}>
+          <label className="sr-only" htmlFor="public-signup-email">E-mailová adresa</label>
+          <input id="public-signup-email" type="email" value={signupEmail} onChange={(event) => setSignupEmail(event.target.value)} placeholder="E-mailová adresa" autoComplete="email" inputMode="email" required />
+          <button type="submit">ZAČAŤ <b aria-hidden="true">→</b></button>
+        </form>
+        <a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a>
       </div>
     </section>
 
