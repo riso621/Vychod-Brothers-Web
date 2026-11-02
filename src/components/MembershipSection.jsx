@@ -188,8 +188,8 @@ export default function MembershipSection() {
           {isMember && <span className="membership-plan-current">TVOJE AKTÍVNE ČLENSTVO</span>}
           <header><span>VÝCHOD BROTHERS</span><h3>{clubPlan.name}</h3><p>Všetky členské videá a funkcie v jednom predplatnom.</p></header>
           <div className="membership-billing-preview" aria-label="Možnosti fakturácie">
-            <div><em>ŠTARTOVACIA CENA</em><small>Plánovaná bežná cena <s>9,99 €</s></small><strong>6,99 € <span>/ mesiac</span></strong></div>
-            <div className="is-annual"><em>NAJVÝHODNEJŠIE</em><small>Úspora oproti 12 mesačným platbám</small><strong>59,99 € <span>/ rok</span></strong><b>Ušetríš 23,89 €</b></div>
+            <div className="club-price-card is-monthly"><header><strong>MESAČNÉ</strong><em>ŠTARTOVACIA PONUKA</em></header><div className="club-price-offer"><div className="club-price-planned"><small>Plánovaná bežná cena</small><s>9,99 €</s></div><i aria-hidden="true">→</i><div className="club-price-current"><b>6,99 €</b><small>/ mesiac</small></div></div><footer>ROZDIEL 3 € MESAČNE</footer></div>
+            <div className="club-price-card is-annual"><header><strong>ROČNÉ</strong><em>NAJVÝHODNEJŠIE</em></header><div className="club-price-offer"><div className="club-price-current"><b>59,99 €</b><small>/ rok</small></div></div><footer>UŠETRÍŠ 23,89 € OPROTI 12 MESAČNÝM PLATBÁM</footer></div>
           </div>
           <ul>{planBenefits.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
           <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – OD 6,99 €'}<ArrowIcon/></button>}<small>Mesačne alebo ročne · zrušíš kedykoľvek.</small></div>

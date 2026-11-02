@@ -505,12 +505,13 @@ export default function CheckoutPage({ plan }) {
             <span>VYBER SI FAKTURÁCIU</span>
             <h2>Rovnaký obsah. Dve možnosti platby.</h2>
             <div className="checkout-billing-options" role="radiogroup" aria-label="Periodicita členstva">
-              {Object.entries(clubBilling).map(([cycle, option]) => <button className={billingCycle === cycle ? 'is-selected' : ''} type="button" role="radio" aria-checked={billingCycle === cycle} onClick={() => setBillingCycle(cycle)} key={cycle}>
-                <em>{option.badge}</em><strong>{option.label}</strong>
-                {cycle === 'monthly'
-                  ? <div className="checkout-price-context"><small>Plánovaná bežná cena</small><s>9,99 €</s></div>
-                  : <div className="checkout-price-context is-saving"><small>Úspora oproti 12 mesačným platbám</small><span>23,89 €</span></div>}
-                <b>{option.price} <small>/ {option.interval}</small></b>
+              {Object.entries(clubBilling).map(([cycle, option]) => <button className={`club-price-card is-${cycle}${billingCycle === cycle ? ' is-selected' : ''}`} type="button" role="radio" aria-checked={billingCycle === cycle} onClick={() => setBillingCycle(cycle)} key={cycle}>
+                <header><strong>{option.label}</strong><em>{option.badge}</em></header>
+                <div className="club-price-offer">
+                  {cycle === 'monthly' && <><div className="club-price-planned"><small>Plánovaná bežná cena</small><s>9,99 €</s></div><i aria-hidden="true">→</i></>}
+                  <div className="club-price-current"><b>{option.price}</b><small>/ {option.interval}</small></div>
+                </div>
+                <footer>{cycle === 'monthly' ? 'ROZDIEL 3 € MESAČNE' : 'UŠETRÍŠ 23,89 € OPROTI 12 MESAČNÝM PLATBÁM'}</footer>
               </button>)}
             </div>
             <button className="payment-checkout-submit" type="button" onClick={() => setBillingConfirmed(true)}>POKRAČOVAŤ NA BEZPEČNÚ PLATBU</button>
