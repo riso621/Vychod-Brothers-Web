@@ -232,7 +232,7 @@ export default function AuthControl() {
 
   return (
     <>
-      <button className="auth-trigger" type="button" onClick={() => { setMode('login'); setOpen(true) }} disabled={!isSupabaseConfigured}>Prihlásiť</button>
+      <button className="auth-trigger" type="button" onClick={() => { setMode('login'); setOpen(true) }} disabled={!isSupabaseConfigured}>Prihlásiť sa</button>
       {open && <AuthModal mode={mode} onModeChange={setMode} onClose={() => setOpen(false)} />}
     </>
   )

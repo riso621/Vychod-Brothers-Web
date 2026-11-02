@@ -27,9 +27,10 @@ const CollaborationTeaser = lazy(() => import('./components/CollaborationTeaser'
 const AboutStoryTeaser = lazy(() => import('./components/AboutStoryTeaser'))
 const AboutPage = lazy(() => import('./components/AboutPage'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker'))
+const LegalPage = lazy(() => import('./components/LegalPage'))
 
 function Logo() {
-  return <a className="brand" href="/" aria-label="Východ Brothers – domov"><i>V</i>B</a>
+  return <a className="brand" href="/" aria-label="Východ Brothers – domov"><i>V</i>B<span>VÝCHOD BROTHERS</span></a>
 }
 
 function Header() {
@@ -38,21 +39,22 @@ function Header() {
   const isMember = isActiveClubMember(profile, session?.user?.app_metadata?.role === 'admin')
   const path = window.location.pathname
   const nav = [['Domov', '/'], ['Filmy', '/filmy'], ['Seriály', '/serialy'], ['Všetky videá', '/videos'], ['Členstvo', '/clenstvo']]
-  return <header className="topbar">
+  return <header className={`topbar${session ? '' : ' public-topbar'}`}>
     <Logo />
-    <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
+    {session && <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
       {nav.map(([label, href]) => <a className={path === href || href === '/videos' && path.startsWith('/videos') ? 'active' : ''} href={href} key={href} onClick={() => setOpen(false)}>{label}</a>)}
-    </nav>
-    <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : '5,99 € / MESIAC'}</a>
+    </nav>}
+    {session && <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : '5,99 € / MESIAC'}</a>}
     <Suspense fallback={null}><AuthControl /></Suspense>
-    <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
+    {session && <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>}
   </header>
 }
 
 function HomePage() {
+  const { session, authLoading } = useProfile()
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><main className="site-shell streaming-shell"><Header /><StreamingHome /><Suspense fallback={null}><AboutStoryTeaser /><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><main className="site-shell streaming-shell"><Header /><StreamingHome />{!authLoading && session && <><Suspense fallback={null}><AboutStoryTeaser /><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></>}</main></>
 }
 
 function VideosPage({ slug, contentType = 'all' }) {
@@ -74,6 +76,8 @@ function routeFor(path) {
   if (path === '/spolupraca' || path === '/spolupraca/') return <StandardPage className="collaboration-page"><CollaborationSection /></StandardPage>
   if (path === '/reset-hesla' || path === '/reset-hesla/') return <StandardPage className="account-page"><PasswordResetPage /></StandardPage>
   if (path === '/auth/callback' || path === '/auth/callback/') return <StandardPage className="account-page"><AuthCallbackPage /></StandardPage>
+  if (path === '/obchodne-podmienky' || path === '/obchodne-podmienky/') return <StandardPage className="legal-shell"><LegalPage type="terms" /></StandardPage>
+  if (path === '/ochrana-osobnych-udajov' || path === '/ochrana-osobnych-udajov/') return <StandardPage className="legal-shell"><LegalPage type="privacy" /></StandardPage>
   return <HomePage />
 }
 

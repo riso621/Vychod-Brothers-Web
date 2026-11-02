@@ -5,6 +5,7 @@ import { getSignedStorageUrls } from '../lib/storage'
 import { canAccessMembership, isActiveClubMember } from '../lib/membership'
 import { useProfile } from '../context/profile-context'
 import { useWatchHistory } from '../context/watch-history-context'
+import PublicStreamingLanding from './PublicStreamingLanding'
 
 const fallback = '/images/backgrounds/vb-cinematic-energy-4k.webp'
 
@@ -29,7 +30,7 @@ function Rail({ title, eyebrow, videos, urls, getProgress }) {
 }
 
 export default function StreamingHome() {
-  const { profile, session } = useProfile()
+  const { profile, session, authLoading } = useProfile()
   const { getProgress } = useWatchHistory()
   const [videos, setVideos] = useState([])
   const [urls, setUrls] = useState(new Map())
@@ -53,6 +54,9 @@ export default function StreamingHome() {
   const movies = videos.filter((video) => video.contentType === 'movie')
   const series = videos.filter((video) => video.contentType === 'series')
   const continuing = accessible.filter((video) => getProgress(video.id) && !getProgress(video.id)?.completed)
+
+  if (authLoading) return <div className="public-home-loading" aria-live="polite">Načítavam Východ Brothers…</div>
+  if (!session) return <PublicStreamingLanding videos={videos} urls={urls} />
 
   return <div className="stream-home">
     <section className="stream-hero" style={{ '--hero-image': `url("${resolveImage(hero, urls)}")` }}>
