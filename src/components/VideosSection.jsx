@@ -38,7 +38,7 @@ function VideoCard({ video, thumbnailUrl, featured = false, progress = null, has
   )
 }
 
-export default function VideosSection() {
+export default function VideosSection({ contentType = 'all' }) {
   const { session, profile } = useProfile()
   const { getProgress, isEnabled: watchHistoryEnabled } = useWatchHistory()
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
@@ -47,10 +47,11 @@ export default function VideosSection() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [thumbnailUrls, setThumbnailUrls] = useState(new Map())
-  const featuredVideo = publishedVideos.find((video) => video.featured) || null
   const accessLevels = useMemo(() => ['free', 'member', 'vip'].filter((level) => publishedVideos.some((video) => video.accessLevel === level)), [publishedVideos])
   const [accessFilter, setAccessFilter] = useState('all')
-  const visibleVideos = accessFilter === 'all' ? publishedVideos : publishedVideos.filter((video) => video.accessLevel === accessFilter)
+  const typedVideos = contentType === 'all' ? publishedVideos : publishedVideos.filter((video) => video.contentType === contentType)
+  const featuredVideo = typedVideos.find((video) => video.featured) || (contentType === 'all' ? null : typedVideos[0]) || null
+  const visibleVideos = accessFilter === 'all' ? typedVideos : typedVideos.filter((video) => video.accessLevel === accessFilter)
   const accessFor = (video) => canAccessMembership(video.accessLevel, profile, isAdmin)
 
   useEffect(() => {
@@ -88,14 +89,15 @@ export default function VideosSection() {
   return (
     <section className="videos-catalog" aria-labelledby="videos-heading">
       <header className="videos-catalog-heading">
-        <span>VÝCHOD BROTHERS · KATALÓG</span>
-        <h1 id="videos-heading">Videá</h1>
-        <p>Paródie, minifilmy, skeče aj pohľad do zákulisia na jednom mieste. Katalóg postupne pripravujeme.</p>
+        <span>VÝCHOD BROTHERS · STREAM</span>
+        <h1 id="videos-heading">{contentType === 'movie' ? 'Filmy' : contentType === 'series' ? 'Seriály' : 'Všetky videá'}</h1>
+        <p>{contentType === 'movie' ? 'Originálne minifilmy a príbehy z východu v jednom filmovom katalógu.' : contentType === 'series' ? 'Série, epizódy a formáty, ku ktorým sa budeš chcieť vrátiť.' : 'Filmy, série, paródie, skeče aj zákulisie. Všetko na jednom mieste.'}</p>
       </header>
 
       {loading && <p className="videos-catalog-status" aria-live="polite">Načítavam videá…</p>}
       {!loading && error && <p className="videos-catalog-status is-error" role="alert">{error}</p>}
       {!loading && !error && publishedVideos.length === 0 && <p className="videos-catalog-status">Zatiaľ tu nie sú žiadne publikované videá.</p>}
+      {!loading && !error && publishedVideos.length > 0 && typedVideos.length === 0 && <p className="videos-catalog-status">V tejto kategórii zatiaľ nie je publikovaný žiadny obsah.</p>}
 
       {!loading && !error && featuredVideo && (
         <div className="videos-featured" aria-label="Odporúčané video">
@@ -104,8 +106,8 @@ export default function VideosSection() {
         </div>
       )}
 
-      {!loading && !error && publishedVideos.length > 0 && <><div className="videos-toolbar">
-        <h2>Všetky videá</h2>
+      {!loading && !error && typedVideos.length > 0 && <><div className="videos-toolbar">
+        <h2>{contentType === 'all' ? 'Celý katalóg' : contentType === 'movie' ? 'Všetky filmy' : 'Všetky seriály'}</h2>
         <div className="videos-filters" aria-label="Filtrovať videá podľa prístupu">
           <button type="button" className={accessFilter === 'all' ? 'is-active' : ''} aria-pressed={accessFilter === 'all'} onClick={() => setAccessFilter('all')}>Všetky</button>
           {accessLevels.map((level) => <button type="button" className={accessFilter === level ? 'is-active' : ''} aria-pressed={accessFilter === level} onClick={() => setAccessFilter(level)} key={level}>{accessLabels[level]}</button>)}

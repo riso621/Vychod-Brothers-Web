@@ -7,6 +7,8 @@ let publishedVideosCachedAt = 0
 const PUBLISHED_VIDEOS_TTL_MS = 30_000
 
 function mapVideo(row) {
+  const searchable = `${row.title || ''} ${row.description || ''}`.toLocaleLowerCase('sk')
+  const contentType = /seri[aá]l|epiz[oó]d|s[ée]ria|diel\b/.test(searchable) ? 'series' : 'movie'
   return {
     id: row.id,
     slug: row.slug,
@@ -29,6 +31,7 @@ function mapVideo(row) {
     streamVideoId: ['stream', 'cloudflare_stream'].includes(row.provider) ? row.provider_video_id || '' : '',
     trailerStreamVideoId: row.trailer_provider_video_id || '',
     tags: [],
+    contentType,
   }
 }
 

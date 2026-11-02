@@ -1,18 +1,13 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { animate, motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { aboutPath, media, navItems, socialProfiles, stats } from './data'
-import NewsletterSection from './components/NewsletterSection'
+import { lazy, Suspense, useState } from 'react'
+import { motion, useScroll, useSpring } from 'framer-motion'
+import { aboutPath } from './data'
 import Footer from './components/Footer'
+import NewsletterSection from './components/NewsletterSection'
 import { useProfile } from './context/profile-context'
 import { isActiveClubMember } from './lib/membership'
-import { useSiteContent } from './hooks/useSiteContent'
-import CtaButton from './components/CtaButton'
-import ClubCommunityCard from './components/ClubCommunityCard'
 import PublicCinematicBackground from './components/PublicCinematicBackground'
-import { getHomepageCounts } from './lib/homepage-counts'
-import { formatSocialCount } from './lib/social-stats'
-import { useSocialStats } from './hooks/useSocialStats'
 import './App.css'
+import './netflix.css'
 
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
@@ -20,7 +15,8 @@ const WatchHistoryProvider = lazy(() => import('./context/WatchHistoryProvider')
 const AdminApp = lazy(() => import('./admin/AdminApp'))
 const VideosSection = lazy(() => import('./components/VideosSection'))
 const VideoDetail = lazy(() => import('./components/VideoDetail'))
-const HomepageContent = lazy(() => import('./components/HomepageContent'))
+const StreamingHome = lazy(() => import('./components/StreamingHome'))
+const CinematicIntro = lazy(() => import('./components/CinematicIntro'))
 const MembershipSection = lazy(() => import('./components/MembershipSection'))
 const AccountDashboard = lazy(() => import('./components/AccountDashboard'))
 const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
@@ -32,163 +28,59 @@ const AboutStoryTeaser = lazy(() => import('./components/AboutStoryTeaser'))
 const AboutPage = lazy(() => import('./components/AboutPage'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker'))
 
-const reveal = {
-  hidden: { opacity: 0, y: 26 },
-  visible: { opacity: 1, y: 0, transition: { duration: .85, ease: [.2, .7, .2, 1] } },
-}
-
 function Logo() {
-  return <a className="brand" href={window.location.pathname === '/' ? '#domov' : '/'} aria-label="Východ Brothers – domov"><i>V</i>B</a>
+  return <a className="brand" href="/" aria-label="Východ Brothers – domov"><i>V</i>B</a>
 }
 
 function Header() {
   const [open, setOpen] = useState(false)
   const { profile, session } = useProfile()
   const isMember = isActiveClubMember(profile, session?.user?.app_metadata?.role === 'admin')
-  const isVideosPage = window.location.pathname.startsWith('/videos')
-  const isMembershipPage = window.location.pathname.startsWith('/clenstvo')
-  const isAboutPage = window.location.pathname === aboutPath || window.location.pathname === `${aboutPath}/`
-  const isHomePage = window.location.pathname === '/'
-  const hrefs = !isHomePage
-    ? ['/', '/videos', aboutPath, '/clenstvo', '/#merch', '/#kontakt']
-    : ['#domov', '/videos', aboutPath, '/clenstvo', '#merch', '#kontakt']
-  return (
-    <header className="topbar">
-      <Logo />
-      <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
-        {navItems.map((item, index) => <a className={isVideosPage && index === 1 || isAboutPage && index === 2 || isMembershipPage && index === 3 || isHomePage && index === 0 ? 'active' : ''} href={hrefs[index]} key={item} onClick={() => setOpen(false)}>{item}</a>)}
-      </nav>
-      <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'ČLENSKÉ VIDEÁ' : 'STAŤ SA ČLENOM'}</a>
-      <Suspense fallback={null}><AuthControl /></Suspense>
-      <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
-    </header>
-  )
-}
-
-function FilmStrip() {
-  const { scrollY } = useScroll()
-  const stripX = useTransform(scrollY, [0, 900], [0, 36])
-  return <motion.div className="film-strip" style={{ x: stripX }} initial={{ opacity: 0, y: 35 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .75, duration: 1 }} aria-label="Ukážky z videí"><div className="perforations top" />{media.film.map((image, index) => <div className="frame" key={`${image}-${index}`}><img src={image} alt={`Momentka z natáčania ${index + 1}`} loading="eager" decoding="async" /></div>)}<div className="perforations bottom" /></motion.div>
-}
-
-function Hero() {
-  const siteContent = useSiteContent()
-  const reduceMotion = useReducedMotion()
-  const { scrollY } = useScroll()
-  const photoY = useTransform(scrollY, [0, 900], [0, reduceMotion ? 0 : 46])
-  const copyY = useTransform(scrollY, [0, 700], [0, reduceMotion ? 0 : -24])
-  return (
-    <section className="hero" id="domov">
-      <Header />
-      <motion.div className="hero-team-volumetric" aria-hidden="true" style={{ y: photoY }} />
-      <motion.div className="hero-team-aura" aria-hidden="true" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} />
-      <motion.div className="hero-photo" style={{ backgroundImage: `url(${media.hero})`, y: photoY }} animate={reduceMotion ? undefined : { scale: [1.015, 1.055] }} transition={{ duration: 18, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }} />
-      <div className="hero-smoke" aria-hidden="true" />
-      <motion.div className="hero-copy" style={{ y: copyY }} initial="hidden" animate="visible" transition={{ staggerChildren: .16 }}><motion.h1 variants={reveal}>{String(siteContent['homepage.hero.headline'] || 'VÝCHOD BROTHERS').split(' ').map((word)=><span key={word}>{word}</span>)}</motion.h1><motion.p variants={reveal}>{siteContent['homepage.hero.subtitle'] || <>PARÓDIE. MINIFILMY. ZÁBAVA.<br />TO JE NÁŠ SVET.</>}</motion.p><motion.div variants={reveal}><CtaButton className="hero-main-cta" href={socialProfiles.youtube.url} external icon="play" label="POZRIEŤ NAJNOVŠIE VIDEO" /></motion.div></motion.div>
-      <motion.div className="neon-mark" aria-hidden="true" initial={{ opacity: 0 }} animate={{ opacity: .76 }} transition={{ delay: .8, duration: 1.2 }}>VB</motion.div>
-      <FilmStrip />
-      <motion.p className="mentality" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: .8 }}>NIE JE LEN MIESTO,<br />JE TO MENTALITA.<i /></motion.p>
-    </section>
-  )
-}
-
-function AnimatedNumber({ value, placeholder = '--' }) {
-  const ref = useRef(null)
-  const inView = useInView(ref, { once: true, amount: .7 })
-  const hasVerifiedValue = typeof value === 'string' && value.trim() !== ''
-  const numericMatch = hasVerifiedValue ? value.match(/\d+(?:[.,]\d+)?/) : null
-  const numeric = numericMatch ? Number(numericMatch[0].replace(',', '.')) : null
-  const suffix = numericMatch ? value.replace(numericMatch[0], '') : ''
-  const decimals = numericMatch?.[0].includes(',') || numericMatch?.[0].includes('.') ? 1 : 0
-  const [display, setDisplay] = useState('0')
-  useEffect(() => {
-    if (!inView || numeric === null || !Number.isFinite(numeric)) return undefined
-    const control = animate(0, numeric, { duration: 1.6, ease: 'easeOut', onUpdate: (latest) => setDisplay(latest.toFixed(decimals).replace('.', ',')) })
-    return () => control.stop()
-  }, [inView, numeric, decimals])
-  return <strong ref={ref} aria-label={hasVerifiedValue ? value : 'Štatistika zatiaľ nie je načítaná'}>{hasVerifiedValue ? `${display}${suffix}` : placeholder}</strong>
-}
-
-function SocialStatIcon({ platform }) {
-  if (platform === 'youtube') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="6" /><path d="m13 11 8 5-8 5V11Z" className="is-filled" /></svg>
-  if (platform === 'instagram') return <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="7" /><circle cx="16" cy="16" r="5.5" /><circle cx="23.5" cy="8.7" r="1.2" className="is-filled" /></svg>
-  return <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18.5 5v15.2a6.2 6.2 0 1 1-5.3-6.1" /><path d="M18.5 5c.8 4.4 3.4 6.8 7.5 7" /></svg>
-}
-
-function Stats() {
-  const socialStats = useSocialStats()
-  const visibleStats = ['youtube-subscribers', 'instagram-followers', 'tiktok-followers'].map((id) => stats.find((item) => item.id === id)).filter(Boolean)
-  return <motion.section className="social-stats" id="onas" aria-labelledby="social-stats-title" initial="hidden" whileInView="visible" viewport={{ once: true, amount: .18 }} transition={{ staggerChildren: .08 }}>
-    <motion.header variants={reveal} className="social-stats-heading"><span>OVERENÉ ŠTATISTIKY</span><h2 id="social-stats-title">REÁLNE ČÍSLA.<br /><em>SKUTOČNÉ VÝSLEDKY.</em></h2></motion.header>
-    <div className="social-stats-grid">{visibleStats.map((item) => { const profile = socialProfiles[item.social]; const value = formatSocialCount(socialStats.data[item.platform]?.followers); return <motion.a variants={reveal} className={`social-stat-card${socialStats.loading ? ' is-loading' : ''}`} href={profile.url} target="_blank" rel="noreferrer" aria-label={`${profile.name}: ${value || 'údaj sa načítava'} ${item.lines[1].toLowerCase()}`} data-platform={item.platform} data-metric={item.metric} key={item.id}><div className="social-stat-icon"><SocialStatIcon platform={item.platform} /></div><span className="social-stat-platform">{profile.name}</span><AnimatedNumber value={value} placeholder={item.placeholder} /><b>{item.lines[1]}</b><i aria-hidden="true" /></motion.a> })}</div>
-  </motion.section>
+  const path = window.location.pathname
+  const nav = [['Domov', '/'], ['Filmy', '/filmy'], ['Seriály', '/serialy'], ['Všetky videá', '/videos'], ['Členstvo', '/clenstvo']]
+  return <header className="topbar">
+    <Logo />
+    <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
+      {nav.map(([label, href]) => <a className={path === href || href === '/videos' && path.startsWith('/videos') ? 'active' : ''} href={href} key={href} onClick={() => setOpen(false)}>{label}</a>)}
+    </nav>
+    <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : '5,99 € / MESIAC'}</a>
+    <Suspense fallback={null}><AuthControl /></Suspense>
+    <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>
+  </header>
 }
 
 function HomePage() {
-  const [homepageCounts, setHomepageCounts] = useState({ memberCount: null, videoCount: null, loading: true, error: false })
-  useEffect(() => { const observer = new IntersectionObserver((entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')), { threshold: .08 }); document.querySelectorAll('.reveal').forEach((el) => observer.observe(el)); return () => observer.disconnect() }, [])
-  useEffect(() => {
-    let active = true
-    getHomepageCounts()
-      .then(({ memberCount, videoCount }) => { if (active) setHomepageCounts({ memberCount, videoCount, loading: false, error: false }) })
-      .catch(() => { if (active) setHomepageCounts({ memberCount: null, videoCount: null, loading: false, error: true }) })
-    return () => { active = false }
-  }, [])
   const { scrollYProgress } = useScroll()
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 90, damping: 24 })
-  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><main className="site-shell"><Hero /><ClubCommunityCard memberCount={homepageCounts.memberCount} videoCount={homepageCounts.videoCount} loading={homepageCounts.loading} error={homepageCounts.error} /><Stats /><Suspense fallback={null}><AboutStoryTeaser /></Suspense><HomepageContent /><Suspense fallback={null}><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
+  return <><motion.div className="scroll-progress" style={{ scaleX: smoothProgress }} /><main className="site-shell streaming-shell"><Header /><StreamingHome /><Suspense fallback={null}><AboutStoryTeaser /><CollaborationTeaser /></Suspense><NewsletterSection /><Footer /></main></>
 }
 
-function VideosPage({ slug }) {
-  return <main className="videos-page"><Header />{slug ? <VideoDetail slug={slug} /> : <VideosSection />}<Footer /></main>
+function VideosPage({ slug, contentType = 'all' }) {
+  return <main className="videos-page"><Header />{slug ? <VideoDetail slug={slug} /> : <VideosSection contentType={contentType} />}<Footer /></main>
 }
 
-function AccountPage() {
-  return <main className="account-page"><Header /><AccountDashboard /><Footer /></main>
+function StandardPage({ className, children, footerVariant }) {
+  return <main className={className}><Header />{children}<Footer variant={footerVariant} /></main>
 }
 
-function MembershipPage() {
-  return <main className="membership-page"><Header /><MembershipSection standalone /><Footer variant="membership" /></main>
-}
-
-function AuthFlowPage({ type }) {
-  return <main className="account-page"><Header />{type === 'reset' ? <PasswordResetPage /> : <AuthCallbackPage />}<Footer /></main>
-}
-
-function CheckoutRoute({ plan }) {
-  return <main className="checkout-page"><Header /><CheckoutPage plan={plan} /></main>
-}
-
-function CollaborationPage() {
-  return <main className="collaboration-page"><Header /><CollaborationSection /><Footer /></main>
-}
-
-function AboutRoute() {
-  return <main className="about-page"><Header /><AboutPage /><Footer /></main>
+function routeFor(path) {
+  if (path === '/filmy' || path === '/filmy/') return <VideosPage contentType="movie" />
+  if (path === '/serialy' || path === '/serialy/') return <VideosPage contentType="series" />
+  if (path.startsWith('/videos')) return <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
+  if (/^\/checkout\/(club|member|vip)\/?$/.test(path)) return <main className="checkout-page"><Header /><CheckoutPage plan="club" /></main>
+  if (path === '/account' || path === '/account/') return <StandardPage className="account-page"><AccountDashboard /></StandardPage>
+  if (path === '/clenstvo' || path === '/clenstvo/') return <StandardPage className="membership-page" footerVariant="membership"><MembershipSection standalone /></StandardPage>
+  if (path === aboutPath || path === `${aboutPath}/`) return <StandardPage className="about-page"><AboutPage /></StandardPage>
+  if (path === '/spolupraca' || path === '/spolupraca/') return <StandardPage className="collaboration-page"><CollaborationSection /></StandardPage>
+  if (path === '/reset-hesla' || path === '/reset-hesla/') return <StandardPage className="account-page"><PasswordResetPage /></StandardPage>
+  if (path === '/auth/callback' || path === '/auth/callback/') return <StandardPage className="account-page"><AuthCallbackPage /></StandardPage>
+  return <HomePage />
 }
 
 export default function App() {
   const path = window.location.pathname
-  const isAdminRoute = path === '/admin' || path.startsWith('/admin/')
-  if (isAdminRoute) {
+  if (path === '/admin' || path.startsWith('/admin/')) {
     return <Suspense fallback={<div className="admin-boot">Načítavam administráciu…</div>}><ProfileProvider><AdminApp /></ProfileProvider></Suspense>
   }
-  const page = path.startsWith('/videos')
-    ? <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
-    : /^\/checkout\/(club|member|vip)\/?$/.test(path)
-      ? <CheckoutRoute plan="club" />
-    : path === '/account' || path === '/account/'
-      ? <AccountPage />
-      : path === '/clenstvo' || path === '/clenstvo/'
-        ? <MembershipPage />
-        : path === aboutPath || path === `${aboutPath}/`
-          ? <AboutRoute />
-        : path === '/spolupraca' || path === '/spolupraca/'
-          ? <CollaborationPage />
-        : path === '/reset-hesla' || path === '/reset-hesla/'
-          ? <AuthFlowPage type="reset" />
-          : path === '/auth/callback' || path === '/auth/callback/'
-            ? <AuthFlowPage type="callback" />
-        : <HomePage />
-  return <Suspense fallback={null}><PublicCinematicBackground /><ProfileProvider><WatchHistoryProvider><AnalyticsTracker />{page}</WatchHistoryProvider></ProfileProvider></Suspense>
+  return <Suspense fallback={null}><PublicCinematicBackground /><CinematicIntro /><ProfileProvider><WatchHistoryProvider><AnalyticsTracker />{routeFor(path)}</WatchHistoryProvider></ProfileProvider></Suspense>
 }
