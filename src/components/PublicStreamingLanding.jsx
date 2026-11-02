@@ -50,7 +50,13 @@ export default function PublicStreamingLanding({ videos, urls }) {
         <aside className="public-hero-offer" aria-label="Štartovacia ponuka členstva">
           <span className="public-hero-offer-badge">ŠTARTOVACIA PONUKA</span>
           <div className="public-hero-offer-prices">
-            <div className="public-hero-planned-price"><small>Bežná cena po skončení ponuky</small><s>9,99 €</s></div>
+            <div className="public-hero-planned-price">
+              <small>Bežná cena po skončení ponuky</small>
+              <div className="public-hero-struck-price">
+                <strong>9,99 €</strong>
+                <svg viewBox="0 0 150 34" preserveAspectRatio="none" aria-hidden="true"><path d="M4 24 C34 20 69 27 105 22 S136 24 146 19"/><path d="M7 27 C38 23 72 29 108 24 S136 26 144 22"/></svg>
+              </div>
+            </div>
             <div className="public-hero-main-price"><strong>6,99 €</strong><small>/ mesiac</small></div>
           </div>
           <strong className="public-hero-saving">UŠETRÍŠ 3 € MESAČNE</strong>

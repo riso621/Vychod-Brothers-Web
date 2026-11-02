@@ -51,49 +51,62 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
-  padding-bottom: 3px;
+  gap: 7px;
+  padding: 9px 11px 10px;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgba(8, 8, 10, .84), rgba(25, 25, 28, .72));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .04), 0 8px 24px rgba(0, 0, 0, .2);
 }
 
 .public-hero-planned-price small {
-  color: #a1a1a5;
+  color: #a9a9ae;
   font-size: 9px;
   font-weight: 600;
   line-height: 1.25;
 }
 
-.public-hero-planned-price s {
+.public-hero-struck-price {
   position: relative;
-  color: #d0d0d2;
-  font: 800 28px/.9 "Barlow Condensed", sans-serif;
-  letter-spacing: -.015em;
-  text-decoration: none;
+  width: max-content;
+  height: 34px;
+  display: flex;
+  align-items: center;
 }
 
-.public-hero-planned-price s::after {
-  content: "";
-  position: absolute;
-  left: -4px;
-  right: -6px;
-  top: 49%;
-  height: 5px;
-  border-radius: 65% 40% 55% 45%;
-  background: #e50914;
-  box-shadow: 0 1px rgba(255, 85, 93, .45);
-  transform: rotate(-6deg) skewX(-13deg);
-  opacity: .95;
+.public-hero-struck-price strong {
+  position: relative;
+  z-index: 1;
+  color: #ededf0;
+  font: 850 29px/.9 Inter, sans-serif;
+  letter-spacing: -.025em;
+  white-space: nowrap;
 }
 
-.public-hero-planned-price s::before {
-  content: "";
+.public-hero-struck-price svg {
   position: absolute;
-  left: -2px;
-  right: -4px;
-  top: 56%;
-  height: 2px;
-  border-radius: 50%;
-  background: rgba(229, 9, 20, .72);
-  transform: rotate(3deg);
+  z-index: 2;
+  left: -5px;
+  right: -7px;
+  bottom: -1px;
+  width: calc(100% + 12px);
+  height: 34px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.public-hero-struck-price path {
+  fill: none;
+  stroke: #e50914;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.public-hero-struck-price path + path {
+  stroke: rgba(255, 57, 67, .5);
+  stroke-width: 1.7;
 }
 
 .public-hero-main-price {
@@ -183,8 +196,16 @@
     font-size: 8px;
   }
 
-  .public-hero-planned-price s {
-    font-size: 25px;
+  .public-hero-planned-price {
+    padding: 8px 9px 9px;
+  }
+
+  .public-hero-struck-price {
+    height: 32px;
+  }
+
+  .public-hero-struck-price strong {
+    font-size: 26px;
   }
 
   .public-hero-main-price {
