@@ -44,7 +44,7 @@ function Header() {
     {session && <nav className={open ? 'main-nav is-open' : 'main-nav'} aria-label="Hlavná navigácia">
       {nav.map(([label, href]) => <a className={path === href || href === '/videos' && path.startsWith('/videos') ? 'active' : ''} href={href} key={href} onClick={() => setOpen(false)}>{label}</a>)}
     </nav>}
-    {session && <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : '5,99 € / MESIAC'}</a>}
+    {session && <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : 'OD 6,99 €'}</a>}
     <Suspense fallback={null}><AuthControl /></Suspense>
     {session && <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>}
   </header>

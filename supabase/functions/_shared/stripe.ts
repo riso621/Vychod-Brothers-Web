@@ -7,19 +7,21 @@ export const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 export function stripeConfig() {
   const memberPrice = Deno.env.get('STRIPE_MEMBER_PRICE_ID') || ''
   const vipPrice = Deno.env.get('STRIPE_VIP_PRICE_ID') || ''
-  const clubPrice = Deno.env.get('STRIPE_CLUB_PRICE_ID') || ''
+  const clubMonthlyPrice = Deno.env.get('STRIPE_CLUB_MONTHLY_PRICE_ID') || Deno.env.get('STRIPE_CLUB_PRICE_ID') || ''
+  const clubAnnualPrice = Deno.env.get('STRIPE_CLUB_ANNUAL_PRICE_ID') || ''
   return {
     memberPrice,
     vipPrice,
-    clubPrice,
+    clubMonthlyPrice,
+    clubAnnualPrice,
     siteUrl: (Deno.env.get('SITE_URL') || '').replace(/\/$/, ''),
     webhookSecret: Deno.env.get('STRIPE_WEBHOOK_SECRET') || '',
   }
 }
 
 export function planForPrice(priceId: string) {
-  const { memberPrice, vipPrice, clubPrice } = stripeConfig()
-  if (priceId && priceId === clubPrice) return 'club'
+  const { memberPrice, vipPrice, clubMonthlyPrice, clubAnnualPrice } = stripeConfig()
+  if (priceId && (priceId === clubMonthlyPrice || priceId === clubAnnualPrice)) return 'club'
   if (priceId && priceId === memberPrice) return 'member'
   if (priceId && priceId === vipPrice) return 'vip'
   return null
@@ -32,9 +34,9 @@ export function membershipForPrice(priceId: string) {
   return null
 }
 
-export function priceForPlan(plan: string) {
-  const { memberPrice, vipPrice, clubPrice } = stripeConfig()
-  if (plan === 'club') return clubPrice
+export function priceForPlan(plan: string, billingCycle = 'monthly') {
+  const { memberPrice, vipPrice, clubMonthlyPrice, clubAnnualPrice } = stripeConfig()
+  if (plan === 'club') return billingCycle === 'annual' ? clubAnnualPrice : clubMonthlyPrice
   if (plan === 'member') return memberPrice
   if (plan === 'vip') return vipPrice
   return ''

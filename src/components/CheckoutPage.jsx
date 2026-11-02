@@ -7,9 +7,14 @@ import { formatMembershipDate, getEffectiveMembership } from '../lib/membership'
 import { safeInternalReturnPath } from '../lib/safe-return'
 
 const planDetails = {
-  club: { name: 'VÝCHOD BROTHERS CLUB', price: '5,99 €', description: 'Jedno mesačné členstvo s prístupom ku všetkým exkluzívnym videám a členským funkciám.' },
+  club: { name: 'VÝCHOD BROTHERS CLUB', description: 'Jedno členstvo s prístupom ku všetkým exkluzívnym videám a členským funkciám.' },
   member: { name: 'MEMBER', price: '4,99 €', description: 'Mesačné členstvo Východ Brothers s prístupom k exkluzívnemu obsahu pre členov.' },
   vip: { name: 'VIP', price: '9,99 €', description: 'Najvyššie členstvo so všetkým MEMBER obsahom a exkluzívnymi VIP premiérami.' },
+}
+
+const clubBilling = {
+  monthly: { ...planDetails.club, price: '6,99 €', interval: 'mesiac', renewal: 'každý mesiac', label: 'Mesačné', note: 'Štartovacia cena; plánovaná bežná cena 9,99 € mesačne.' },
+  annual: { ...planDetails.club, price: '59,99 €', interval: 'rok', renewal: 'každý rok', label: 'Ročné', note: 'Najvýhodnejšie · ušetríš 23,89 € oproti 12 mesačným platbám.' },
 }
 
 const appearance = {
@@ -39,6 +44,10 @@ function initialCheckoutFlow() {
   return hasMarker || isStripeReturn ? 'restoring' : 'payment'
 }
 
+function initialBillingCycle() {
+  return new URLSearchParams(window.location.search).get('billing') === 'monthly' ? 'monthly' : 'annual'
+}
+
 function membershipConfirmed(profile, plan) {
   if (plan === 'club') return ['member', 'vip'].includes(profile?.membership)
     && profile?.membership_status === 'active'
@@ -62,6 +71,8 @@ export default function CheckoutPage({ plan }) {
   const [submitting, setSubmitting] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [portalLoading, setPortalLoading] = useState(false)
+  const [billingCycle, setBillingCycle] = useState(initialBillingCycle)
+  const [billingConfirmed, setBillingConfirmed] = useState(false)
   const [upgradePreview, setUpgradePreview] = useState(null)
   const [upgradeLoading, setUpgradeLoading] = useState(false)
   const [upgradeAttempt, setUpgradeAttempt] = useState(0)
@@ -77,7 +88,7 @@ export default function CheckoutPage({ plan }) {
   const upgradeElementsRef = useRef(null)
   const upgradeMountRef = useRef(null)
   const upgradeSubmitRef = useRef(false)
-  const details = planDetails[plan]
+  const details = plan === 'club' ? clubBilling[billingCycle] : planDetails[plan]
   const returnTo = safeInternalReturnPath(new URLSearchParams(window.location.search).get('returnTo'), '/videos')
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
@@ -150,7 +161,7 @@ export default function CheckoutPage({ plan }) {
   }, [flow, session, profileLoading, profile, plan, clearFlowMarker, storeFlowMarker])
 
   useEffect(() => {
-    if (flow !== 'payment' || !stripePromise || !session || profileLoading || activeSubscription || !details) return undefined
+    if (flow !== 'payment' || !stripePromise || !session || profileLoading || activeSubscription || !details || (plan === 'club' && !billingConfirmed)) return undefined
     let cancelled = false
     let paymentElement
 
@@ -160,7 +171,7 @@ export default function CheckoutPage({ plan }) {
       try {
         const stripe = await stripePromise
         if (!stripe) throw new Error('Stripe.js sa nepodarilo načítať.')
-        if (!requestRef.current) requestRef.current = createCheckoutSession(plan)
+        if (!requestRef.current) requestRef.current = createCheckoutSession(plan, billingCycle)
         const clientSecret = await requestRef.current
         if (!/^pi_[A-Za-z0-9_]+_secret_/.test(clientSecret)) throw new Error('Stripe vrátil neplatný platobný token.')
         if (cancelled || !mountRef.current) return
@@ -185,7 +196,7 @@ export default function CheckoutPage({ plan }) {
       paymentElement?.destroy()
       elementsRef.current = null
     }
-  }, [plan, session, profileLoading, activeSubscription, details, attempt, flow])
+  }, [plan, billingCycle, billingConfirmed, session, profileLoading, activeSubscription, details, attempt, flow])
 
   useEffect(() => {
     if (flow !== 'verifying' || !session || !details) return undefined
@@ -266,7 +277,7 @@ export default function CheckoutPage({ plan }) {
       const stripe = await stripePromise
       const { error: paymentError } = await stripe.confirmPayment({
         elements: elementsRef.current,
-        confirmParams: { return_url: `${window.location.origin}/checkout/${plan}?payment=return&returnTo=${encodeURIComponent(returnTo)}` },
+        confirmParams: { return_url: `${window.location.origin}/checkout/${plan}?payment=return&billing=${billingCycle}&returnTo=${encodeURIComponent(returnTo)}` },
         redirect: 'if_required',
       })
       if (paymentError) throw paymentError
@@ -456,7 +467,7 @@ export default function CheckoutPage({ plan }) {
           <strong className="checkout-result-brand">VÝCHOD BROTHERS</strong>
           <p>Tvoje členstvo <strong>{details.name}</strong> je teraz aktívne.</p>
           <div className="checkout-result-membership-card">
-            <div className="checkout-result-plan"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
+            <div className="checkout-result-plan"><strong>{details.name}</strong><b>{details.price} <small>/ {details.interval || 'mesiac'}</small></b></div>
             <ul><li>Platba bola úspešne spracovaná</li><li>Členstvo je aktívne</li><li>Exkluzívny obsah je odomknutý</li><li>Predplatné sa obnovuje automaticky</li></ul>
             {renewalDate && <p className="checkout-result-renewal"><span>Ďalšie obnovenie</span><strong>{renewalDate}</strong></p>}
           </div>
@@ -473,7 +484,7 @@ export default function CheckoutPage({ plan }) {
         <span>VÝCHOD BROTHERS · {details.name}</span>
         <h1 id="checkout-heading">Aktivuj svoje členstvo</h1>
         <p>{details.description}</p>
-        <div className="payment-checkout-price"><strong>{details.name}</strong><b>{details.price} <small>/ mesiac</small></b></div>
+        <div className="payment-checkout-price"><strong>{details.name}</strong><b>{details.price} <small>/ {details.interval || 'mesiac'}</small></b></div>
         <ul><li>Okamžitý prístup po potvrdení platby</li><li>Bezpečné spracovanie cez Stripe</li><li>Zrušenie kedykoľvek v Mojom účte</li></ul>
       </header>
 
@@ -489,6 +500,18 @@ export default function CheckoutPage({ plan }) {
           </div>
         ) : activeSubscription ? (
           <div className="checkout-existing" role="status"><h2>{currentMembership === 'vip' ? 'VIP už máš aktívne.' : 'MEMBER už máš aktívne.'}</h2><p>Svoje predplatné, platobnú metódu a faktúry môžeš bezpečne spravovať v zákazníckom portáli.</p><div className="checkout-existing-actions"><a href="/account">Môj účet</a><button type="button" onClick={openPortal} disabled={portalLoading}>{portalLoading ? 'Otváram…' : 'Spravovať predplatné'}</button></div></div>
+        ) : plan === 'club' && !billingConfirmed ? (
+          <div className="checkout-billing-choice">
+            <span>VYBER SI FAKTURÁCIU</span>
+            <h2>Rovnaký obsah. Dve možnosti platby.</h2>
+            <div className="checkout-billing-options" role="radiogroup" aria-label="Periodicita členstva">
+              {Object.entries(clubBilling).map(([cycle, option]) => <button className={billingCycle === cycle ? 'is-selected' : ''} type="button" role="radio" aria-checked={billingCycle === cycle} onClick={() => setBillingCycle(cycle)} key={cycle}>
+                {cycle === 'annual' && <em>NAJVÝHODNEJŠIE</em>}<strong>{option.label}</strong><b>{option.price} <small>/ {option.interval}</small></b><p>{option.note}</p>
+              </button>)}
+            </div>
+            <button className="payment-checkout-submit" type="button" onClick={() => setBillingConfirmed(true)}>POKRAČOVAŤ NA BEZPEČNÚ PLATBU</button>
+            <p className="payment-checkout-security">Obe možnosti odomknú rovnaký členský obsah. Predplatné môžeš zrušiť v Mojom účte.</p>
+          </div>
         ) : !stripePromise ? (
           <div className="checkout-existing is-error" role="alert"><h2>Platbu zatiaľ nemožno načítať</h2><p>Chýba verejná Stripe konfigurácia. Skús to prosím neskôr.</p></div>
         ) : (
@@ -501,10 +524,10 @@ export default function CheckoutPage({ plan }) {
               <span className="payment-checkout-step">02</span><div><h2>Spôsob platby</h2><p>Karta a dostupné peňaženky sa zobrazia bezpečne podľa zariadenia.</p></div>
               <div className="payment-element-wrap">{!ready && !error && <p className="payment-element-loading" aria-live="polite">Načítavam bezpečné platobné údaje…</p>}<div ref={mountRef} className="payment-element-mount" /></div>
             </section>
-            <section className="payment-checkout-summary"><div><span>Súhrn</span><strong>{details.name}</strong></div><b>{details.price} <small>/ mesiac</small></b></section>
-            <p className="payment-checkout-renewal">Predplatné sa automaticky obnovuje každý mesiac, kým ho nezrušíš.</p>
+            <section className="payment-checkout-summary"><div><span>Súhrn · {details.label || 'Mesačné'}</span><strong>{details.name}</strong></div><b>{details.price} <small>/ {details.interval || 'mesiac'}</small></b></section>
+            <p className="payment-checkout-renewal">Predplatné sa automaticky obnovuje {details.renewal || 'každý mesiac'}, kým ho nezrušíš. {plan === 'club' && details.note}</p>
             {error && <div className="payment-checkout-error" role="alert"><p>{error}</p>{!ready && <button type="button" onClick={retry}>Skúsiť znova</button>}</div>}
-            <button className="payment-checkout-submit" type="submit" disabled={!ready || submitting || Boolean(error && !ready)}>{submitting ? 'SPRACÚVAM PLATBU…' : `AKTIVOVAŤ ${details.name} – ${details.price} / MESIAC`}</button>
+            <button className="payment-checkout-submit" type="submit" disabled={!ready || submitting || Boolean(error && !ready)}>{submitting ? 'SPRACÚVAM PLATBU…' : `AKTIVOVAŤ ${details.name} – ${details.price} / ${String(details.interval || 'mesiac').toUpperCase()}`}</button>
             <p className="payment-checkout-security">Platobné údaje spracúva Stripe. Východ Brothers neukladá číslo karty ani CVC.</p>
           </form>
         )}

@@ -6,7 +6,7 @@ import { getSignedStorageUrls } from '../lib/storage'
 import { getPublishedVideos } from '../lib/videos'
 
 const planMeta = {
-  club: { price: '5,99 €', note: 'mesačne', cta: 'Stať sa členom' },
+  club: { price: 'od 6,99 €', note: 'mesačne', cta: 'Stať sa členom' },
 }
 
 const benefits = [
@@ -30,7 +30,7 @@ const faqs = [
   ['Kedy získam prístup po zaplatení?', 'Prístup sa aktivuje automaticky po úspešnom potvrdení platby. Zvyčajne to trvá len niekoľko sekúnd.'],
   ['Čo členstvo odomkne?', 'Jedno členstvo odomkne všetky aktuálne aj budúce členské videá, zákulisie, bonusový obsah a skorší prístup k vybraným premiéram.'],
   ['Môžem členstvo kedykoľvek zrušiť?', 'Áno. Predplatné zrušíš kedykoľvek v Mojom účte. Prístup zostane aktívny až do konca už zaplateného obdobia.'],
-  ['Obnovuje sa členstvo automaticky?', 'Áno. Východ Brothers Club sa obnovuje každý mesiac, kým predplatné nezrušíš.'],
+  ['Obnovuje sa členstvo automaticky?', 'Áno. Podľa zvolenej fakturácie sa Východ Brothers Club obnovuje každý mesiac alebo každý rok, kým predplatné nezrušíš.'],
   ['Funguje členstvo aj na mobile?', 'Áno. Členský obsah je dostupný na mobile, tablete aj desktope cez rovnaký účet.'],
   ['Budú pribúdať nové videá?', 'Áno. Členská knižnica pravidelne rastie o bonusové videá, zákulisie, premiéry aj nové exkluzívne série.'],
 ]
@@ -134,7 +134,7 @@ export default function MembershipSection() {
           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .6 }}>VÝCHOD BROTHERS · MEMBERSHIP</motion.span>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08 }}>STAŇ SA ČLENOM<br/><em>VÝCHOD BROTHERS</em></motion.h1>
           <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .18 }}>Exkluzívne videá, bonusový obsah, premiéry, zákulisie a množstvo ďalšieho obsahu, ktorý na YouTube nikdy neuvidíš.</motion.p>
-          <motion.div className="membership-hero-price" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .23 }}><strong>5,99 €</strong><span>/ MESIAC</span></motion.div>
+          <motion.div className="membership-hero-price" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .23 }}><strong>6,99 €</strong><span>/ MESIAC · ALEBO 59,99 € / ROK</span></motion.div>
           <motion.div className="membership-hero-actions" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .28 }}>
             {isMember ? <a href="/videos">POZRIEŤ ČLENSKÉ VIDEÁ <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <ArrowIcon/></button>}
           </motion.div>
@@ -159,7 +159,7 @@ export default function MembershipSection() {
       </section>
 
       <section className="membership-preview membership-sales">
-        <Reveal className="membership-preview-heading"><div><span>JEDNO ČLENSTVO · VŠETOK OBSAH</span><h2>ČO DOSTANEŠ<br/><em>ZA 5,99 €</em></h2></div></Reveal>
+        <Reveal className="membership-preview-heading"><div><span>JEDNO ČLENSTVO · VŠETOK OBSAH</span><h2>ČO DOSTANEŠ<br/><em>OD 6,99 €</em></h2></div></Reveal>
         <div className="membership-sales-layout">
           {previewStatus === 'loading' ? <div className="membership-preview-loading membership-sales-media" aria-label="Načítavam členské video"><span/></div> : previewVideos.length ? <div className="membership-preview-rail membership-sales-media items-1">
           {previewVideos.slice(0, 1).map((video) => {
@@ -193,7 +193,7 @@ export default function MembershipSection() {
           <header><span>VÝCHOD BROTHERS</span><h3>{clubPlan.name}</h3><p>Všetky členské videá a funkcie v jednom predplatnom.</p></header>
           <div className="membership-plan-price"><strong>{planMeta.club.price}</strong><span>{planMeta.club.note}</span></div>
           <ul>{planBenefits.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
-          <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – 5,99 € / MESIAC'}<ArrowIcon/></button>}<small>Zrušíš kedykoľvek.</small></div>
+          <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – OD 6,99 €'}<ArrowIcon/></button>}<small>Mesačne alebo ročne · zrušíš kedykoľvek.</small></div>
           <p className="membership-trust-note">Tvoríme pre komunitu Východ Brothers naprieč YouTube, TikTok a Instagram.</p>
         </motion.article></div>
       </section>
@@ -210,7 +210,7 @@ export default function MembershipSection() {
 
       <section className="membership-final-cta">
         <div className="membership-final-orbit" aria-hidden="true">VB</div>
-        <Reveal className="membership-final-content"><div className="membership-final-copy"><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{isMember ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{isMember ? 'Všetok členský obsah je pripravený v tvojom katalógu.' : '5,99 € / mesiac'}</p></div><div className="membership-final-action">{isMember ? <a className="membership-final-link" href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <><button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <ArrowIcon/></button><small className="membership-final-note">Zrušíš kedykoľvek.</small></>}</div></Reveal>
+        <Reveal className="membership-final-content"><div className="membership-final-copy"><span>TVORBA, KTORÁ POKRAČUJE AJ VĎAKA TEBE</span><h2>{isMember ? <>MÁŠ ODOMKNUTÝ CELÝ SVET<br/><em>VÝCHOD BROTHERS.</em></> : <>STAŇ SA ČLENOM<br/><em>EŠTE DNES.</em></>}</h2><p>{isMember ? 'Všetok členský obsah je pripravený v tvojom katalógu.' : '6,99 € mesačne alebo 59,99 € ročne'}</p></div><div className="membership-final-action">{isMember ? <a className="membership-final-link" href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <><button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <ArrowIcon/></button><small className="membership-final-note">Zrušíš kedykoľvek.</small></>}</div></Reveal>
       </section>
 
       <AnimatePresence>{isOpen && <motion.div className="membership-modal" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsOpen(false)}><motion.div className="membership-dialog" role="dialog" aria-modal="true" aria-labelledby="membership-dialog-title" initial={{ opacity: 0, y: 18, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .98 }}><button ref={closeButtonRef} className="modal-close" type="button" aria-label="Zavrieť" onClick={() => setIsOpen(false)}>×</button><span>VÝCHOD BROTHERS · {selectedPlan.toUpperCase()}</span><h2 id="membership-dialog-title">Checkout sa nepodarilo spustiť</h2><p role="alert">{checkoutError || 'Platobná služba momentálne nie je dostupná.'}</p><button className="modal-confirm" type="button" onClick={() => setIsOpen(false)}>Rozumiem</button></motion.div></motion.div>}</AnimatePresence>

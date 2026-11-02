@@ -15,8 +15,8 @@ async function invokeBillingFunction(name, body, responseField = 'url') {
   return data[responseField]
 }
 
-export function createCheckoutSession(plan) {
-  return invokeBillingFunction('stripe-create-checkout', { plan }, 'clientSecret')
+export function createCheckoutSession(plan, billingCycle = 'monthly') {
+  return invokeBillingFunction('stripe-create-checkout', { plan, billingCycle }, 'clientSecret')
 }
 
 export function createCustomerPortalSession() {

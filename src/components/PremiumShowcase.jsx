@@ -46,10 +46,10 @@ function InlineTrailerFeature({ video, thumbnailUrl, membershipHref }) {
     <div className="members-inline-player" ref={sectionRef}>
       {nearViewport ? <VideoPlayer title={`${video.title} – verejná ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer autoPlay={!reducedMotion} startMuted playbackActive={inViewport && !reducedMotion && !ended} replaySignal={replaySignal} onEnded={handleEnded} /> : <Artwork url={thumbnailUrl} />}
       <span className="members-inline-badge">TRAILER</span>
-      {ended && <div className="members-inline-ended" role="status"><span>CHCEŠ VIDIEŤ CELÉ VIDEO?</span><p>Odomkni celé video a všetok členský obsah.</p><CtaButton href={membershipHref} variant="primary" icon="crown" label="ODOMKNÚŤ CELÉ VIDEO" sublabel="5,99 € / MESIAC" /><button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button></div>}
+      {ended && <div className="members-inline-ended" role="status"><span>CHCEŠ VIDIEŤ CELÉ VIDEO?</span><p>Odomkni celé video a všetok členský obsah.</p><CtaButton href={membershipHref} variant="primary" icon="crown" label="ODOMKNÚŤ CELÉ VIDEO" sublabel="OD 6,99 €" /><button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button></div>}
       <small className="members-inline-note">Bezplatná ukážka. Celé členské video zostáva chránené.</small>
     </div>
-    <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>Chceš vidieť, ako to dopadlo?</h3><p>Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><CtaButton href={membershipHref} variant="primary" fullWidth icon="crown" label="ODOMKNÚŤ CELÉ VIDEO" sublabel="5,99 € / MESIAC" />{ended && <button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button>}</aside>
+    <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>Chceš vidieť, ako to dopadlo?</h3><p>Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><CtaButton href={membershipHref} variant="primary" fullWidth icon="crown" label="ODOMKNÚŤ CELÉ VIDEO" sublabel="OD 6,99 €" />{ended && <button type="button" onClick={handleReplay}>↻ PREHRAŤ UKÁŽKU ZNOVA</button>}</aside>
   </div>
 }
 
@@ -66,7 +66,7 @@ function FeaturedPoster({ video, thumbnailUrl, unlocked, membershipHref }) {
 }
 
 function OfferPanel({ video, unlocked, membershipHref }) {
-  return <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>{unlocked ? video.title : 'Chceš vidieť, ako to dopadlo?'}</h3><p>{unlocked ? 'Toto členské video máte odomknuté. Pokračujte priamo na celé video.' : 'Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.'}</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><CtaButton href={unlocked ? `/videos/${video.slug}` : membershipHref} variant="primary" fullWidth icon={unlocked ? 'play' : 'crown'} label={unlocked ? 'POZRIEŤ CELÉ VIDEO' : 'ODOMKNÚŤ CELÉ VIDEO'} sublabel={unlocked ? '' : '5,99 € / MESIAC'} /></aside>
+  return <aside className="members-inline-offer"><span>VÝCHOD BROTHERS CLUB</span><h3>{unlocked ? video.title : 'Chceš vidieť, ako to dopadlo?'}</h3><p>{unlocked ? 'Toto členské video máte odomknuté. Pokračujte priamo na celé video.' : 'Celé video a mnoho ďalšieho nájdeš len vo Východ Brothers Clube.'}</p><ul><li>Exkluzívne videá a zákulisie</li><li>Bonusy a predčasné prístupy</li><li>Všetok budúci členský obsah</li></ul><CtaButton href={unlocked ? `/videos/${video.slug}` : membershipHref} variant="primary" fullWidth icon={unlocked ? 'play' : 'crown'} label={unlocked ? 'POZRIEŤ CELÉ VIDEO' : 'ODOMKNÚŤ CELÉ VIDEO'} sublabel={unlocked ? '' : 'OD 6,99 €'} /></aside>
 }
 
 function MemberVideoRail({ videos, selectedId, thumbnailUrls, onSelect }) {

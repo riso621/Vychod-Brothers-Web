@@ -12,7 +12,7 @@ const benefits = [
 
 const faqs = [
   ['Čo je VÝCHOD BROTHERS?', 'VÝCHOD BROTHERS je slovenská platforma s originálnymi minifilmami, seriálmi, paródiami a exkluzívnym obsahom našej tvorivej skupiny.'],
-  ['Koľko stojí predplatné?', 'Členstvo stojí 5,99 € mesačne. Ide o jeden plán bez ďalších úrovní alebo skrytých doplatkov.'],
+  ['Koľko stojí predplatné?', 'Jedno členstvo stojí 6,99 € mesačne alebo 59,99 € ročne. Ročná platba šetrí 23,89 € oproti 12 mesačným platbám.'],
   ['Čo môžem sledovať?', 'Po aktivácii členstva získaš prístup ku všetkým publikovaným členským videám, minifilmom, seriálom, bonusom a zákulisiu. Verejné videá môže sledovať každý.'],
   ['Kde môžem sledovať obsah?', 'Obsah môžeš sledovať vo webovom prehliadači na mobile, tablete alebo počítači. Stačí sa prihlásiť do svojho účtu.'],
   ['Ako môžem zrušiť predplatné?', 'Predplatné môžeš kedykoľvek spravovať alebo zrušiť v časti Môj účet. Prístup ti zostane do konca už zaplateného obdobia.'],
@@ -46,7 +46,7 @@ export default function PublicStreamingLanding({ videos, urls }) {
         <span>VÝCHOD BROTHERS ORIGINAL</span>
         <h1>FILMY A SERIÁLY,<br/>KTORÉ INDE NENÁJDEŠ.</h1>
         <p>Originálne mini filmy, seriály a exkluzívny obsah od Východ Brothers.</p>
-        <strong>Už za 5,99 € mesačne. <small>Zrušíš kedykoľvek.</small></strong>
+        <strong>Už za 6,99 € mesačne. <small>Alebo 59,99 € ročne · zrušíš kedykoľvek.</small></strong>
         <div><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a><a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a></div>
       </div>
     </section>
@@ -62,7 +62,7 @@ export default function PublicStreamingLanding({ videos, urls }) {
 
     <section className="public-section public-faq" id="faq" aria-labelledby="faq-title"><span className="public-eyebrow">VŠETKO PODSTATNÉ</span><h2 id="faq-title">ČASTO KLADENÉ OTÁZKY</h2><div>{faqs.map(([question, answer], index) => <article className={openFaq === index ? 'is-open' : ''} key={question}><button type="button" aria-expanded={openFaq === index} onClick={() => setOpenFaq(openFaq === index ? -1 : index)}><span>{question}</span><b>+</b></button><div><p>{answer}</p></div></article>)}</div></section>
 
-    <section className="public-final-cta"><span>VÝCHOD BROTHERS CLUB</span><h2>PRIPRAVENÝ SLEDOVAŤ?</h2><p>Objav originálne filmy a seriály od Východ Brothers.</p><strong>5,99 € / mesiac</strong><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a></section>
+    <section className="public-final-cta"><span>VÝCHOD BROTHERS CLUB</span><h2>PRIPRAVENÝ SLEDOVAŤ?</h2><p>Objav originálne filmy a seriály od Východ Brothers.</p><strong>6,99 € / mesiac · 59,99 € / rok</strong><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a></section>
 
     <footer className="public-footer"><a className="public-footer-logo" href="/">VB</a><nav aria-label="Pätička"><a href="mailto:ahoj@vychodbrothers.sk">Kontakt</a><a href="#faq">Často kladené otázky</a><a href="/obchodne-podmienky">Podmienky používania</a><a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a><a href="/account">Správa predplatného</a><a href="/?auth=login&next=%2Fvideos">Prihlásenie</a></nav><p>© {new Date().getFullYear()} Východ Brothers. Všetky práva vyhradené.</p></footer>
   </div>

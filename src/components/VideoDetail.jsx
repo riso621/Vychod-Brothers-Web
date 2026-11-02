@@ -63,7 +63,7 @@ export default function VideoDetail({ slug }) {
   const membershipHref = session
     ? `/checkout/club?returnTo=${encodeURIComponent(videoPath)}`
     : `/?auth=register&next=${encodeURIComponent(`/checkout/club?returnTo=${videoPath}`)}`
-  const lockedCopy = { heading: 'Celé video je dostupné členom.', description: 'Aktivuj Východ Brothers Club a odomkni všetky členské videá.', ctaLabel: 'Stať sa členom – 5,99 € / mesiac', ctaHref: membershipHref }
+  const lockedCopy = { heading: 'Celé video je dostupné členom.', description: 'Aktivuj Východ Brothers Club a odomkni všetky členské videá.', ctaLabel: 'Stať sa členom – od 6,99 €', ctaHref: membershipHref }
   const watchProgress = getProgress(video.id)
 
   return (
@@ -79,7 +79,7 @@ export default function VideoDetail({ slug }) {
         <p>{video.shortDescription}</p>
       </header>
 
-      {!hasAccess && video.trailerStreamVideoId && !accessLoading && <section className="video-trailer-preview"><header><span>VEREJNÁ UKÁŽKA</span><h2>Pozrite si trailer</h2><p>Toto je ukážka. Celé video a všetok členský obsah odomknete jedným členstvom.</p></header><VideoPlayer title={`${video.title} – ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer /><aside className="video-trailer-cta"><div><span>VÝCHOD BROTHERS CLUB</span><h2>POZRITE SI CELÉ VIDEO</h2><p>Všetok členský obsah za <strong>5,99 € / mesiac</strong>.</p><small>Bez záväzku • Zrušíte kedykoľvek</small></div><a href={membershipHref}>STAŤ SA ČLENOM →</a></aside></section>}
+      {!hasAccess && video.trailerStreamVideoId && !accessLoading && <section className="video-trailer-preview"><header><span>VEREJNÁ UKÁŽKA</span><h2>Pozrite si trailer</h2><p>Toto je ukážka. Celé video a všetok členský obsah odomknete jedným členstvom.</p></header><VideoPlayer title={`${video.title} – ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer /><aside className="video-trailer-cta"><div><span>VÝCHOD BROTHERS CLUB</span><h2>POZRITE SI CELÉ VIDEO</h2><p>Všetok členský obsah od <strong>6,99 € / mesiac</strong>.</p><small>Alebo 59,99 € ročne • Zrušíte kedykoľvek</small></div><a href={membershipHref}>STAŤ SA ČLENOM →</a></aside></section>}
       {(hasAccess || !video.trailerStreamVideoId || accessLoading) && <VideoPlayer youtubeUrl={video.youtubeUrl} title={video.title} accessLevel={video.accessLevel} streamVideoId={video.streamVideoId} provider={video.provider} poster={video.poster} previewImage={video.previewImage} hasAccess={hasAccess} accessLoading={accessLoading} lockedCopy={lockedCopy} videoId={video.id} watchProgress={watchProgress} onWatchProgress={watchHistoryEnabled ? saveProgress : null} />}
 
       <div className="video-detail-content">

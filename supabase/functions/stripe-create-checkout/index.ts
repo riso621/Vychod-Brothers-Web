@@ -14,10 +14,12 @@ Deno.serve(async (request) => {
   if (authError || !user?.email) return json({ error: 'Prihlásenie nie je platné.' }, 401)
   const authCompletedAt = performance.now()
 
-  let body: { plan?: string }
+  let body: { plan?: string; billingCycle?: string }
   try { body = await request.json() } catch { return json({ error: 'Neplatná požiadavka.' }, 400) }
   const plan = String(body.plan || '').toLowerCase()
-  const priceId = priceForPlan(plan)
+  const billingCycle = String(body.billingCycle || 'monthly').toLowerCase()
+  if (!['monthly', 'annual'].includes(billingCycle)) return json({ error: 'Neplatná periodicita platby.' }, 400)
+  const priceId = priceForPlan(plan, billingCycle)
   const { siteUrl } = stripeConfig()
   if (plan !== 'club') return json({ error: 'Neplatný plán.' }, 400)
   if (!priceId || !siteUrl || !Deno.env.get('STRIPE_SECRET_KEY')) return json({ error: 'Platby zatiaľ nie sú nakonfigurované.' }, 503)
@@ -50,8 +52,8 @@ Deno.serve(async (request) => {
       return json({ error: 'Predplatné už máte aktívne. Spravujte ho v Mojom účte.' }, 409)
     }
     const incomplete = subscriptions.data.find((item) => item.status === 'incomplete' && item.metadata.supabase_user_id === user.id)
-    if (incomplete && incomplete.metadata.plan !== plan) {
-      return json({ error: 'Máte rozpracovanú platbu iného plánu. Dokončite ju alebo skúste neskôr.' }, 409)
+    if (incomplete && incomplete.metadata.billing_cycle !== billingCycle) {
+      return json({ error: 'Máte rozpracovanú platbu s inou periodicitou. Dokončite ju alebo skúste neskôr.' }, 409)
     }
 
     const subscription = incomplete
@@ -61,7 +63,7 @@ Deno.serve(async (request) => {
         items: [{ price: priceId }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
-        metadata: { supabase_user_id: user.id, plan },
+        metadata: { supabase_user_id: user.id, plan, billing_cycle: billingCycle },
         expand: ['latest_invoice.confirmation_secret'],
       }, { idempotencyKey: `vb-subscription-${user.id}-${Math.floor(Date.now() / 600000)}` })
 
@@ -69,7 +71,7 @@ Deno.serve(async (request) => {
     const clientSecret = invoice?.confirmation_secret?.client_secret || ''
     if (!clientSecret) return json({ error: 'Stripe nevrátil bezpečný platobný token.' }, 502)
     console.info('stripe-create-checkout completed', {
-      plan, reusedCustomer: Boolean(profile.stripe_customer_id), reusedSubscription: Boolean(incomplete),
+      plan, billingCycle, reusedCustomer: Boolean(profile.stripe_customer_id), reusedSubscription: Boolean(incomplete),
       authMs: Math.round(authCompletedAt - startedAt), profileMs: Math.round(profileCompletedAt - authCompletedAt),
       stripeMs: Math.round(performance.now() - profileCompletedAt), totalMs: Math.round(performance.now() - startedAt),
     })

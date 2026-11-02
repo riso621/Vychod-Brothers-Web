@@ -22,7 +22,7 @@ export const membershipPrices = {
 export const clubPlan = {
   id: 'club',
   name: 'VÝCHOD BROTHERS CLUB',
-  price: '5,99 € / mesiac',
+  price: 'od 6,99 € / mesiac',
   perks: ['Všetky exkluzívne videá', 'Komentáre a interakcie', 'História sledovania', 'Všetok budúci členský obsah'],
 }
 

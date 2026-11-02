@@ -74,7 +74,7 @@ export default function StreamingHome() {
     <div className="stream-library">
       <Rail title="Pokračovať v pozeraní" eyebrow="TVOJ ZOZNAM" videos={continuing} urls={urls} getProgress={getProgress} />
       <Rail title="Teraz populárne" eyebrow="TOP VÝBER" videos={videos.slice(0, 10)} urls={urls} getProgress={getProgress} />
-      <section className="stream-club-banner"><div><span>VÝCHOD BROTHERS CLUB</span><h2>Všetko, čo na YouTube neuvidíš.</h2><p>Originálne filmy, exkluzívne série, zákulisie a predpremiéry. Bez reklám.</p></div><div><strong>5,99 € <small>/ mesiac</small></strong><a href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'Otvoriť katalóg' : 'Stať sa členom'}</a><small>Zrušíš kedykoľvek.</small></div></section>
+      <section className="stream-club-banner"><div><span>VÝCHOD BROTHERS CLUB</span><h2>Všetko, čo na YouTube neuvidíš.</h2><p>Originálne filmy, exkluzívne série, zákulisie a predpremiéry. Bez reklám.</p></div><div><strong>6,99 € <small>/ mesiac</small></strong><a href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'Otvoriť katalóg' : 'Stať sa členom'}</a><small>Ročne 59,99 € · zrušíš kedykoľvek.</small></div></section>
       <Rail title="Filmy Východ Brothers" eyebrow="CELÉ PRÍBEHY" videos={movies.slice(0, 10)} urls={urls} getProgress={getProgress} />
       <Rail title="Seriály a epizódy" eyebrow="ĎALŠÍ DIEL ČAKÁ" videos={series.slice(0, 10)} urls={urls} getProgress={getProgress} />
       <Rail title="Iba pre členov" eyebrow="VB CLUB" videos={members.slice(0, 10)} urls={urls} getProgress={getProgress} />

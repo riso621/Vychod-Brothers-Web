@@ -15,7 +15,7 @@ const pages = {
     title: 'Podmienky používania',
     intro: 'Používaním platformy súhlasíte s týmito základnými podmienkami poskytovania digitálneho obsahu.',
     sections: [
-      ['Členstvo', 'VÝCHOD BROTHERS Club je mesačné predplatné za 5,99 €. Predplatné sa obnovuje automaticky, kým ho nezrušíte.'],
+      ['Členstvo', 'VÝCHOD BROTHERS Club je jedno členstvo s mesačnou fakturáciou 6,99 € alebo ročnou fakturáciou 59,99 €. Predplatné sa obnovuje automaticky podľa zvolenej periodicity, kým ho nezrušíte.'],
       ['Prístup k obsahu', 'Členský obsah je určený iba pre prihláseného používateľa s aktívnym členstvom. Zdieľanie účtu alebo neoprávnené šírenie obsahu nie je dovolené.'],
       ['Zrušenie', 'Predplatné môžete kedykoľvek zrušiť cez správu predplatného v časti Môj účet. Prístup ostáva aktívny do konca zaplateného obdobia.'],
       ['Kontakt', 'Otázky k členstvu alebo platforme posielajte na ahoj@vychodbrothers.sk.'],
