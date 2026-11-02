@@ -13,7 +13,7 @@ const benefits = [
 
 const faqs = [
   ['Čo je VÝCHOD BROTHERS?', 'VÝCHOD BROTHERS je slovenská platforma s originálnymi minifilmami, seriálmi, paródiami a exkluzívnym obsahom našej tvorivej skupiny.'],
-  ['Koľko stojí predplatné?', 'Štartovacia mesačná cena je 6,99 €; plánovaná bežná mesačná cena je 10,99 €. Ročné členstvo stojí 59,99 € a šetrí 23,89 € oproti 12 mesačným platbám.'],
+  ['Koľko stojí predplatné?', 'Štartovacia mesačná cena je 6,99 €; bežná cena po skončení ponuky je plánovaná na 9,99 €. Ročné členstvo stojí 59,99 € a šetrí 23,89 € oproti 12 mesačným platbám.'],
   ['Čo môžem sledovať?', 'Po aktivácii členstva získaš prístup ku všetkým publikovaným členským videám, minifilmom, seriálom, bonusom a zákulisiu. Verejné videá môže sledovať každý.'],
   ['Kde môžem sledovať obsah?', 'Obsah môžeš sledovať vo webovom prehliadači na mobile, tablete alebo počítači. Stačí sa prihlásiť do svojho účtu.'],
   ['Ako môžem zrušiť predplatné?', 'Predplatné môžeš kedykoľvek spravovať alebo zrušiť v časti Môj účet. Prístup ti zostane do konca už zaplateného obdobia.'],
@@ -48,13 +48,13 @@ export default function PublicStreamingLanding({ videos, urls }) {
         <h1>FILMY A SERIÁLY,<br/>KTORÉ INDE NENÁJDEŠ.</h1>
         <p>Originálne mini filmy, seriály a exkluzívny obsah od Východ Brothers.</p>
         <aside className="public-hero-offer" aria-label="Štartovacia ponuka členstva">
-          <span>ŠTARTOVACIA PONUKA</span>
+          <span className="public-hero-offer-badge">ŠTARTOVACIA PONUKA</span>
           <div className="public-hero-offer-prices">
-            <div className="public-hero-planned-price"><small>Plánovaná bežná cena</small><s>10,99 €</s></div>
+            <div className="public-hero-planned-price"><small>Bežná cena po skončení ponuky</small><s>9,99 €</s></div>
             <div className="public-hero-main-price"><strong>6,99 €</strong><small>/ mesiac</small></div>
-            <b>O 4 € MENEJ MESAČNE</b>
           </div>
-          <p>Alebo 59,99 € ročne – ušetríš 23,89 € oproti 12 mesačným platbám.</p>
+          <strong className="public-hero-saving">UŠETRÍŠ 3 € MESAČNE</strong>
+          <p>Ročné členstvo 59,99 € – úspora 23,89 € oproti mesačnej platbe.</p>
         </aside>
         <div className="public-hero-actions"><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a><a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a></div>
       </div>
