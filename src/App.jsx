@@ -5,12 +5,15 @@ import Footer from './components/Footer'
 import NewsletterSection from './components/NewsletterSection'
 import { useProfile } from './context/profile-context'
 import { isActiveClubMember } from './lib/membership'
+import { useViewerProfile } from './context/viewer-profile-context'
 import PublicCinematicBackground from './components/PublicCinematicBackground'
 import './App.css'
 import './netflix.css'
+import './active-profile.css'
 
 const AuthControl = lazy(() => import('./components/AuthModal'))
 const ProfileProvider = lazy(() => import('./context/ProfileProvider'))
+const ViewerProfileProvider = lazy(() => import('./context/ViewerProfileProvider'))
 const WatchHistoryProvider = lazy(() => import('./context/WatchHistoryProvider'))
 const AdminApp = lazy(() => import('./admin/AdminApp'))
 const VideosSection = lazy(() => import('./components/VideosSection'))
@@ -24,6 +27,7 @@ const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
 const RegistrationPage = lazy(() => import('./components/RegistrationPage'))
 const LoginPage = lazy(() => import('./components/LoginPage'))
 const ProfileSelectionPage = lazy(() => import('./components/ProfileSelectionPage'))
+const ProfileEditorPage = lazy(() => import('./components/ProfileEditorPage'))
 const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
 const CollaborationSection = lazy(() => import('./components/CollaborationSection'))
 const CollaborationTeaser = lazy(() => import('./components/CollaborationTeaser'))
@@ -39,6 +43,7 @@ function Logo() {
 function Header() {
   const [open, setOpen] = useState(false)
   const { profile, session } = useProfile()
+  const { activeProfile } = useViewerProfile()
   const isMember = isActiveClubMember(profile, session?.user?.app_metadata?.role === 'admin')
   const path = window.location.pathname
   const nav = [['Domov', '/'], ['Filmy', '/filmy'], ['Seriály', '/serialy'], ['Všetky videá', '/videos'], ['Členstvo', '/clenstvo']]
@@ -48,6 +53,7 @@ function Header() {
       {nav.map(([label, href]) => <a className={path === href || href === '/videos' && path.startsWith('/videos') ? 'active' : ''} href={href} key={href} onClick={() => setOpen(false)}>{label}</a>)}
     </nav>}
     {session && <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : 'OD 6,99 €'}</a>}
+    {session && activeProfile && <a className="active-viewer-chip" href="/profil" title="Prepnúť profil"><span>VB</span><b>{activeProfile.name}</b></a>}
     {session ? <Suspense fallback={null}><AuthControl /></Suspense> : <a className="auth-trigger" href="/prihlasenie">Prihlásiť sa</a>}
     {session && <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>}
   </header>
@@ -72,6 +78,8 @@ function routeFor(path) {
   if (path === '/registracia' || path === '/registracia/') return <RegistrationPage />
   if (path === '/prihlasenie' || path === '/prihlasenie/') return <LoginPage />
   if (path === '/profil' || path === '/profil/') return <ProfileSelectionPage />
+  if (path === '/profily/novy' || path === '/profily/novy/') return <ProfileEditorPage mode="create" />
+  if (path === '/profily/sprava' || path === '/profily/sprava/') return <ProfileEditorPage mode="manage" />
   if (path === '/filmy' || path === '/filmy/') return <VideosPage contentType="movie" />
   if (path === '/serialy' || path === '/serialy/') return <VideosPage contentType="series" />
   if (path.startsWith('/videos')) return <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
@@ -92,5 +100,5 @@ export default function App() {
   if (path === '/admin' || path.startsWith('/admin/')) {
     return <Suspense fallback={<div className="admin-boot">Načítavam administráciu…</div>}><ProfileProvider><AdminApp /></ProfileProvider></Suspense>
   }
-  return <Suspense fallback={null}><PublicCinematicBackground /><CinematicIntro /><ProfileProvider><WatchHistoryProvider><AnalyticsTracker />{routeFor(path)}</WatchHistoryProvider></ProfileProvider></Suspense>
+  return <Suspense fallback={null}><PublicCinematicBackground /><CinematicIntro /><ProfileProvider><ViewerProfileProvider><WatchHistoryProvider><AnalyticsTracker />{routeFor(path)}</WatchHistoryProvider></ViewerProfileProvider></ProfileProvider></Suspense>
 }

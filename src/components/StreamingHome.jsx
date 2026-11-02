@@ -6,6 +6,8 @@ import { canAccessMembership, isActiveClubMember } from '../lib/membership'
 import { useProfile } from '../context/profile-context'
 import { useWatchHistory } from '../context/watch-history-context'
 import PublicStreamingLanding from './PublicStreamingLanding'
+import { useViewerProfile } from '../context/viewer-profile-context'
+import { supabase } from '../lib/supabase'
 
 const fallback = '/images/backgrounds/vb-cinematic-energy-4k.webp'
 
@@ -32,8 +34,10 @@ function Rail({ title, eyebrow, videos, urls, getProgress }) {
 export default function StreamingHome() {
   const { profile, session, authLoading } = useProfile()
   const { getProgress } = useWatchHistory()
+  const { activeProfile, loading: viewerLoading } = useViewerProfile()
   const [videos, setVideos] = useState([])
   const [urls, setUrls] = useState(new Map())
+  const [favoriteIds,setFavoriteIds]=useState(new Set())
   const isAdmin = session?.user?.app_metadata?.role === 'admin'
   const isMember = isActiveClubMember(profile, isAdmin)
 
@@ -48,14 +52,18 @@ export default function StreamingHome() {
     return () => { active = false }
   }, [])
 
+  useEffect(()=>{if(!authLoading&&!viewerLoading&&session&&isMember&&!activeProfile)window.location.replace('/profil')},[activeProfile,authLoading,isMember,session,viewerLoading])
+  useEffect(()=>{let current=true;if(!activeProfile?.id){setFavoriteIds(new Set());return}supabase.from('viewer_favorites').select('video_id').eq('viewer_profile_id',activeProfile.id).then(({data})=>{if(current)setFavoriteIds(new Set((data||[]).map((item)=>item.video_id)))});return()=>{current=false}},[activeProfile?.id])
+
   const hero = videos.find((video) => video.featured) || videos[0]
   const accessible = useMemo(() => videos.filter((video) => canAccessMembership(video.accessLevel, profile, isAdmin)), [isAdmin, profile, videos])
   const members = videos.filter((video) => video.accessLevel !== 'free')
   const movies = videos.filter((video) => video.contentType === 'movie')
   const series = videos.filter((video) => video.contentType === 'series')
   const continuing = accessible.filter((video) => getProgress(video.id) && !getProgress(video.id)?.completed)
+  const favorites=accessible.filter((video)=>favoriteIds.has(video.id))
 
-  if (authLoading) return <div className="public-home-loading" aria-live="polite">Načítavam Východ Brothers…</div>
+  if (authLoading || (session && viewerLoading) || (session && isMember && !activeProfile)) return <div className="public-home-loading" aria-live="polite">Načítavam Východ Brothers…</div>
   if (!session) return <PublicStreamingLanding videos={videos} urls={urls} />
 
   return <div className="stream-home">
@@ -73,6 +81,7 @@ export default function StreamingHome() {
 
     <div className="stream-library">
       <Rail title="Pokračovať v pozeraní" eyebrow="TVOJ ZOZNAM" videos={continuing} urls={urls} getProgress={getProgress} />
+      <Rail title="Môj zoznam" eyebrow={activeProfile?.name?.toUpperCase()||'PROFIL'} videos={favorites} urls={urls} getProgress={getProgress} />
       <Rail title="Teraz populárne" eyebrow="TOP VÝBER" videos={videos.slice(0, 10)} urls={urls} getProgress={getProgress} />
       <section className="stream-club-banner"><div><span>VÝCHOD BROTHERS CLUB</span><h2>Všetko, čo na YouTube neuvidíš.</h2><p>Originálne filmy, exkluzívne série, zákulisie a predpremiéry. Bez reklám.</p></div><div><strong>6,99 € <small>/ mesiac</small></strong><a href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'Otvoriť katalóg' : 'Stať sa členom'}</a><small>Štartovacia cena · ročne 59,99 €.</small></div></section>
       <Rail title="Filmy Východ Brothers" eyebrow="CELÉ PRÍBEHY" videos={movies.slice(0, 10)} urls={urls} getProgress={getProgress} />

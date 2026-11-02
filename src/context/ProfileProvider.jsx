@@ -93,16 +93,17 @@ export default function ProfileProvider({ children }) {
     }
   }, [session?.user?.id, loadProfile])
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     if (!supabase) return { error: null }
     profileRequestRef.current += 1
     setSession(null)
     setProfile(null)
     setProfileLoading(false)
     setProfileError('')
+    if (session?.user?.id) localStorage.removeItem(`vb-active-viewer:${session.user.id}`)
     const { error } = await supabase.auth.signOut({ scope: 'local' })
     return { error }
-  }
+  }, [session?.user?.id])
 
   const refreshProfile = useCallback((options) => loadProfile(session?.user?.id, options), [loadProfile, session?.user?.id])
 
@@ -114,7 +115,7 @@ export default function ProfileProvider({ children }) {
     profileError,
     refreshProfile,
     signOut,
-  }), [session, profile, authLoading, profileLoading, profileError, refreshProfile])
+  }), [session, profile, authLoading, profileLoading, profileError, refreshProfile, signOut])
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
 }

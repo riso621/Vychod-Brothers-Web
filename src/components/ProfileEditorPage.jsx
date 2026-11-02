@@ -1,0 +1,21 @@
+import { useEffect,useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { useProfile } from '../context/profile-context'
+import { useViewerProfile } from '../context/viewer-profile-context'
+import { isActiveClubMember } from '../lib/membership'
+import { onboardingCheckoutPath } from '../lib/auth-flow'
+import '../profiles.css'
+
+const avatars=['vb-red','vb-dark','vb-slate','vb-crimson']
+function Avatar({kind}){return <span className={`viewer-avatar is-${kind}`}><i>V</i>B</span>}
+export default function ProfileEditorPage({mode}){
+  const {session,profile,authLoading,profileLoading}=useProfile();const {profiles,loading,refresh,selectProfile}=useViewerProfile();const [editing,setEditing]=useState(null);const [name,setName]=useState('');const [avatar,setAvatar]=useState('vb-red');const [error,setError]=useState('');const [saving,setSaving]=useState(false);const active=isActiveClubMember(profile,session?.user?.app_metadata?.role==='admin')
+  useEffect(()=>{if(authLoading||profileLoading)return;if(!session)window.location.replace('/prihlasenie');else if(!active)window.location.replace(onboardingCheckoutPath)},[active,authLoading,profileLoading,session])
+  const begin=(item)=>{setEditing(item);setName(item.name);setAvatar(item.avatar_key);setError('')}
+  const save=async(event)=>{event.preventDefault();const clean=name.trim();if(!clean)return setError('Zadaj názov profilu.');if(clean.length>32)return setError('Názov môže mať najviac 32 znakov.');if(mode==='create'&&profiles.length>=4)return setError('Dosiahol si maximálny počet 4 profilov.');setSaving(true);setError('');const query=editing?supabase.from('viewer_profiles').update({name:clean,avatar_key:avatar}).eq('id',editing.id):supabase.from('viewer_profiles').insert({owner_id:session.user.id,name:clean,avatar_key:avatar});const {error:saveError}=await query;if(saveError)setError(saveError.message.includes('Maximum')?'Dosiahol si maximálny počet 4 profilov.':'Profil sa nepodarilo uložiť.');else{await refresh();if(mode==='create')window.location.assign('/profil');else setEditing(null)}setSaving(false)}
+  const remove=async(item)=>{if(item.is_primary)return;if(!window.confirm(`Naozaj chceš odstrániť profil ${item.name}? Jeho história a obľúbené položky sa odstránia.`))return;const {error:deleteError}=await supabase.from('viewer_profiles').delete().eq('id',item.id);if(deleteError)setError('Profil sa nepodarilo odstrániť.');else await refresh()}
+  const switchTo=(item)=>{if(selectProfile(item))window.location.assign('/')}
+  if(authLoading||profileLoading||loading||!session||!active)return <main className="profile-screen"><div className="profile-spinner"/></main>
+  if(mode==='manage'&&!editing)return <main className="profile-screen"><a className="profile-brand" href="/"><i>V</i>B<span>VÝCHOD BROTHERS</span></a><section><h1>Spravovať profily</h1>{error&&<p className="profile-error">{error}</p>}<div className="manage-grid">{profiles.map((item)=><article key={item.id}><Avatar kind={item.avatar_key}/><strong>{item.name}</strong>{item.is_primary&&<small>Primárny profil</small>}<div><button onClick={()=>begin(item)}>Upraviť</button><button onClick={()=>switchTo(item)}>Prepnúť</button>{!item.is_primary&&<button className="danger" onClick={()=>remove(item)}>Odstrániť</button>}</div></article>)}</div><a className="manage-profiles" href="/profil">Hotovo</a></section></main>
+  return <main className="profile-screen"><a className="profile-brand" href="/"><i>V</i>B<span>VÝCHOD BROTHERS</span></a><section className="profile-editor"><h1>{editing?'Upraviť profil':'Pridať profil'}</h1><p>Profil má vlastnú históriu, rozpozerané videá a obľúbené položky.</p><form onSubmit={save}><label>Názov profilu<input value={name} onChange={(e)=>setName(e.target.value)} maxLength="32" autoFocus/></label><fieldset><legend>Vyber avatar</legend><div>{avatars.map((key)=><button className={avatar===key?'selected':''} type="button" onClick={()=>setAvatar(key)} aria-label={`Avatar ${key}`} key={key}><Avatar kind={key}/></button>)}</div></fieldset>{error&&<p className="profile-error" role="alert">{error}</p>}<div className="profile-form-actions"><button type="submit" disabled={saving}>{saving?'Ukladám…':'Uložiť profil'}</button><a href={mode==='create'?'/profil':'/profily/sprava'}>Zrušiť</a></div></form></section></main>
+}

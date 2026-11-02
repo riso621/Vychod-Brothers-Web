@@ -5,6 +5,7 @@ import VideoPlayer from './VideoPlayer'
 import { canAccessMembership } from '../lib/membership'
 import { useWatchHistory } from '../context/watch-history-context'
 import VideoInteractions from './VideoInteractions'
+import FavoriteButton from './FavoriteButton'
 
 const accessLabels = {
   free: 'FREE',
@@ -77,6 +78,7 @@ export default function VideoDetail({ slug }) {
         </div>
         <h1>{video.title}</h1>
         <p>{video.shortDescription}</p>
+        {!accessLoading && hasAccess && <FavoriteButton videoId={video.id} />}
       </header>
 
       {!hasAccess && video.trailerStreamVideoId && !accessLoading && <section className="video-trailer-preview"><header><span>VEREJNÁ UKÁŽKA</span><h2>Pozrite si trailer</h2><p>Toto je ukážka. Celé video a všetok členský obsah odomknete jedným členstvom.</p></header><VideoPlayer title={`${video.title} – ukážka`} accessLevel="free" streamVideoId={video.trailerStreamVideoId} provider="cloudflare_stream" poster={video.poster} previewImage={video.previewImage} hasAccess trailer /><aside className="video-trailer-cta"><div><span>VÝCHOD BROTHERS CLUB</span><h2>POZRITE SI CELÉ VIDEO</h2><p>Všetok členský obsah od <strong>6,99 € / mesiac</strong>.</p><small>Alebo 59,99 € ročne • Zrušíte kedykoľvek</small></div><a href={membershipHref}>STAŤ SA ČLENOM →</a></aside></section>}

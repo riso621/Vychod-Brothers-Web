@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProfile } from './profile-context'
 import { WatchHistoryContext } from './watch-history-context'
+import { useViewerProfile } from './viewer-profile-context'
 
-const historyColumns = 'id, user_id, video_id, position_seconds, duration_seconds, progress_percent, completed, started_at, last_watched_at, updated_at'
+const historyColumns = 'id, user_id, viewer_profile_id, video_id, position_seconds, duration_seconds, progress_percent, completed, started_at, last_watched_at, updated_at'
 
 const normalizeProgress = ({ positionSeconds, durationSeconds, completed }) => {
   if (completed) return 100
@@ -13,6 +14,7 @@ const normalizeProgress = ({ positionSeconds, durationSeconds, completed }) => {
 
 export default function WatchHistoryProvider({ children }) {
   const { session, authLoading } = useProfile()
+  const { activeProfile, loading: viewerLoading } = useViewerProfile()
   const [history, setHistory] = useState(new Map())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -20,7 +22,7 @@ export default function WatchHistoryProvider({ children }) {
   useEffect(() => {
     let active = true
     const userId = session?.user?.id
-    if (!supabase || !userId) {
+    if (!supabase || !userId || !activeProfile?.id) {
       setHistory(new Map())
       setLoading(false)
       setError('')
@@ -32,6 +34,7 @@ export default function WatchHistoryProvider({ children }) {
     supabase
       .from('watch_history')
       .select(historyColumns)
+      .eq('viewer_profile_id', activeProfile.id)
       .order('last_watched_at', { ascending: false })
       .then(({ data, error: queryError }) => {
         if (!active) return
@@ -45,11 +48,11 @@ export default function WatchHistoryProvider({ children }) {
       .finally(() => { if (active) setLoading(false) })
 
     return () => { active = false }
-  }, [session?.user?.id])
+  }, [session?.user?.id, activeProfile?.id])
 
   const saveProgress = useCallback(async (videoId, values) => {
     const userId = session?.user?.id
-    if (!supabase || !userId || !videoId) return null
+    if (!supabase || !userId || !videoId || !activeProfile?.id) return null
 
     const durationSeconds = Number.isFinite(values.durationSeconds) ? Math.max(0, Math.round(values.durationSeconds)) : null
     const positionSeconds = Number.isFinite(values.positionSeconds) ? Math.max(0, Math.round(values.positionSeconds)) : 0
@@ -58,6 +61,7 @@ export default function WatchHistoryProvider({ children }) {
     const timestamp = new Date().toISOString()
     const record = {
       user_id: userId,
+      viewer_profile_id: activeProfile.id,
       video_id: videoId,
       position_seconds: positionSeconds,
       duration_seconds: durationSeconds,
@@ -68,7 +72,7 @@ export default function WatchHistoryProvider({ children }) {
     }
     const { data, error: saveError } = await supabase
       .from('watch_history')
-      .upsert(record, { onConflict: 'user_id,video_id' })
+      .upsert(record, { onConflict: 'viewer_profile_id,video_id' })
       .select(historyColumns)
       .single()
     if (saveError) {
@@ -77,16 +81,16 @@ export default function WatchHistoryProvider({ children }) {
     }
     setHistory((current) => new Map(current).set(videoId, data))
     return data
-  }, [session?.user?.id])
+  }, [session?.user?.id, activeProfile?.id])
 
   const value = useMemo(() => ({
     history,
-    loading: authLoading || loading,
+    loading: authLoading || viewerLoading || loading,
     error,
-    isEnabled: Boolean(session?.user?.id),
+    isEnabled: Boolean(session?.user?.id && activeProfile?.id),
     getProgress: (videoId) => history.get(videoId) || null,
     saveProgress,
-  }), [authLoading, error, history, loading, saveProgress, session?.user?.id])
+  }), [authLoading, viewerLoading, error, history, loading, saveProgress, session?.user?.id, activeProfile?.id])
 
   return <WatchHistoryContext.Provider value={value}>{children}</WatchHistoryContext.Provider>
 }
