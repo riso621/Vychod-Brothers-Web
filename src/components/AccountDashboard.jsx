@@ -23,7 +23,7 @@ export default function AccountDashboard() {
   const { session, profile, authLoading, profileLoading, profileError, refreshProfile, signOut } = useProfile()
   const checkoutState = useRef(new URLSearchParams(window.location.search).get('checkout')).current
   const portalReturn = useRef(new URLSearchParams(window.location.search).get('billing') === 'portal').current
-  useEffect(() => { if (!authLoading && !session && !signingOut) window.location.replace('/?auth=login&next=/account') }, [authLoading, session, signingOut])
+  useEffect(() => { if (!authLoading && !session && !signingOut) window.location.replace('/prihlasenie?next=%2Faccount') }, [authLoading, session, signingOut])
   useEffect(() => {
     if (checkoutState !== 'success' || !session) return undefined
     const controller = new AbortController()

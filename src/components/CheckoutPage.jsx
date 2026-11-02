@@ -89,7 +89,7 @@ export default function CheckoutPage({ plan }) {
   const upgradeMountRef = useRef(null)
   const upgradeSubmitRef = useRef(false)
   const details = plan === 'club' ? clubBilling[billingCycle] : planDetails[plan]
-  const returnTo = safeInternalReturnPath(new URLSearchParams(window.location.search).get('returnTo'), '/videos')
+  const returnTo = safeInternalReturnPath(new URLSearchParams(window.location.search).get('returnTo'), '/profil')
   const activeSubscription = Boolean(profile?.stripe_subscription_id)
     && ['active', 'trialing', 'past_due'].includes(profile?.stripe_subscription_status || '')
   const currentMembership = getEffectiveMembership(profile)
@@ -103,7 +103,7 @@ export default function CheckoutPage({ plan }) {
   }, [markerKind, plan, session?.user?.id])
 
   useEffect(() => {
-    if (!authLoading && !session) window.location.replace(`/?auth=login&next=${encodeURIComponent(`/checkout/${plan}`)}`)
+    if (!authLoading && !session) window.location.replace(`/prihlasenie?next=${encodeURIComponent(`/checkout/${plan}`)}`)
   }, [authLoading, session, plan])
 
   useEffect(() => {

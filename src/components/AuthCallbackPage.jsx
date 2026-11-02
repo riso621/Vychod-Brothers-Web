@@ -8,7 +8,7 @@ export default function AuthCallbackPage() {
   const callbackError = search.get('error_description') || hash.get('error_description')
   const nextPath = search.get('next')
   const safeNextPath = safeInternalReturnPath(nextPath)
-  const loginHref = `/?auth=login${safeNextPath ? `&next=${encodeURIComponent(safeNextPath)}` : ''}`
+  const loginHref = `/prihlasenie${safeNextPath ? `?next=${encodeURIComponent(safeNextPath)}` : ''}`
 
   if (authLoading || (session && profileLoading)) {
     return <section className="auth-page-state" aria-live="polite">Dokončujem overenie e-mailu…</section>
@@ -25,7 +25,7 @@ export default function AuthCallbackPage() {
             ? 'Odkaz je neplatný alebo expiroval. Skús sa prihlásiť alebo si vytvor nový účet.'
             : session ? 'Tvoj účet je aktívny a môžeš pokračovať do svojho profilu.' : 'Tvoj e-mail bol potvrdený. Teraz sa môžeš prihlásiť.'}
         </p>
-        <a className="auth-page-link" href={session ? safeNextPath || '/account' : loginHref}>{session ? safeNextPath ? 'Pokračovať' : 'Prejsť do účtu' : 'Prihlásiť sa'}</a>
+        <a className="auth-page-link" href={session ? safeNextPath || '/profil' : loginHref}>{session ? safeNextPath ? 'Pokračovať' : 'Vybrať profil' : 'Prihlásiť sa'}</a>
       </div>
     </section>
   )

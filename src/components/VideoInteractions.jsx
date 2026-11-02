@@ -26,7 +26,7 @@ export default function VideoInteractions({ videoId }) {
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState('')
   const authorName = profile?.username?.trim() || 'Člen komunity'
-  const loginHref = useMemo(() => `/?auth=login&next=${encodeURIComponent(window.location.pathname)}`, [])
+  const loginHref = useMemo(() => `/prihlasenie?next=${encodeURIComponent(window.location.pathname)}`, [])
 
   const load = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setLoading(true)

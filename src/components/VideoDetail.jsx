@@ -62,7 +62,7 @@ export default function VideoDetail({ slug }) {
   const videoPath = `/videos/${slug}`
   const membershipHref = session
     ? `/checkout/club?returnTo=${encodeURIComponent(videoPath)}`
-    : `/?auth=register&next=${encodeURIComponent(`/checkout/club?returnTo=${videoPath}`)}`
+    : `/registracia?next=${encodeURIComponent(`/checkout/club?returnTo=${videoPath}`)}`
   const lockedCopy = { heading: 'Celé video je dostupné členom.', description: 'Aktivuj Východ Brothers Club a odomkni všetky členské videá.', ctaLabel: 'Stať sa členom – od 6,99 €', ctaHref: membershipHref }
   const watchProgress = getProgress(video.id)
 

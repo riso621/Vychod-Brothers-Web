@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import '../public-offer.css'
 
-const checkoutHref = '/?auth=register&next=%2Fcheckout%2Fclub'
+const checkoutHref = '/registracia'
 const fallbackImages = ['/images/team/vychod-brothers-team-evening.webp', '/images/team/vychod-brothers-team-day.webp', '/images/backgrounds/vb-cinematic-energy.webp']
 
 const benefits = [
@@ -42,7 +42,9 @@ export default function PublicStreamingLanding({ videos, urls }) {
 
   const startRegistration = (event) => {
     event.preventDefault()
-    window.dispatchEvent(new CustomEvent('vb:open-auth', { detail: { mode: 'register', email: signupEmail.trim(), next: '/checkout/club' } }))
+    const form = event.currentTarget
+    if (!form.reportValidity()) return
+    window.location.assign(`/registracia?email=${encodeURIComponent(signupEmail.trim())}`)
   }
 
   return <div className="public-stream">
@@ -73,7 +75,7 @@ export default function PublicStreamingLanding({ videos, urls }) {
           <input id="public-signup-email" type="email" value={signupEmail} onChange={(event) => setSignupEmail(event.target.value)} placeholder="E-mailová adresa" autoComplete="email" inputMode="email" required />
           <button type="submit">ZAČAŤ <b aria-hidden="true">→</b></button>
         </form>
-        <a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a>
+        <a className="public-member-link" href="/prihlasenie">Už si člen? Prejsť do katalógu</a>
       </div>
     </section>
 
@@ -90,6 +92,6 @@ export default function PublicStreamingLanding({ videos, urls }) {
 
     <section className="public-final-cta"><span>VÝCHOD BROTHERS CLUB</span><h2>PRIPRAVENÝ SLEDOVAŤ?</h2><p>Objav originálne filmy a seriály od Východ Brothers.</p><strong>6,99 € / mesiac · 59,99 € / rok</strong><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a></section>
 
-    <footer className="public-footer"><a className="public-footer-logo" href="/">VB</a><nav aria-label="Pätička"><a href="mailto:ahoj@vychodbrothers.sk">Kontakt</a><a href="#faq">Často kladené otázky</a><a href="/obchodne-podmienky">Podmienky používania</a><a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a><a href="/account">Správa predplatného</a><a href="/?auth=login&next=%2Fvideos">Prihlásenie</a></nav><p>© {new Date().getFullYear()} Východ Brothers. Všetky práva vyhradené.</p></footer>
+    <footer className="public-footer"><a className="public-footer-logo" href="/">VB</a><nav aria-label="Pätička"><a href="mailto:ahoj@vychodbrothers.sk">Kontakt</a><a href="#faq">Často kladené otázky</a><a href="/obchodne-podmienky">Podmienky používania</a><a href="/ochrana-osobnych-udajov">Ochrana osobných údajov</a><a href="/account">Správa predplatného</a><a href="/prihlasenie">Prihlásenie</a></nav><p>© {new Date().getFullYear()} Východ Brothers. Všetky práva vyhradené.</p></footer>
   </div>
 }

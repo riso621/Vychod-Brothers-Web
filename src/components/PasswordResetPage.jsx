@@ -59,10 +59,10 @@ export default function PasswordResetPage() {
           <p className="auth-status is-success" role="status" aria-live="polite">{status.message}</p>
           {submitting
             ? <p aria-live="polite">Bezpečne ťa odhlasujem…</p>
-            : <a className="auth-page-link" href="/?auth=login">Prihlásiť sa novým heslom</a>}
+            : <a className="auth-page-link" href="/prihlasenie">Prihlásiť sa novým heslom</a>}
         </> : invalidRecovery ? <>
           <p className="auth-page-error" role="alert">Odkaz na obnovu hesla nie je platný alebo už expiroval.</p>
-          <a className="auth-page-link" href="/?auth=login">Späť na prihlásenie</a>
+          <a className="auth-page-link" href="/prihlasenie">Späť na prihlásenie</a>
         </> : <>
           <p>Zadaj nové heslo s minimálne ôsmimi znakmi.</p>
           <form className="auth-form" onSubmit={handleSubmit} noValidate>

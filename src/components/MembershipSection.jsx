@@ -101,7 +101,7 @@ export default function MembershipSection() {
 
   const showModal = async () => {
     if (!session) {
-      window.location.assign('/?auth=login&next=/clenstvo')
+      window.location.assign('/prihlasenie?next=%2Fclenstvo')
       return
     }
     if (checkoutLockRef.current) return

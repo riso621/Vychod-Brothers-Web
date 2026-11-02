@@ -103,7 +103,7 @@ export default function PremiumShowcase({ videos, thumbnailUrls, profile, sessio
   const selectedVideo = videos.find((video) => video.id === selectedId) || defaultVideo
   const unlocked = canAccessMembership(selectedVideo.accessLevel, profile, isAdmin)
   const returnTo = `/videos/${selectedVideo.slug}`
-  const membershipHref = session ? `/checkout/club?returnTo=${encodeURIComponent(returnTo)}` : `/?auth=register&next=${encodeURIComponent(`/checkout/club?returnTo=${returnTo}`)}`
+  const membershipHref = session ? `/checkout/club?returnTo=${encodeURIComponent(returnTo)}` : `/registracia?next=${encodeURIComponent(`/checkout/club?returnTo=${returnTo}`)}`
   const selectedThumbnail = thumbnailUrls.get(selectedVideo.thumbnail)
 
   return <section className={`members-showcase count-${videos.length} has-inline-trailer`} aria-labelledby="members-showcase-heading">

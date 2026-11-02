@@ -21,6 +21,9 @@ const MembershipSection = lazy(() => import('./components/MembershipSection'))
 const AccountDashboard = lazy(() => import('./components/AccountDashboard'))
 const PasswordResetPage = lazy(() => import('./components/PasswordResetPage'))
 const AuthCallbackPage = lazy(() => import('./components/AuthCallbackPage'))
+const RegistrationPage = lazy(() => import('./components/RegistrationPage'))
+const LoginPage = lazy(() => import('./components/LoginPage'))
+const ProfileSelectionPage = lazy(() => import('./components/ProfileSelectionPage'))
 const CheckoutPage = lazy(() => import('./components/CheckoutPage'))
 const CollaborationSection = lazy(() => import('./components/CollaborationSection'))
 const CollaborationTeaser = lazy(() => import('./components/CollaborationTeaser'))
@@ -45,7 +48,7 @@ function Header() {
       {nav.map(([label, href]) => <a className={path === href || href === '/videos' && path.startsWith('/videos') ? 'active' : ''} href={href} key={href} onClick={() => setOpen(false)}>{label}</a>)}
     </nav>}
     {session && <a className="join-brush" href={isMember ? '/videos' : '/clenstvo'}>{isMember ? 'MOJE VIDEÁ' : 'OD 6,99 €'}</a>}
-    <Suspense fallback={null}><AuthControl /></Suspense>
+    {session ? <Suspense fallback={null}><AuthControl /></Suspense> : <a className="auth-trigger" href="/prihlasenie">Prihlásiť sa</a>}
     {session && <button className="hamburger" aria-label="Otvoriť menu" aria-expanded={open} onClick={() => setOpen(!open)}><span /><span /><span /></button>}
   </header>
 }
@@ -66,6 +69,9 @@ function StandardPage({ className, children, footerVariant }) {
 }
 
 function routeFor(path) {
+  if (path === '/registracia' || path === '/registracia/') return <RegistrationPage />
+  if (path === '/prihlasenie' || path === '/prihlasenie/') return <LoginPage />
+  if (path === '/profil' || path === '/profil/') return <ProfileSelectionPage />
   if (path === '/filmy' || path === '/filmy/') return <VideosPage contentType="movie" />
   if (path === '/serialy' || path === '/serialy/') return <VideosPage contentType="series" />
   if (path.startsWith('/videos')) return <VideosPage slug={path === '/videos' || path === '/videos/' ? '' : decodeURIComponent(path.slice('/videos/'.length))} />
