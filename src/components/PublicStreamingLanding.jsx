@@ -12,7 +12,7 @@ const benefits = [
 
 const faqs = [
   ['Čo je VÝCHOD BROTHERS?', 'VÝCHOD BROTHERS je slovenská platforma s originálnymi minifilmami, seriálmi, paródiami a exkluzívnym obsahom našej tvorivej skupiny.'],
-  ['Koľko stojí predplatné?', 'Jedno členstvo stojí 6,99 € mesačne alebo 59,99 € ročne. Ročná platba šetrí 23,89 € oproti 12 mesačným platbám.'],
+  ['Koľko stojí predplatné?', 'Štartovacia mesačná cena je 6,99 €; plánovaná bežná mesačná cena je 9,99 €. Ročné členstvo stojí 59,99 € a šetrí 23,89 € oproti 12 mesačným platbám.'],
   ['Čo môžem sledovať?', 'Po aktivácii členstva získaš prístup ku všetkým publikovaným členským videám, minifilmom, seriálom, bonusom a zákulisiu. Verejné videá môže sledovať každý.'],
   ['Kde môžem sledovať obsah?', 'Obsah môžeš sledovať vo webovom prehliadači na mobile, tablete alebo počítači. Stačí sa prihlásiť do svojho účtu.'],
   ['Ako môžem zrušiť predplatné?', 'Predplatné môžeš kedykoľvek spravovať alebo zrušiť v časti Môj účet. Prístup ti zostane do konca už zaplateného obdobia.'],
@@ -46,7 +46,7 @@ export default function PublicStreamingLanding({ videos, urls }) {
         <span>VÝCHOD BROTHERS ORIGINAL</span>
         <h1>FILMY A SERIÁLY,<br/>KTORÉ INDE NENÁJDEŠ.</h1>
         <p>Originálne mini filmy, seriály a exkluzívny obsah od Východ Brothers.</p>
-        <strong>Už za 6,99 € mesačne. <small>Alebo 59,99 € ročne · zrušíš kedykoľvek.</small></strong>
+        <strong>Štartovacia cena 6,99 € mesačne. <small>Alebo 59,99 € ročne · zrušíš kedykoľvek.</small></strong>
         <div><a href={checkoutHref}>ZAČAŤ SLEDOVAŤ <b>›</b></a><a className="public-member-link" href="/?auth=login&next=%2Fvideos">Už si člen? Prejsť do katalógu</a></div>
       </div>
     </section>

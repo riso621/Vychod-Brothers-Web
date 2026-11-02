@@ -5,10 +5,6 @@ import { canAccessMembership, clubPlan, isActiveClubMember } from '../lib/member
 import { getSignedStorageUrls } from '../lib/storage'
 import { getPublishedVideos } from '../lib/videos'
 
-const planMeta = {
-  club: { price: 'od 6,99 €', note: 'mesačne', cta: 'Stať sa členom' },
-}
-
 const benefits = [
   { icon: 'film', title: 'Exkluzívne videá', text: 'Minifilmy, skeče a bonusové epizódy, ktoré na verejnom YouTube nenájdeš.' },
   { icon: 'camera', title: 'Zákulisie natáčania', text: 'Buď s nami pred prvou klapkou aj po poslednom strihu.' },
@@ -134,7 +130,7 @@ export default function MembershipSection() {
           <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .6 }}>VÝCHOD BROTHERS · MEMBERSHIP</motion.span>
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .8, delay: .08 }}>STAŇ SA ČLENOM<br/><em>VÝCHOD BROTHERS</em></motion.h1>
           <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .18 }}>Exkluzívne videá, bonusový obsah, premiéry, zákulisie a množstvo ďalšieho obsahu, ktorý na YouTube nikdy neuvidíš.</motion.p>
-          <motion.div className="membership-hero-price" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .23 }}><strong>6,99 €</strong><span>/ MESIAC · ALEBO 59,99 € / ROK</span></motion.div>
+          <motion.div className="membership-hero-price" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .65, delay: .23 }}><i>ŠTARTOVACIA CENA</i><strong>6,99 €</strong><span>/ MESIAC · ALEBO 59,99 € / ROK</span></motion.div>
           <motion.div className="membership-hero-actions" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7, delay: .28 }}>
             {isMember ? <a href="/videos">POZRIEŤ ČLENSKÉ VIDEÁ <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM'} <ArrowIcon/></button>}
           </motion.div>
@@ -191,7 +187,10 @@ export default function MembershipSection() {
         <div className="membership-plan-grid"><motion.article className={`membership-plan-card is-vip is-recommended${isMember ? ' is-current' : ''}`} whileHover={reduceMotion ? undefined : { y: -3 }}>
           {isMember && <span className="membership-plan-current">TVOJE AKTÍVNE ČLENSTVO</span>}
           <header><span>VÝCHOD BROTHERS</span><h3>{clubPlan.name}</h3><p>Všetky členské videá a funkcie v jednom predplatnom.</p></header>
-          <div className="membership-plan-price"><strong>{planMeta.club.price}</strong><span>{planMeta.club.note}</span></div>
+          <div className="membership-billing-preview" aria-label="Možnosti fakturácie">
+            <div><em>ŠTARTOVACIA CENA</em><small>Plánovaná bežná cena <s>9,99 €</s></small><strong>6,99 € <span>/ mesiac</span></strong></div>
+            <div className="is-annual"><em>NAJVÝHODNEJŠIE</em><small>Úspora oproti 12 mesačným platbám</small><strong>59,99 € <span>/ rok</span></strong><b>Ušetríš 23,89 €</b></div>
+          </div>
           <ul>{planBenefits.map((perk) => <li key={perk}><Icon name="check"/>{perk}</li>)}</ul>
           <div className="membership-plan-action">{isMember ? <a href="/videos">Prejsť na členský obsah <ArrowIcon/></a> : <button type="button" disabled={Boolean(checkoutPlan)} onClick={showModal}>{checkoutPlan ? 'Otváram Checkout…' : 'STAŤ SA ČLENOM – OD 6,99 €'}<ArrowIcon/></button>}<small>Mesačne alebo ročne · zrušíš kedykoľvek.</small></div>
           <p className="membership-trust-note">Tvoríme pre komunitu Východ Brothers naprieč YouTube, TikTok a Instagram.</p>

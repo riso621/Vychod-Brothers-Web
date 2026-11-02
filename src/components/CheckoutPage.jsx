@@ -13,8 +13,8 @@ const planDetails = {
 }
 
 const clubBilling = {
-  monthly: { ...planDetails.club, price: '6,99 €', interval: 'mesiac', renewal: 'každý mesiac', label: 'Mesačné', note: 'Štartovacia cena; plánovaná bežná cena 9,99 € mesačne.' },
-  annual: { ...planDetails.club, price: '59,99 €', interval: 'rok', renewal: 'každý rok', label: 'Ročné', note: 'Najvýhodnejšie · ušetríš 23,89 € oproti 12 mesačným platbám.' },
+  monthly: { ...planDetails.club, price: '6,99 €', interval: 'mesiac', renewal: 'každý mesiac', label: 'Mesačné', badge: 'ŠTARTOVACIA CENA' },
+  annual: { ...planDetails.club, price: '59,99 €', interval: 'rok', renewal: 'každý rok', label: 'Ročné', badge: 'NAJVÝHODNEJŠIE' },
 }
 
 const appearance = {
@@ -506,7 +506,11 @@ export default function CheckoutPage({ plan }) {
             <h2>Rovnaký obsah. Dve možnosti platby.</h2>
             <div className="checkout-billing-options" role="radiogroup" aria-label="Periodicita členstva">
               {Object.entries(clubBilling).map(([cycle, option]) => <button className={billingCycle === cycle ? 'is-selected' : ''} type="button" role="radio" aria-checked={billingCycle === cycle} onClick={() => setBillingCycle(cycle)} key={cycle}>
-                {cycle === 'annual' && <em>NAJVÝHODNEJŠIE</em>}<strong>{option.label}</strong><b>{option.price} <small>/ {option.interval}</small></b><p>{option.note}</p>
+                <em>{option.badge}</em><strong>{option.label}</strong>
+                {cycle === 'monthly'
+                  ? <div className="checkout-price-context"><small>Plánovaná bežná cena</small><s>9,99 €</s></div>
+                  : <div className="checkout-price-context is-saving"><small>Úspora oproti 12 mesačným platbám</small><span>23,89 €</span></div>}
+                <b>{option.price} <small>/ {option.interval}</small></b>
               </button>)}
             </div>
             <button className="payment-checkout-submit" type="button" onClick={() => setBillingConfirmed(true)}>POKRAČOVAŤ NA BEZPEČNÚ PLATBU</button>
@@ -525,7 +529,7 @@ export default function CheckoutPage({ plan }) {
               <div className="payment-element-wrap">{!ready && !error && <p className="payment-element-loading" aria-live="polite">Načítavam bezpečné platobné údaje…</p>}<div ref={mountRef} className="payment-element-mount" /></div>
             </section>
             <section className="payment-checkout-summary"><div><span>Súhrn · {details.label || 'Mesačné'}</span><strong>{details.name}</strong></div><b>{details.price} <small>/ {details.interval || 'mesiac'}</small></b></section>
-            <p className="payment-checkout-renewal">Predplatné sa automaticky obnovuje {details.renewal || 'každý mesiac'}, kým ho nezrušíš. {plan === 'club' && details.note}</p>
+            <p className="payment-checkout-renewal">Predplatné sa automaticky obnovuje {details.renewal || 'každý mesiac'}, kým ho nezrušíš.</p>
             {error && <div className="payment-checkout-error" role="alert"><p>{error}</p>{!ready && <button type="button" onClick={retry}>Skúsiť znova</button>}</div>}
             <button className="payment-checkout-submit" type="submit" disabled={!ready || submitting || Boolean(error && !ready)}>{submitting ? 'SPRACÚVAM PLATBU…' : `AKTIVOVAŤ ${details.name} – ${details.price} / ${String(details.interval || 'mesiac').toUpperCase()}`}</button>
             <p className="payment-checkout-security">Platobné údaje spracúva Stripe. Východ Brothers neukladá číslo karty ani CVC.</p>
